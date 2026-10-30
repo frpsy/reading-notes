@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
   escapeHtml, dnum, dstr, parseToc, tocText, isGroup, leavesOf, descLeaves, metrics,
-  autoDates, toggleChapter, nextLeafIndex, activityByDate, currentStreak, longestStreak, heatmapWeeks, goalInfo, chartGeometry, normalizeBook, parseCatalogText,
+  autoDates, toggleChapter, nextLeafIndex, completeThrough, activityByDate, currentStreak, longestStreak, heatmapWeeks, goalInfo, chartGeometry, normalizeBook, parseCatalogText,
   agoText,
 } from "../js/core.js";
 
@@ -199,4 +199,18 @@ test("히트맵: 주 단위 열·오늘 위치", () => {
   assert.equal(last[1].level, 3);
   assert.equal(last[6].future, true);
   assert.equal(last[5].future, false);
+});
+
+test("여기까지 읽음: 앞 단위 일괄 완료, 기존 날짜 유지", () => {
+  const b = book();
+  toggleChapter(b, 1, "2026-10-01");
+  completeThrough(b, 4, "2026-10-05"); // 3장까지
+  assert.equal(b.chapters[1].done, "2026-10-01");
+  assert.equal(b.chapters[2].done, "2026-10-05");
+  assert.equal(b.chapters[4].done, "2026-10-05");
+  assert.equal(b.chapters[5].done, null);
+  assert.equal(b.startDate, "2026-10-01");
+  completeThrough(b, 5, "2026-10-06");
+  assert.equal(b.endDate, "2026-10-06");
+  assert.equal(b.endAuto, true);
 });
