@@ -14,12 +14,15 @@ export function todayStr(now = new Date()) {
   return now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
 }
 
-// 'YYYY-MM-DD' → 1970-01-01 기준 일수. 형식이 틀리면 null
+// 'YYYY-MM-DD' → 1970-01-01 기준 일수. 형식이나 달력상 날짜가 틀리면 null (2026-02-31 같은 값 포함)
 export function dnum(s) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
   if (!m) return null;
-  const n = Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5;
-  return Number.isFinite(n) ? n : null;
+  const y = +m[1], mo = +m[2], d = +m[3];
+  const dt = new Date(0);
+  dt.setUTCFullYear(y, mo - 1, d);
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return null;
+  return dt.getTime() / 864e5;
 }
 
 export function dstr(n) {

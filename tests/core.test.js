@@ -20,7 +20,9 @@ test("escapeHtml", () => {
 
 test("날짜 변환", () => {
   assert.equal(dstr(dnum("2026-10-30")), "2026-10-30");
-  assert.equal(dnum("2026-13-01") === null, false); // 월 범위는 Date.UTC 가 넘겨 처리
+  for (const s of ["2026-13-01", "2026-00-10", "2026-02-31", "2026-04-31", "2026-1-1", "", null]) assert.equal(dnum(s), null, String(s));
+  assert.equal(dstr(dnum("2024-02-29")), "2024-02-29"); // 윤일
+  assert.equal(dnum("2026-02-29"), null);
   assert.equal(dnum("abc"), null);
   assert.equal(agoText("2026-10-29", "2026-10-30"), "어제");
   assert.equal(agoText("2026-10-30", "2026-10-30"), "오늘");
@@ -213,4 +215,11 @@ test("여기까지 읽음: 앞 단위 일괄 완료, 기존 날짜 유지", () =
   completeThrough(b, 5, "2026-10-06");
   assert.equal(b.endDate, "2026-10-06");
   assert.equal(b.endAuto, true);
+});
+
+test("정규화: 달력에 없는 날짜는 버림", () => {
+  const b = normalizeBook({ title: "a", startDate: "2026-02-31", goalDate: "2026-12-31", chapters: [{ t: "x", done: "2026-04-31" }] });
+  assert.equal(b.startDate, null);
+  assert.equal(b.goalDate, "2026-12-31");
+  assert.equal(b.chapters[0].done, null);
 });
