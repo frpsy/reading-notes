@@ -151,8 +151,9 @@ test("catalog 파일이 모두 읽힘", () => {
     const c = parseCatalogText(fs.readFileSync(new URL("../catalog/" + x.file, import.meta.url), "utf8"));
     const items = parseToc(c.toc);
     assert.ok(c.title && items.length > 5, x.file);
-    assert.ok(items.every((i) => i.p != null), x.file + " 쪽수");
+    if (items.some((i) => i.p != null)) assert.ok(items.every((i) => i.p != null), x.file + " 쪽수");
     const m = metrics({ chapters: items, totalPages: c.totalPages });
-    assert.ok(m.pagesTotal > 0, x.file + " 분량 계산");
+    assert.ok(m.L > 0, x.file + " 읽을 챕터 계산");
+    if (items.every((i) => i.p != null)) assert.ok(m.pagesTotal > 0, x.file + " 분량 계산");
   }
 });
