@@ -323,6 +323,41 @@ export function chartGeometry(book, m, today = todayStr()) {
   };
 }
 
+/* ---------- 메모·검색·연간 기록 ---------- */
+// 메모가 있는 챕터(목차 순서)
+export function memosOf(book) {
+  return (book.chapters || []).map((c, i) => ({ i, t: c.t, memo: c.memo, done: c.done })).filter((x) => x.memo);
+}
+
+// 제목·저자에 검색어가 들어 있는지(대소문자·공백 무시)
+export function matchBook(book, q) {
+  const norm = (s) => String(s || "").toLowerCase().replace(/\s+/g, "");
+  const k = norm(q);
+  return !k || norm(book.title).includes(k) || norm(book.author).includes(k);
+}
+
+// 한 해의 독서 기록: 완독한 책(종료일 순), 월별 완료 챕터 수, 읽은 날 수, 기록이 있는 해 목록(최근 순)
+export function yearSummary(books, year, today = todayStr()) {
+  const y = String(year);
+  const years = new Set([today.slice(0, 4)]);
+  const months = Array(12).fill(0);
+  const dayset = new Set();
+  const done = [];
+  books.forEach((b) => {
+    const m = metrics(b, today);
+    m.doneDates.forEach((d) => {
+      years.add(d.slice(0, 4));
+      if (d.slice(0, 4) === y) { months[+d.slice(5, 7) - 1]++; dayset.add(d); }
+    });
+    if (m.status === "done" && m.endStr) {
+      years.add(m.endStr.slice(0, 4));
+      if (m.endStr.slice(0, 4) === y) done.push({ id: b.id, title: b.title, author: b.author || "", end: m.endStr, rating: b.rating || 0, days: m.days, L: m.L });
+    }
+  });
+  done.sort((a, b) => a.end.localeCompare(b.end));
+  return { year: y, years: [...years].sort().reverse(), done, months, chapters: months.reduce((a, x) => a + x, 0), readDays: dayset.size };
+}
+
 /* ---------- 책 데이터 정리 ---------- */
 const isDateStr = (s) => typeof s === "string" && dnum(s) != null;
 

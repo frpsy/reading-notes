@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import * as C from "../js/core.js";
 import {
   escapeHtml, dnum, dstr, parseToc, tocText, isGroup, leavesOf, descLeaves, metrics,
   autoDates, toggleChapter, nextLeafIndex, completeThrough, activityByDate, currentStreak, longestStreak, heatmapWeeks, goalInfo, chartGeometry, normalizeBook, parseCatalogText,
@@ -227,4 +228,33 @@ test("정규화: 달력에 없는 날짜는 버림", () => {
   assert.equal(b.startDate, null);
   assert.equal(b.goalDate, "2026-12-31");
   assert.equal(b.chapters[0].done, null);
+});
+
+test("메모 모아보기·검색", () => {
+  const b = C.normalizeBook({ title: "인생의 역사", author: "신형철", chapters: [
+    { t: "1부", lv: 0, memo: "" }, { t: "1장", lv: 1, memo: "좋은 문장", done: "2026-01-02" }, { t: "2장", lv: 1, memo: "질문" },
+  ] });
+  assert.deepEqual(C.memosOf(b).map((x) => [x.i, x.t, x.memo, x.done]), [[1, "1장", "좋은 문장", "2026-01-02"], [2, "2장", "질문", null]]);
+  assert.ok(C.matchBook(b, "인생 의"));
+  assert.ok(C.matchBook(b, "신형"));
+  assert.ok(C.matchBook(b, ""));
+  assert.ok(!C.matchBook(b, "실용"));
+  assert.ok(C.matchBook({ title: "The Pragmatic Programmer" }, "pragmatic"));
+});
+
+test("연간 기록 요약", () => {
+  const a = C.normalizeBook({ id: "a", title: "A", rating: 4, startDate: "2025-12-30", chapters: [
+    { t: "1", done: "2025-12-31" }, { t: "2", done: "2026-01-03" }, { t: "3", done: "2026-01-03" },
+  ] });
+  const b = C.normalizeBook({ id: "b", title: "B", chapters: [{ t: "1", done: "2026-03-10" }, { t: "2" }] });
+  const s = C.yearSummary([a, b], 2026, "2026-10-30");
+  assert.deepEqual(s.years, ["2026", "2025"]);
+  assert.deepEqual(s.done.map((x) => [x.id, x.end, x.rating, x.days]), [["a", "2026-01-03", 4, 5]]);
+  assert.equal(s.months[0], 2);
+  assert.equal(s.months[2], 1);
+  assert.equal(s.chapters, 3);
+  assert.equal(s.readDays, 2);
+  const s25 = C.yearSummary([a, b], "2025", "2026-10-30");
+  assert.equal(s25.done.length, 0);
+  assert.equal(s25.chapters, 1);
 });

@@ -2,9 +2,9 @@
 import {
   escapeHtml, todayStr, dnum, fmtDate, fmtShort, agoText, newId, parseToc, tocText, parseCatalogText,
   isGroup, leavesOf, descLeaves, nextLeafIndex, activityByDate, currentStreak, longestStreak, heatmapWeeks, metrics as calcMetrics, autoDates, toggleChapter as toggle, completeThrough,
-  goalInfo, chartGeometry, normalizeBook,
-} from "./core.js?v=10";
-import * as store from "./store.js?v=10";
+  goalInfo, chartGeometry, normalizeBook, memosOf, matchBook, yearSummary,
+} from "./core.js?v=11";
+import * as store from "./store.js?v=11";
 
 var view = document.getElementById("view");
 var syncEl = document.getElementById("sync");
@@ -20,7 +20,7 @@ var books = new Map(), lastJson = new Map(), dirty = new Set(), timers = new Map
 var mode = "pending";      // firebase | local
 var phase = "boot";        // boot | login | denied | error | app
 var ready = false, readyTimer = null, unsub = null, authMsg = "", userEmail = "";
-var ui = { filter: "all", onlyRemaining: false, openMemo: new Set(), confirmDel: null, folded: loadFolded() };
+var ui = { filter: "all", q: "", onlyRemaining: false, openMemo: new Set(), confirmDel: null, folded: loadFolded() };
 
 /* ---------- 테마 ---------- */
 var themeEl = document.getElementById("theme");
@@ -227,6 +227,8 @@ function currentRoute() {
   if (h === "add") return { name: "form", id: null };
   if ((m = /^edit-(.+)$/.exec(h))) return { name: "form", id: m[1] };
   if ((m = /^book-(.+)$/.exec(h))) return { name: "book", id: m[1] };
+  if (h === "year") return { name: "year", year: todayStr().slice(0, 4) };
+  if ((m = /^year-(\d{4})$/.exec(h))) return { name: "year", year: m[1] };
   return { name: "library" };
 }
 window.addEventListener("hashchange", function () { ui.confirmDel = null; hideToast(); render(); window.scrollTo(0, 0); });
@@ -329,21 +331,22 @@ function libraryView(){
   }
   var strip='<div class="strip"><div class="s"><b>'+cnt.reading+'</b><span>읽는 중</span></div>'+
     '<div class="s"><b>'+cnt.done+'</b><span>완독</span></div>'+
-    '<div class="s"><b>'+doneYear+'</b><span>올해 완독</span></div>'+
+    '<a class="s" href="#year"><b>'+doneYear+'</b><span>올해 완독 · 연간 기록 ›</span></a>'+
     '<div class="s"><b>'+week+'</b><span>최근 7일 완료 챕터</span></div></div>';
   var tabs='<div class="tabs" role="group" aria-label="상태 필터">'+[['all','전체'],['reading','읽는 중'],['todo','읽을 예정'],['done','완독']].map(function(x){
     return '<button type="button" class="tab" data-act="filter" data-v="'+x[0]+'" aria-pressed="'+(ui.filter===x[0])+'">'+x[1]+'<em>'+cnt[x[0]]+'</em></button>';
   }).join('')+'</div>';
   var order={reading:0,todo:1,done:2};
-  var list=all.filter(function(x){return ui.filter==='all'||x.m.status===ui.filter});
+  var list=all.filter(function(x){return (ui.filter==='all'||x.m.status===ui.filter)&&matchBook(x.b,ui.q)});
   list.sort(function(a,c){
     if(order[a.m.status]!==order[c.m.status])return order[a.m.status]-order[c.m.status];
     if(a.m.status==='reading')return (c.m.last||'').localeCompare(a.m.last||'');
     if(a.m.status==='done')return (c.m.endStr||'').localeCompare(a.m.endStr||'');
     return (c.b.createdAt||0)-(a.b.createdAt||0);
   });
-  var rows=list.length?'<div class="books">'+list.map(function(x){return bookRow(x.b,x.m)}).join('')+'</div>':'<p class="muted">해당하는 책이 없습니다.</p>';
-  return head+strip+activityHtml(all.map(function(x){return x.b}))+tabs+rows+note;
+  var rows=list.length?'<div class="books">'+list.map(function(x){return bookRow(x.b,x.m)}).join('')+'</div>':'<p class="muted">'+(ui.q?'검색 결과가 없습니다.':'해당하는 책이 없습니다.')+'</p>';
+  var search=all.length>1?'<input type="search" class="search" data-act="search" value="'+esc(ui.q)+'" placeholder="제목·저자 검색" aria-label="제목·저자 검색" autocomplete="off">':'';
+  return head+strip+activityHtml(all.map(function(x){return x.b}))+search+tabs+rows+note;
 }
 
 function goalHtml(b, m) {
@@ -444,11 +447,49 @@ function bookView(id){
     '<p class="hint">모든 챕터를 완료하면 종료일이 자동으로 채워집니다. 날짜는 직접 고칠 수 있습니다.</p></section>'+
     '<section class="panel" aria-label="누적 그래프"><h2 class="sec">누적 완료 챕터</h2><div style="margin-top:12px">'+chartSvg(b,m)+'</div></section>'+
     '<div class="sec-h"><h2 class="sec">챕터</h2><button type="button" class="tgl" data-act="remaining" aria-pressed="'+ui.onlyRemaining+'">남은 챕터만 보기</button></div>'+
-    chaptersHtml(b,m)+
+    chaptersHtml(b,m)+'<div id="memos-box">'+memosHtml(b)+'</div>'+
     '<div class="sec-h"><h2 class="sec">독서 메모</h2></div>'+
     '<div class="panel" style="margin-top:0"><div class="dates"><label class="fld"><span>평점</span><select id="d-rating" data-act="rating">'+rating+'</select></label></div>'+
     '<label class="fld" style="margin-top:12px"><span>전체 느낌, 남기고 싶은 문장</span><textarea id="d-note" data-act="note">'+esc(b.note||'')+'</textarea></label></div>'+
     '<div style="margin-top:28px">'+del+'</div>';
+}
+
+function memosHtml(b){
+  var list=memosOf(b);
+  if(!list.length)return '';
+  return '<details class="panel memos"><summary>챕터 메모 모아보기 <em>'+list.length+'</em></summary><ul>'+list.map(function(x){
+    return '<li><div class="memo-h"><b>'+esc(x.t)+'</b>'+(x.done?'<span class="mono">'+esc(fmt(x.done))+'</span>':'')+'</div><p>'+esc(x.memo)+'</p></li>';
+  }).join('')+'</ul></details>';
+}
+
+// 메모를 고친 뒤 모아보기 칸만 바꿉니다(전체를 다시 그리면 누르려던 버튼이 사라질 수 있음).
+function refreshMemos(b){
+  var box=document.getElementById('memos-box');if(!box)return;
+  var d=box.querySelector('details'),open=d&&d.open;
+  box.innerHTML=memosHtml(b);
+  if(open&&(d=box.querySelector('details')))d.open=true;
+}
+
+function yearView(y){
+  var s=yearSummary(Array.from(books.values()),y);
+  var max=Math.max.apply(null,s.months.concat([1]));
+  var tabs=s.years.length>1?'<div class="tabs" role="group" aria-label="연도">'+s.years.map(function(x){
+    return '<a class="tab" href="#year-'+x+'" aria-current="'+(x===s.year?'page':'false')+'">'+x+'</a>';
+  }).join('')+'</div>':'';
+  var strip='<div class="strip"><div class="s"><b>'+s.done.length+'</b><span>완독</span></div>'+
+    '<div class="s"><b>'+s.chapters+'</b><span>완료 챕터</span></div>'+
+    '<div class="s"><b>'+s.readDays+'</b><span>읽은 날</span></div></div>';
+  var bars='<section class="panel" aria-label="월별 완료 챕터"><h2 class="sec">월별 완료 챕터</h2><div class="months">'+s.months.map(function(n,i){
+    return '<div class="mo" title="'+(i+1)+'월 · '+n+'챕터"><span class="mo-n mono">'+(n||'')+'</span><i style="height:'+Math.round(n/max*100)+'%"></i><span class="mo-l">'+(i+1)+'</span></div>';
+  }).join('')+'</div></section>';
+  var list=s.done.length?'<div class="books">'+s.done.map(function(x){
+    var sub=fmt(x.end)+' 완독'+(x.days?' · '+x.days+'일':'')+' · '+x.L+'챕터';
+    return '<a class="book" href="#book-'+esc(x.id)+'"><span class="cover" style="--h:'+hue(x.title)+'" aria-hidden="true">'+esc(x.title.charAt(0))+'</span>'+
+      '<span class="book-main"><span class="book-title">'+esc(x.title)+'</span><span class="book-sub">'+(x.author?esc(x.author)+' · ':'')+esc(sub)+'</span></span>'+
+      '<span class="rating mono">'+(x.rating?x.rating+' / 5':'')+'</span></a>';
+  }).join('')+'</div>':'<p class="muted">이 해에 완독한 책이 아직 없습니다.</p>';
+  return '<a class="back" href="#library">← 서재</a><h1 class="page">'+esc(s.year)+'년 독서 기록</h1>'+tabs+strip+bars+
+    '<div class="sec-h"><h2 class="sec">완독한 책</h2></div>'+list;
 }
 
 function previewHtml(items){
@@ -550,10 +591,17 @@ function render() {
   else if (!ready) html = loadingView();
   else if (r.name === "library") html = libraryView();
   else if (r.name === "book") html = bookView(r.id);
+  else if (r.name === "year") html = yearView(r.year);
   else html = formView(r.id);
   view.innerHTML = html;
   if (phase === "app" && ready && r.name === "form" && (!r.id || books.has(r.id))) bindForm(r.id);
-  if (fk) { var n = view.querySelector(fk); if (n) n.focus({ preventScroll: true }); }
+  if (fk) {
+    var n = view.querySelector(fk);
+    if (n) {
+      n.focus({ preventScroll: true });
+      if (n.dataset.act === "search" && typeof ae.selectionStart === "number") { try { n.setSelectionRange(ae.selectionStart, ae.selectionEnd); } catch (e) { /* 무시 */ } }
+    }
+  }
 }
 
 /* ---------- 이벤트 ---------- */
@@ -609,6 +657,9 @@ view.addEventListener("click", function (e) {
       break;
   }
 });
+view.addEventListener("input", function (e) {
+  if (e.target.dataset && e.target.dataset.act === "search") { ui.q = e.target.value; render(); }
+});
 view.addEventListener("change", function (e) {
   var el = e.target, act = el.dataset && el.dataset.act;
   if (!act) return;
@@ -621,7 +672,7 @@ view.addEventListener("change", function (e) {
     case "end": b.endDate = metrics(b).status === "done" ? (el.value || null) : null; b.endAuto = false; persist(b); render(); break;
     case "goal": b.goalDate = el.value || null; persist(b); render(); break;
     case "chdate": b.chapters[+el.dataset.i].done = el.value || null; autoDates(b); persist(b); render(); break;
-    case "memotext": b.chapters[+el.dataset.i].memo = el.value.trim(); persist(b); break;
+    case "memotext": b.chapters[+el.dataset.i].memo = el.value.trim(); persist(b); refreshMemos(b); break;
     case "rating": b.rating = parseInt(el.value, 10) || 0; persist(b); break;
     case "note": b.note = el.value; persist(b); break;
   }
