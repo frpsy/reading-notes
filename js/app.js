@@ -1,7 +1,7 @@
 // 책갈피 화면 코드. 순수 로직은 core.js, 저장소는 store.js 에 있습니다.
 import {
   escapeHtml, todayStr, dnum, fmtDate, fmtShort, agoText, newId, parseToc, tocText, parseCatalogText,
-  isGroup, leavesOf, descLeaves, metrics as calcMetrics, autoDates, toggleChapter as toggle,
+  isGroup, leavesOf, descLeaves, nextLeafIndex, metrics as calcMetrics, autoDates, toggleChapter as toggle,
   goalInfo, chartGeometry, normalizeBook,
 } from "./core.js";
 import * as store from "./store.js";
@@ -188,6 +188,20 @@ function chipHtml(m){return '<span class="chip '+m.status+'">'+ST[m.status]+'</s
 function loadingView(){return '<p class="muted">불러오는 중…</p>'}
 function notFound(){return '<p>이 책을 찾을 수 없습니다.</p><p><a href="#library">서재로 돌아가기</a></p>'}
 
+function nextLine(b,m){
+  if(m.status==='done')return '';
+  var i=nextLeafIndex(b);
+  return i<0?'':'<span class="book-next">다음 · '+esc(b.chapters[i].t)+'</span>';
+}
+function nextPanel(b,m){
+  if(m.status==='done')return '';
+  var i=nextLeafIndex(b);
+  if(i<0)return '';
+  var c=b.chapters[i];
+  return '<section class="panel next" aria-label="이어 읽기"><div class="next-main"><span class="next-lbl">이어 읽기</span>'+
+    '<span class="next-title">'+esc(c.t)+'</span>'+(c.p!=null?'<span class="pg">p.'+c.p+'</span>':'')+'</div>'+
+    '<button type="button" class="btn primary" data-act="nextdone">읽음 표시</button></section>';
+}
 function bookRow(b,m){
   var sub;
   if(m.status==='done')sub=fmt(m.start)+' – '+fmt(m.endStr);
@@ -202,7 +216,7 @@ function bookRow(b,m){
     '<span class="book-main"><span class="book-title">'+esc(b.title)+(b.example?' <span class="chip">예시</span>':'')+'</span>'+
     '<span class="book-sub">'+by+sub+'</span>'+
     '<span class="bar'+(m.status==='done'?' ok':'')+'"><i style="width:'+Math.round(m.pct*100)+'%"></i></span>'+
-    '<span class="book-meta">'+esc(meta)+'</span></span>'+
+    '<span class="book-meta">'+esc(meta)+'</span>'+nextLine(b,m)+'</span>'+
     '<span class="book-side"><b class="pct">'+Math.round(m.pct*100)+'%</b>'+chipHtml(m)+(stale?'<span class="chip warn">7일 넘게 기록 없음</span>':'')+'</span></a>';
 }
 
@@ -324,6 +338,7 @@ function bookView(id){
   return '<a class="back" href="#library">← 서재</a>'+
     '<div class="head">'+coverHtml(b,true)+'<div><h1>'+esc(b.title)+(b.example?' <span class="chip">예시</span>':'')+'</h1>'+
     '<div class="by">'+(b.author?esc(b.author)+' · ':'')+chipHtml(m)+(stale?' <span class="chip warn">7일 넘게 기록 없음</span>':'')+(b.totalPages?' · '+b.totalPages+'쪽':'')+'</div></div>'+'<div class="head-actions"><a class="btn sm" href="#edit-'+esc(b.id)+'">정보·목차 수정</a></div></div>'+
+    nextPanel(b,m)+
     '<section class="panel" aria-label="진척 현황"><div class="prog"><span class="big">'+pct+'%</span><span class="of">'+m.D+' / '+m.L+' 챕터</span>'+alt+'</div>'+
     '<div class="bar lg'+(m.status==='done'?' ok':'')+'"><i style="width:'+pct+'%"></i></div>'+goalHtml(b,m)+statsHtml+'</section>'+
     '<section class="panel" aria-label="날짜"><div class="dates">'+
@@ -461,6 +476,9 @@ view.addEventListener("click", function (e) {
     case "trial": enterApp("local"); break;
     case "logout": store.signOut(); break;
     case "catadd": addFromCatalog(el.dataset.id); break;
+    case "nextdone":
+      if (b) { var ni = nextLeafIndex(b); if (ni >= 0) { toggleChapter(b, ni); persist(b); render(); } }
+      break;
     case "toggle":
       if (b) { toggleChapter(b, +el.dataset.i); persist(b); render(); }
       break;

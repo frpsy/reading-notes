@@ -173,6 +173,13 @@ export function autoDates(book) {
   }
 }
 
+// 아직 읽지 않은 첫 읽을 단위의 인덱스. 모두 읽었으면 -1
+export function nextLeafIndex(book) {
+  const ch = book.chapters || [];
+  const i = leavesOf(ch).find((k) => !ch[k].done);
+  return i === undefined ? -1 : i;
+}
+
 export function toggleChapter(book, i, today = todayStr()) {
   const ch = book.chapters;
   if (isGroup(ch, i)) {

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
   escapeHtml, dnum, dstr, parseToc, tocText, isGroup, leavesOf, descLeaves, metrics,
-  autoDates, toggleChapter, goalInfo, chartGeometry, normalizeBook, parseCatalogText,
+  autoDates, toggleChapter, nextLeafIndex, goalInfo, chartGeometry, normalizeBook, parseCatalogText,
   agoText,
 } from "../js/core.js";
 
@@ -156,4 +156,16 @@ test("catalog 파일이 모두 읽힘", () => {
     assert.ok(m.L > 0, x.file + " 읽을 챕터 계산");
     if (items.every((i) => i.p != null)) assert.ok(m.pagesTotal > 0, x.file + " 분량 계산");
   }
+});
+
+test("이어 읽기: 다음 읽을 단위", () => {
+  const b = book();
+  assert.equal(nextLeafIndex(b), 1);
+  toggleChapter(b, 1, "2026-10-01");
+  assert.equal(nextLeafIndex(b), 2);
+  toggleChapter(b, 0, "2026-10-02"); // 묶음 전체 체크
+  assert.equal(nextLeafIndex(b), 4);
+  toggleChapter(b, 3, "2026-10-02");
+  assert.equal(nextLeafIndex(b), -1);
+  assert.equal(nextLeafIndex({ chapters: [] }), -1);
 });
