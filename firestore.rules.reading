@@ -1,0 +1,8 @@
+// parent-survey 의 firestore.rules 맨 아래(match /databases/{database}/documents { ... } 안)에 이 블록을 추가해 게시합니다.
+// 책갈피 데이터는 readingUsers/{uid}/books/{bookId} 에만 저장되며, 본인 구글 계정(허용 이메일)만 읽고 쓸 수 있습니다.
+match /readingUsers/{uid}/books/{bookId} {
+  allow read, write: if request.auth != null
+    && request.auth.uid == uid
+    && request.auth.token.email_verified == true
+    && request.auth.token.email in ['lgpsy83@gmail.com'];
+}
