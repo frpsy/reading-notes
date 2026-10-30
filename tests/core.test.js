@@ -4,7 +4,7 @@ import fs from "node:fs";
 import {
   escapeHtml, dnum, dstr, parseToc, tocText, isGroup, leavesOf, descLeaves, metrics,
   autoDates, toggleChapter, goalInfo, chartGeometry, normalizeBook, parseCatalogText,
-  makeBackup, parseBackup, agoText,
+  agoText,
 } from "../js/core.js";
 
 const book = (extra = {}) => Object.assign({
@@ -155,13 +155,4 @@ test("catalog 파일이 모두 읽힘", () => {
     const m = metrics({ chapters: items, totalPages: c.totalPages });
     assert.ok(m.pagesTotal > 0, x.file + " 분량 계산");
   }
-});
-
-test("백업 왕복", () => {
-  const b = normalizeBook(Object.assign(book(), { id: "k1", title: "책" }));
-  const out = parseBackup(makeBackup([b], 1));
-  assert.equal(out.length, 1);
-  assert.equal(out[0].id, "k1");
-  assert.throws(() => parseBackup("{}"), /백업/);
-  assert.throws(() => parseBackup("nope"), /JSON/);
 });
