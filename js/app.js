@@ -20,7 +20,59 @@ var books = new Map(), lastJson = new Map(), dirty = new Set(), timers = new Map
 var mode = "pending";      // firebase | local
 var phase = "boot";        // boot | login | denied | error | app
 var ready = false, readyTimer = null, unsub = null, authMsg = "", userEmail = "";
-var ui = { filter: "all", onlyRemaining: false, openMemo: new Set(), confirmDel: null };
+var ui = { filter: "all", onlyRemaining: false, openMemo: new Set(), confirmDel: null, folded: loadFolded() };
+
+/* ---------- 테마 ---------- */
+var themeEl = document.getElementById("theme");
+var THEME_TEXT = { auto: "테마 자동", light: "밝게", dark: "어둡게" };
+function getTheme() { try { var t = localStorage.getItem("chaekgalpi-theme"); return THEME_TEXT[t] ? t : "auto"; } catch (e) { return "auto"; } }
+function applyTheme(t) {
+  if (t === "auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  themeEl.textContent = THEME_TEXT[t];
+  themeEl.setAttribute("aria-label", "화면 테마: " + THEME_TEXT[t] + " (누르면 바뀝니다)");
+}
+themeEl.addEventListener("click", function () {
+  var order = ["auto", "light", "dark"], n = order[(order.indexOf(getTheme()) + 1) % 3];
+  try { localStorage.setItem("chaekgalpi-theme", n); } catch (e) { /* 저장 못 해도 이번 화면에는 적용 */ }
+  applyTheme(n);
+  themeEl.dataset.cur = n;
+});
+applyTheme(getTheme());
+
+/* ---------- 묶음 접기 ---------- */
+function loadFolded() {
+  try { return new Set(JSON.parse(localStorage.getItem("chaekgalpi-fold") || "[]")); } catch (e) { return new Set(); }
+}
+function saveFolded() {
+  try { localStorage.setItem("chaekgalpi-fold", JSON.stringify(Array.from(ui.folded))); } catch (e) { /* 무시 */ }
+}
+
+/* ---------- 되돌리기 ---------- */
+var undoState = null, toastTimer = null;
+function snapshot(b) {
+  return { id: b.id, chapters: JSON.parse(JSON.stringify(b.chapters)), startDate: b.startDate, endDate: b.endDate, endAuto: b.endAuto };
+}
+function hideToast() {
+  clearTimeout(toastTimer); undoState = null;
+  var t = document.getElementById("toast"); if (t) t.hidden = true;
+}
+function showToast(label) {
+  var t = document.getElementById("toast"); if (!t) return;
+  t.innerHTML = '<span class="toast-msg">' + esc(label) + '</span><button type="button" data-undo="1">되돌리기</button>';
+  t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, 6000);
+}
+function mutate(b, label, fn) {
+  var s = snapshot(b);
+  fn(); persist(b); undoState = s; showToast(label); render();
+}
+function restoreUndo() {
+  var s = undoState; if (!s) return;
+  var b = books.get(s.id); hideToast(); if (!b) return;
+  b.chapters = s.chapters; b.startDate = s.startDate; b.endDate = s.endDate; b.endAuto = s.endAuto;
+  persist(b); render();
+}
+document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-undo]")) restoreUndo(); });
 
 /* ---------- 저장 ---------- */
 var SYNC_TEXT = { pending: "연결 중…", saved: "저장됨", saving: "저장 중…", error: "저장 실패 · 다시 시도", local: "이 브라우저에만 저장" };
@@ -161,7 +213,7 @@ function currentRoute() {
   if ((m = /^book-(.+)$/.exec(h))) return { name: "book", id: m[1] };
   return { name: "library" };
 }
-window.addEventListener("hashchange", function () { ui.confirmDel = null; render(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", function () { ui.confirmDel = null; hideToast(); render(); window.scrollTo(0, 0); });
 
 function loginView() {
   var trial = '<button type="button" class="btn" data-act="trial">로그인 없이 체험하기 (이 브라우저에만 저장)</button>';
@@ -200,7 +252,13 @@ function nextPanel(b,m){
   var c=b.chapters[i];
   return '<section class="panel next" aria-label="이어 읽기"><div class="next-main"><span class="next-lbl">이어 읽기</span>'+
     '<span class="next-title">'+esc(c.t)+'</span>'+(c.p!=null?'<span class="pg">p.'+c.p+'</span>':'')+'</div>'+
-    '<button type="button" class="btn primary" data-act="nextdone">읽음 표시</button></section>';
+    '<div class="next-act"><b class="next-pct">'+Math.round(m.pct*100)+'%</b><button type="button" class="btn primary" data-act="nextdone">읽음 표시</button></div></section>';
+}
+function doneBanner(b,m){
+  if(m.status!=='done')return '';
+  var s='완독 · '+(m.days?m.days+'일 동안 ':'')+m.L+'챕터를 읽었습니다';
+  if(m.rate)s+=' (하루 '+m.rate.toFixed(1)+'챕터)';
+  return '<section class="panel done-banner" aria-label="완독"><b>'+esc(s)+'</b></section>';
 }
 function bookRow(b,m){
   var sub;
@@ -300,16 +358,18 @@ function chartSvg(b, m) {
 
 function chaptersHtml(b,m){
   var ch=b.chapters, nextLeaf=m.status==='done'?-1:m.leafIdx.find(function(i){return !ch[i].done});
-  var out='';
+  var out='', skipLv=null;
   for(var i=0;i<ch.length;i++){
     var c=ch[i], page=c.p!=null?'<span class="pg">p.'+c.p+'</span>':'';
+    if(skipLv!==null){if(c.lv>skipLv)continue;skipLv=null}
     if(isGroup(ch,i)){
       var idx=descLeaves(ch,i), dn=idx.filter(function(j){return ch[j].done}).length, tot=idx.length;
       if(ui.onlyRemaining&&dn===tot)continue;
-      var st=dn===tot?'true':dn===0?'false':'mixed';
+      var st=dn===tot?'true':dn===0?'false':'mixed', folded=ui.folded.has(b.id+':'+i);
       out+='<li class="ch group" style="--lv:'+c.lv+'"><button type="button" class="chk" role="checkbox" aria-checked="'+st+'" data-act="toggle" data-i="'+i+'" aria-label="'+esc(c.t)+' 전체 완료 표시">'+(st==='true'?CHECK:st==='mixed'?DASH:'')+'</button>'+
         '<div class="ch-main"><span class="ch-title">'+esc(c.t)+'</span>'+page+'</div>'+
-        '<div class="ch-tools"><span class="count">'+dn+'/'+tot+'</span></div></li>';
+        '<div class="ch-tools"><span class="count">'+dn+'/'+tot+'</span><button type="button" class="memo-btn" data-act="fold" data-i="'+i+'" aria-expanded="'+(!folded)+'">'+(folded?'펼치기':'접기')+'</button></div></li>';
+      if(folded)skipLv=c.lv;
     }else{
       if(ui.onlyRemaining&&c.done)continue;
       var key=b.id+':'+i, open=ui.openMemo.has(key);
@@ -351,7 +411,7 @@ function bookView(id){
   return '<a class="back" href="#library">← 서재</a>'+
     '<div class="head">'+coverHtml(b,true)+'<div><h1>'+esc(b.title)+(b.example?' <span class="chip">예시</span>':'')+'</h1>'+
     '<div class="by">'+(b.author?esc(b.author)+' · ':'')+chipHtml(m)+(stale?' <span class="chip warn">7일 넘게 기록 없음</span>':'')+(b.totalPages?' · '+b.totalPages+'쪽':'')+'</div></div>'+'<div class="head-actions"><a class="btn sm" href="#edit-'+esc(b.id)+'">정보·목차 수정</a></div></div>'+
-    nextPanel(b,m)+
+    nextPanel(b,m)+doneBanner(b,m)+
     '<section class="panel" aria-label="진척 현황"><div class="prog"><span class="big">'+pct+'%</span><span class="of">'+m.D+' / '+m.L+' 챕터</span>'+alt+'</div>'+
     '<div class="bar lg'+(m.status==='done'?' ok':'')+'"><i style="width:'+pct+'%"></i></div>'+goalHtml(b,m)+statsHtml+'</section>'+
     '<section class="panel" aria-label="날짜"><div class="dates">'+
@@ -490,13 +550,24 @@ view.addEventListener("click", function (e) {
     case "logout": store.signOut(); break;
     case "catadd": addFromCatalog(el.dataset.id); break;
     case "upto":
-      if (b) { completeThrough(b, +el.dataset.i); persist(b); render(); }
+      if (b) { var ui2 = +el.dataset.i; mutate(b, "여기까지 읽음 처리", function () { completeThrough(b, ui2); }); }
       break;
     case "nextdone":
-      if (b) { var ni = nextLeafIndex(b); if (ni >= 0) { toggleChapter(b, ni); persist(b); render(); } }
+      if (b) { var ni = nextLeafIndex(b); if (ni >= 0) mutate(b, "읽음: " + b.chapters[ni].t, function () { toggleChapter(b, ni); }); }
       break;
     case "toggle":
-      if (b) { toggleChapter(b, +el.dataset.i); persist(b); render(); }
+      if (b) {
+        var ti = +el.dataset.i, tc = b.chapters[ti];
+        var lbl = isGroup(b.chapters, ti) ? "묶음 전체 변경: " + tc.t : (tc.done ? "읽음 취소: " : "읽음: ") + tc.t;
+        mutate(b, lbl, function () { toggleChapter(b, ti); });
+      }
+      break;
+    case "fold":
+      if (b) {
+        var fk2 = b.id + ":" + el.dataset.i;
+        if (ui.folded.has(fk2)) ui.folded.delete(fk2); else ui.folded.add(fk2);
+        saveFolded(); render();
+      }
       break;
     case "memo":
       if (b) {
