@@ -133,7 +133,7 @@ export function metrics(book, today = todayStr()) {
   const t = dnum(today);
   const start = book.startDate || first;
   const sN = dnum(start);
-  const finished = !!book.endDate || (L > 0 && D === L);
+  const finished = L > 0 && D === L; // 종료일만 있다고 완독이 아님
   const endStr = book.endDate || (finished ? last : null);
   const status = finished ? "done" : ((sN != null && sN <= t) || D > 0) ? "reading" : "todo";
   const eN = finished ? (endStr ? dnum(endStr) : t) : t;
@@ -170,7 +170,8 @@ export function autoDates(book) {
   if (!book.startDate && D > 0) book.startDate = dates[0];
   if (L > 0 && D === L) {
     if (!book.endDate) { book.endDate = dates[dates.length - 1]; book.endAuto = true; }
-  } else if (book.endAuto) {
+  } else {
+    // 다 읽지 않았으면 종료일은 없음(실수로 입력돼도 완독으로 보이지 않게 비웁니다)
     book.endDate = null;
     book.endAuto = false;
   }
@@ -344,14 +345,16 @@ export function normalizeBook(raw) {
   chapters.forEach((c) => { if (c.lv > prev + 1) c.lv = prev + 1; prev = c.lv; });
   const pages = Number.isFinite(r.totalPages) && r.totalPages > 0 ? Math.trunc(r.totalPages) : null;
   const rating = Number.isFinite(r.rating) ? Math.min(5, Math.max(0, Math.trunc(r.rating))) : 0;
+  const lf = leavesOf(chapters);
+  const allDone = lf.length > 0 && lf.every((i) => chapters[i].done);
   return {
     id: String(r.id || ""),
     title: String(r.title == null ? "" : r.title).slice(0, 200),
     author: String(r.author == null ? "" : r.author).slice(0, 100),
     totalPages: pages,
     startDate: isDateStr(r.startDate) ? r.startDate : null,
-    endDate: isDateStr(r.endDate) ? r.endDate : null,
-    endAuto: r.endAuto === true,
+    endDate: allDone && isDateStr(r.endDate) ? r.endDate : null, // 다 읽지 않은 책의 종료일은 버림
+    endAuto: allDone && r.endAuto === true,
     goalDate: isDateStr(r.goalDate) ? r.goalDate : null,
     rating,
     note: String(r.note == null ? "" : r.note).slice(0, 20000),
