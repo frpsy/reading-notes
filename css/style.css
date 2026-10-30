@@ -188,3 +188,13 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .next-main{display:flex;flex-direction:column;gap:2px;min-width:0}
 .next-lbl{font-size:12px;color:var(--muted)}
 .next-title{font:600 16px/1.4 var(--serif);overflow-wrap:anywhere}
+
+.activity{margin:0 0 22px}
+.act-h{display:flex;align-items:baseline;gap:6px;margin-bottom:8px;font-size:14px}
+.act-h b{font-size:22px}
+.heat{display:grid;grid-template-rows:repeat(7,14px);grid-auto-flow:column;grid-auto-columns:14px;gap:3px;overflow-x:auto;padding-bottom:2px}
+.hc{display:block;width:14px;height:14px;border-radius:3px;background:var(--surface-2)}
+.hc.l1{background:color-mix(in srgb,var(--accent) 40%,var(--surface-2))}
+.hc.l2{background:color-mix(in srgb,var(--accent) 70%,var(--surface-2))}
+.hc.l3{background:var(--accent)}
+.hc.fut{background:transparent}
