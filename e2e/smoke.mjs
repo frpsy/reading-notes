@@ -87,6 +87,35 @@ try {
     assert.equal(await view.locator("img").count(), 0);
   });
 
+  await step("서재 검색(입력 중 커서 유지)", async () => {
+    await page.goto(base + "#library");
+    const q = page.locator('input[data-act="search"]');
+    await q.fill("인생");
+    await page.keyboard.type("의");
+    assert.equal(await q.inputValue(), "인생의");
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.act), "search");
+    assert.equal(await view.locator("a.book").count(), 1);
+    await q.fill("없는책제목");
+    await view.getByText("검색 결과가 없습니다.").waitFor();
+    await q.fill("");
+  });
+
+  await step("메모 모아보기", async () => {
+    await view.locator("a.book", { hasText: "제목 <img" }).click();
+    await page.locator("details.memos summary").click();
+    await page.locator("details.memos li", { hasText: "<img src=x" }).waitFor();
+    await page.locator('textarea[data-act="memotext"]').fill("다시 쓴 메모");
+    await page.locator("h1").click();
+    await page.locator("details.memos[open] li", { hasText: "다시 쓴 메모" }).waitFor();
+  });
+
+  await step("연간 기록", async () => {
+    await page.goto(base + "#library");
+    await page.click('a.s[href="#year"]');
+    await view.getByText("년 독서 기록").waitFor();
+    assert.equal(await view.locator(".months .mo").count(), 12);
+  });
+
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
   await ctx.close();
 } finally {
