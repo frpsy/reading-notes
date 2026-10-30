@@ -50,7 +50,7 @@ function saveFolded() {
 /* ---------- 되돌리기 ---------- */
 var undoState = null, toastTimer = null;
 function snapshot(b) {
-  return { id: b.id, chapters: JSON.parse(JSON.stringify(b.chapters)), startDate: b.startDate, endDate: b.endDate, endAuto: b.endAuto };
+  return { id: b.id, done: b.chapters.map(function (x) { return x.done; }), startDate: b.startDate, endDate: b.endDate, endAuto: b.endAuto };
 }
 function hideToast() {
   clearTimeout(toastTimer); undoState = null;
@@ -69,7 +69,9 @@ function mutate(b, label, fn) {
 function restoreUndo() {
   var s = undoState; if (!s) return;
   var b = books.get(s.id); hideToast(); if (!b) return;
-  b.chapters = s.chapters; b.startDate = s.startDate; b.endDate = s.endDate; b.endAuto = s.endAuto;
+  // 읽음 날짜만 되돌립니다. 그 사이 적은 메모·평점 등은 그대로 둡니다.
+  if (s.done.length === b.chapters.length) b.chapters.forEach(function (x, i) { x.done = s.done[i]; });
+  b.startDate = s.startDate; b.endDate = s.endDate; b.endAuto = s.endAuto;
   persist(b); render();
 }
 document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-undo]")) restoreUndo(); });
@@ -146,7 +148,9 @@ function onSnap(list, meta) {
     if (meta && meta.fromCache && meta.empty) { if (!readyTimer) readyTimer = setTimeout(markReady, 1200); return; }
     markReady(); return;
   }
-  if (changed && currentRoute().name !== "form") render();
+  var ae = document.activeElement;
+  var typing = ae && view.contains(ae) && /^(TEXTAREA|INPUT)$/.test(ae.tagName);
+  if (changed && !typing && currentRoute().name !== "form") render(); // 입력 중에는 다시 그리지 않아 글이 사라지지 않게 함
 }
 function enterApp(m) {
   mode = m; phase = "app"; ready = false;
