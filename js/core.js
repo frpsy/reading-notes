@@ -180,6 +180,13 @@ export function nextLeafIndex(book) {
   return i === undefined ? -1 : i;
 }
 
+// "여기까지 읽음": 이 단위와 앞의 읽을 단위를 모두 완료 처리. 이미 완료한 날짜는 유지
+export function completeThrough(book, i, today = todayStr()) {
+  const ch = book.chapters;
+  leavesOf(ch).forEach((k) => { if (k <= i && !ch[k].done) ch[k].done = today; });
+  autoDates(book);
+}
+
 export function toggleChapter(book, i, today = todayStr()) {
   const ch = book.chapters;
   if (isGroup(ch, i)) {

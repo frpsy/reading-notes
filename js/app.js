@@ -1,7 +1,7 @@
 // 책갈피 화면 코드. 순수 로직은 core.js, 저장소는 store.js 에 있습니다.
 import {
   escapeHtml, todayStr, dnum, fmtDate, fmtShort, agoText, newId, parseToc, tocText, parseCatalogText,
-  isGroup, leavesOf, descLeaves, nextLeafIndex, activityByDate, currentStreak, longestStreak, heatmapWeeks, metrics as calcMetrics, autoDates, toggleChapter as toggle,
+  isGroup, leavesOf, descLeaves, nextLeafIndex, activityByDate, currentStreak, longestStreak, heatmapWeeks, metrics as calcMetrics, autoDates, toggleChapter as toggle, completeThrough,
   goalInfo, chartGeometry, normalizeBook,
 } from "./core.js";
 import * as store from "./store.js";
@@ -317,6 +317,7 @@ function chaptersHtml(b,m){
         '<div class="ch-main"><span class="ch-title">'+esc(c.t)+(i===nextLeaf?' <span class="chip reading">다음</span>':'')+'</span>'+page+
         (c.memo&&!open?'<span class="ch-memo">'+esc(c.memo)+'</span>':'')+'</div>'+
         '<div class="ch-tools">'+(c.done?'<input type="date" data-act="chdate" data-i="'+i+'" value="'+esc(c.done)+'" aria-label="'+esc(c.t)+' 완료일">':'')+
+        (!c.done&&nextLeaf>=0&&i>nextLeaf?'<button type="button" class="memo-btn" data-act="upto" data-i="'+i+'">여기까지 읽음</button>':'')+
         '<button type="button" class="memo-btn'+(c.memo?' has':'')+'" data-act="memo" data-i="'+i+'" aria-expanded="'+open+'">'+(open?'메모 닫기':'메모')+'</button></div></li>';
       if(open)out+='<li class="memo-row" style="--lv:'+c.lv+'"><textarea data-act="memotext" data-i="'+i+'" aria-label="'+esc(c.t)+' 메모" placeholder="이 챕터에서 남기고 싶은 말">'+esc(c.memo)+'</textarea></li>';
     }
@@ -488,6 +489,9 @@ view.addEventListener("click", function (e) {
     case "trial": enterApp("local"); break;
     case "logout": store.signOut(); break;
     case "catadd": addFromCatalog(el.dataset.id); break;
+    case "upto":
+      if (b) { completeThrough(b, +el.dataset.i); persist(b); render(); }
+      break;
     case "nextdone":
       if (b) { var ni = nextLeafIndex(b); if (ni >= 0) { toggleChapter(b, ni); persist(b); render(); } }
       break;
