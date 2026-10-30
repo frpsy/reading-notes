@@ -198,3 +198,16 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .hc.l2{background:color-mix(in srgb,var(--accent) 70%,var(--surface-2))}
 .hc.l3{background:var(--accent)}
 .hc.fut{background:transparent}
+
+.top-r{display:flex;align-items:center;gap:8px}
+.tbtn{font:500 12px/1 var(--sans);color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:7px 11px;cursor:pointer;white-space:nowrap}
+.tbtn:hover{background:var(--surface-2)}
+.panel.next{position:sticky;top:8px;z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.next-act{display:flex;align-items:center;gap:12px}
+.next-pct{font:500 20px/1 var(--mono);color:var(--muted)}
+.done-banner{background:var(--ok-soft);border-color:var(--ok);color:var(--ok);margin-top:12px}
+.toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:14px;max-width:min(92vw,520px);padding:10px 14px;border-radius:10px;background:var(--ink);color:var(--bg);box-shadow:0 6px 24px rgba(0,0,0,.3);font-size:14px}
+.toast[hidden]{display:none}
+.toast-msg{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.toast button{flex:none;border:0;background:none;color:inherit;text-decoration:underline;font:600 14px var(--sans);cursor:pointer;padding:6px 4px;min-height:32px}
+.ch.group .ch-tools{gap:10px}

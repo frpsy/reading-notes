@@ -5,22 +5,24 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>책갈피</title>
+<script>try{var t=localStorage.getItem("chaekgalpi-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
 <meta name="theme-color" content="#3347A6">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="책갈피">
-<link rel="stylesheet" href="css/style.css?v=4">
+<link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <a class="brand" href="#library">책갈피</a>
-    <span><button class="sync" id="sync" type="button" data-state="pending">연결 중…</button></span>
+    <span class="top-r"><button class="tbtn" id="theme" type="button">테마 자동</button><button class="sync" id="sync" type="button" data-state="pending">연결 중…</button></span>
   </header>
   <main id="view"></main>
 </div>
-<script type="module" src="js/app.js?v=4"></script>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>
