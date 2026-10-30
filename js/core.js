@@ -215,6 +215,57 @@ export function goalInfo(book, m, today = todayStr()) {
   return { text, cmp };
 }
 
+/* ---------- 독서 기록(연속 일수·히트맵) ---------- */
+// 날짜별 완료한 읽을 단위 수
+export function activityByDate(books) {
+  const map = {};
+  books.forEach((b) => {
+    const ch = b.chapters || [];
+    leavesOf(ch).forEach((i) => { if (ch[i].done) map[ch[i].done] = (map[ch[i].done] || 0) + 1; });
+  });
+  return map;
+}
+
+// 오늘(기록이 없으면 어제)부터 거꾸로 이어진 날 수
+export function currentStreak(map, today = todayStr()) {
+  let d = dnum(today);
+  if (!map[dstr(d)]) d -= 1;
+  let n = 0;
+  while (map[dstr(d)]) { n++; d -= 1; }
+  return n;
+}
+
+export function longestStreak(map) {
+  const days = Object.keys(map).map(dnum).filter((n) => n != null).sort((a, b) => a - b);
+  let best = 0, run = 0, prev = null;
+  days.forEach((d) => {
+    run = prev !== null && d === prev + 1 ? run + 1 : 1;
+    if (run > best) best = run;
+    prev = d;
+  });
+  return best;
+}
+
+export function heatLevel(count) { return !count ? 0 : count <= 1 ? 1 : count <= 3 ? 2 : 3; }
+
+// 일요일 시작 주 단위 열. 마지막 열이 오늘이 있는 주
+export function heatmapWeeks(map, today = todayStr(), weeks = 12) {
+  const t = dnum(today);
+  const dow = (t + 4) % 7; // 1970-01-01 은 목요일
+  const start = t - dow - (weeks - 1) * 7;
+  const cols = [];
+  for (let w = 0; w < weeks; w++) {
+    const col = [];
+    for (let d = 0; d < 7; d++) {
+      const n = start + w * 7 + d;
+      const date = dstr(n);
+      col.push({ date, count: map[date] || 0, level: heatLevel(map[date] || 0), future: n > t });
+    }
+    cols.push(col);
+  }
+  return cols;
+}
+
 /* ---------- 누적 그래프 ---------- */
 export function chartGeometry(book, m, today = todayStr()) {
   if (!m.doneDates.length) return null;

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import {
   escapeHtml, dnum, dstr, parseToc, tocText, isGroup, leavesOf, descLeaves, metrics,
-  autoDates, toggleChapter, nextLeafIndex, goalInfo, chartGeometry, normalizeBook, parseCatalogText,
+  autoDates, toggleChapter, nextLeafIndex, activityByDate, currentStreak, longestStreak, heatmapWeeks, goalInfo, chartGeometry, normalizeBook, parseCatalogText,
   agoText,
 } from "../js/core.js";
 
@@ -168,4 +168,35 @@ test("이어 읽기: 다음 읽을 단위", () => {
   toggleChapter(b, 3, "2026-10-02");
   assert.equal(nextLeafIndex(b), -1);
   assert.equal(nextLeafIndex({ chapters: [] }), -1);
+});
+
+test("독서 기록: 날짜별 집계·연속 일수", () => {
+  const a = book(), b = book();
+  toggleChapter(a, 1, "2026-10-27");
+  toggleChapter(a, 2, "2026-10-28");
+  toggleChapter(b, 1, "2026-10-28");
+  toggleChapter(b, 2, "2026-10-30");
+  const m = activityByDate([a, b]);
+  assert.deepEqual(m, { "2026-10-27": 1, "2026-10-28": 2, "2026-10-30": 1 });
+  assert.equal(currentStreak(m, "2026-10-30"), 1);
+  assert.equal(currentStreak(m, "2026-10-31"), 1); // 오늘 기록이 없으면 어제부터
+  assert.equal(currentStreak(m, "2026-11-02"), 0);
+  assert.equal(currentStreak({ "2026-10-29": 1, "2026-10-30": 1 }, "2026-10-30"), 2);
+  assert.equal(longestStreak(m), 2);
+  assert.equal(longestStreak({}), 0);
+});
+
+test("히트맵: 주 단위 열·오늘 위치", () => {
+  const m = { "2026-10-30": 2, "2026-10-26": 5 };
+  const cols = heatmapWeeks(m, "2026-10-30", 12); // 2026-10-30 은 금요일
+  assert.equal(cols.length, 12);
+  assert.ok(cols.every((c) => c.length === 7));
+  const last = cols[11];
+  assert.equal(last[0].date, "2026-10-25"); // 일요일 시작
+  assert.equal(last[5].date, "2026-10-30");
+  assert.equal(last[5].count, 2);
+  assert.equal(last[5].level, 2);
+  assert.equal(last[1].level, 3);
+  assert.equal(last[6].future, true);
+  assert.equal(last[5].future, false);
 });

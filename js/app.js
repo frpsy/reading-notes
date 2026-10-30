@@ -1,7 +1,7 @@
 // 책갈피 화면 코드. 순수 로직은 core.js, 저장소는 store.js 에 있습니다.
 import {
   escapeHtml, todayStr, dnum, fmtDate, fmtShort, agoText, newId, parseToc, tocText, parseCatalogText,
-  isGroup, leavesOf, descLeaves, nextLeafIndex, metrics as calcMetrics, autoDates, toggleChapter as toggle,
+  isGroup, leavesOf, descLeaves, nextLeafIndex, activityByDate, currentStreak, longestStreak, heatmapWeeks, metrics as calcMetrics, autoDates, toggleChapter as toggle,
   goalInfo, chartGeometry, normalizeBook,
 } from "./core.js";
 import * as store from "./store.js";
@@ -220,6 +220,18 @@ function bookRow(b,m){
     '<span class="book-side"><b class="pct">'+Math.round(m.pct*100)+'%</b>'+chipHtml(m)+(stale?'<span class="chip warn">7일 넘게 기록 없음</span>':'')+'</span></a>';
 }
 
+function activityHtml(list){
+  var map=activityByDate(list);
+  if(!Object.keys(map).length)return '';
+  var cur=currentStreak(map), best=longestStreak(map);
+  var cols=heatmapWeeks(map,todayStr(),12);
+  var cells=cols.map(function(col){return col.map(function(d){
+    return '<i class="hc l'+d.level+(d.future?' fut':'')+'"'+(d.future?'':' title="'+esc(d.date.slice(5).replace('-','/')+' · '+d.count+'챕터')+'"')+'></i>';
+  }).join('')}).join('');
+  return '<section class="activity" aria-label="최근 12주 독서 기록"><div class="act-h"><b class="mono">'+cur+'</b><span>일 연속</span><span class="muted">· 최장 '+best+'일</span></div>'+
+    '<div class="heat" role="img" aria-label="최근 12주 동안 챕터를 읽은 날">'+cells+'</div></section>';
+}
+
 function libraryView(){
   var all=Array.from(books.values()).map(function(b){return {b:b,m:metrics(b)}});
   var t=dnum(todayStr()), yr=String(new Date().getFullYear());
@@ -252,7 +264,7 @@ function libraryView(){
     return (c.b.createdAt||0)-(a.b.createdAt||0);
   });
   var rows=list.length?'<div class="books">'+list.map(function(x){return bookRow(x.b,x.m)}).join('')+'</div>':'<p class="muted">해당하는 책이 없습니다.</p>';
-  return head+strip+tabs+rows+note;
+  return head+strip+activityHtml(all.map(function(x){return x.b}))+tabs+rows+note;
 }
 
 function goalHtml(b, m) {
