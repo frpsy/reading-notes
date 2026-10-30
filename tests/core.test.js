@@ -71,11 +71,16 @@ test("체크·종료일 자동 입력/해제", () => {
   assert.equal(b.endAuto, false);
 });
 
-test("수동 종료일은 해제해도 유지", () => {
+test("수동 종료일은 다 읽었을 때만 유지", () => {
   const b = book({ endDate: "2026-11-01", endAuto: false });
   toggleChapter(b, 1, "2026-10-01");
   autoDates(b);
-  assert.equal(b.endDate, "2026-11-01");
+  assert.equal(b.endDate, null); // 아직 다 안 읽음 → 종료일 없음
+});
+
+test("종료일만 있고 안 읽은 책은 완독이 아님", () => {
+  const b = book({ endDate: "2026-10-31" });
+  assert.notEqual(metrics(b, "2026-10-31").status, "done");
 });
 
 test("진척·속도·예상일", () => {

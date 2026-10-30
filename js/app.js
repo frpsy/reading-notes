@@ -266,9 +266,9 @@ function nextPanel(b,m){
 }
 function doneBanner(b,m){
   if(m.status!=='done')return '';
-  var s='완독 · '+(m.days?m.days+'일 동안 ':'')+m.L+'챕터를 읽었습니다';
-  if(m.rate)s+=' (하루 '+m.rate.toFixed(1)+'챕터)';
-  return '<section class="panel done-banner" aria-label="완독"><b>'+esc(s)+'</b></section>';
+  var s=(m.days?m.days+'일 동안 ':'')+m.L+'챕터';
+  if(m.rate)s+=' · '+(m.rate>=1?'하루 '+(Math.round(m.rate*10)/10)+'챕터':'챕터당 '+(Math.round(10/m.rate)/10)+'일');
+  return '<section class="panel done-banner" aria-label="완독"><b>완독했습니다</b><span>'+esc(s)+'</span></section>';
 }
 function bookRow(b,m){
   var sub;
@@ -605,7 +605,7 @@ view.addEventListener("change", function (e) {
   if (!b) return;
   switch (act) {
     case "start": b.startDate = el.value || null; persist(b); render(); break;
-    case "end": b.endDate = el.value || null; b.endAuto = false; persist(b); render(); break;
+    case "end": b.endDate = metrics(b).status === "done" ? (el.value || null) : null; b.endAuto = false; persist(b); render(); break;
     case "goal": b.goalDate = el.value || null; persist(b); render(); break;
     case "chdate": b.chapters[+el.dataset.i].done = el.value || null; autoDates(b); persist(b); render(); break;
     case "memotext": b.chapters[+el.dataset.i].memo = el.value.trim(); persist(b); break;
