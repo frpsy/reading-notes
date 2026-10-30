@@ -75,8 +75,8 @@ try {
     await page.fill("#f-toc", "1장 " + XSS + "\n2장 <script>window.__xss=2</script>");
     await page.click('#bookForm button[type="submit"]');
     await page.waitForURL(/#book-/);
-    await view.locator("h1").waitFor();
-    assert.match(await view.locator("h1").textContent(), /<img src=x/);
+    // 이스케이프가 빠지면 이 글자가 그대로 나오지 않아 시간 초과로 실패합니다.
+    await view.locator("h1", { hasText: "제목 <img src=x" }).waitFor({ timeout: 5000 });
     await page.locator('[data-act="memo"]').first().click();
     await page.fill('textarea[data-act="memotext"]', XSS);
     await page.locator("h1").click();
