@@ -182,3 +182,9 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:32px;padding-top:16px;border-top:1px solid var(--line)}
 .tools input[type=file]{display:none}
 .msg{color:var(--ok);font-size:14px;margin:12px 0 0}
+
+.book-next{font-size:13px;color:var(--accent);overflow-wrap:anywhere}
+.panel.next{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px}
+.next-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.next-lbl{font-size:12px;color:var(--muted)}
+.next-title{font:600 16px/1.4 var(--serif);overflow-wrap:anywhere}
