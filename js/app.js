@@ -31,13 +31,14 @@ function applyTheme(t) {
   themeEl.textContent = THEME_TEXT[t];
   themeEl.setAttribute("aria-label", "화면 테마: " + THEME_TEXT[t] + " (누르면 바뀝니다)");
 }
+var curTheme = getTheme(); // 저장소를 못 써도 이번 화면에서는 순환되도록 변수로 들고 있습니다
 themeEl.addEventListener("click", function () {
-  var order = ["auto", "light", "dark"], n = order[(order.indexOf(getTheme()) + 1) % 3];
-  try { localStorage.setItem("chaekgalpi-theme", n); } catch (e) { /* 저장 못 해도 이번 화면에는 적용 */ }
-  applyTheme(n);
-  themeEl.dataset.cur = n;
+  var order = ["auto", "light", "dark"];
+  curTheme = order[(order.indexOf(curTheme) + 1) % 3];
+  try { localStorage.setItem("chaekgalpi-theme", curTheme); } catch (e) { /* 무시 */ }
+  applyTheme(curTheme);
 });
-applyTheme(getTheme());
+applyTheme(curTheme);
 
 /* ---------- 묶음 접기 ---------- */
 function loadFolded() {
@@ -264,10 +265,15 @@ function nextPanel(b,m){
     '<span class="next-title">'+esc(c.t)+'</span>'+(c.p!=null?'<span class="pg">p.'+c.p+'</span>':'')+'</div>'+
     '<div class="next-act"><b class="next-pct">'+Math.round(m.pct*100)+'%</b><button type="button" class="btn primary" data-act="nextdone">읽음 표시</button></div></section>';
 }
+// 읽는 속도 문구: 소수 첫째 자리까지, 끝의 .0 은 뺍니다
+function paceText(rate){
+  var r1=function(x){return String(Math.round(x*10)/10)};
+  return rate>=1?'하루 '+r1(rate)+'챕터':'챕터당 '+r1(1/rate)+'일';
+}
 function doneBanner(b,m){
   if(m.status!=='done')return '';
   var s=(m.days?m.days+'일 동안 ':'')+m.L+'챕터';
-  if(m.rate)s+=' · '+(m.rate>=1?'하루 '+(Math.round(m.rate*10)/10)+'챕터':'챕터당 '+(Math.round(10/m.rate)/10)+'일');
+  if(m.rate)s+=' · '+paceText(m.rate);
   return '<section class="panel done-banner" aria-label="완독"><b>완독했습니다</b><span>'+esc(s)+'</span></section>';
 }
 function bookRow(b,m){
@@ -311,10 +317,10 @@ function libraryView(){
   });
   var head='<div class="lib-head"><h1 class="page">내 서재</h1><a class="btn primary" href="#add">책 추가</a></div>';
   var note=(mode==='local'?'<p class="notice">체험 모드입니다. 기록이 이 브라우저에만 저장됩니다.</p>':'')+
-    catalogHtml()+'<div class="tools">'+
-    (mode==='firebase'?'<button type="button" class="btn sm" data-act="logout">로그아웃'+(userEmail?' ('+esc(userEmail)+')':'')+'</button>':'')+'</div>';
+    catalogHtml()+
+    (mode==='firebase'?'<div class="tools"><button type="button" class="btn sm" data-act="logout">로그아웃'+(userEmail?' ('+esc(userEmail)+')':'')+'</button></div>':'');
   if(!all.length){
-    return head+'<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>책은 Claude에게 \'책 이름\'을 말해 추가합니다. 추가되면 아래에 나타나고, 담기를 누르면 서재에 들어옵니다.</p></div>'+note;
+    return head+'<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>\'책 추가\'에서 목차를 붙여 넣거나, 아래 \'담을 수 있는 책\'에서 서재에 담기를 누르세요.</p></div>'+note;
   }
   var strip='<div class="strip"><div class="s"><b>'+cnt.reading+'</b><span>읽는 중</span></div>'+
     '<div class="s"><b>'+cnt.done+'</b><span>완독</span></div>'+
@@ -342,6 +348,8 @@ function goalHtml(b, m) {
   return '<p class="goal">' + esc(g.text) + cmp + "</p>";
 }
 
+// 세로 표시선 라벨이 축 숫자나 오른쪽 끝에 겹치지 않도록 정렬을 고릅니다
+function anchorAt(x, W, ml) { return x > W - 50 ? "end" : (x < ml + 24 ? "start" : "middle"); }
 function chartSvg(b, m) {
   var g = chartGeometry(b, m);
   if (!g) return '<p class="empty-note">챕터를 완료하면 누적 그래프가 그려집니다.</p>';
@@ -354,11 +362,11 @@ function chartSvg(b, m) {
   s += '<path class="ch-area" d="' + g.area + '"/><path class="ch-line" d="' + g.path + '"/>';
   if (g.today.show) {
     s += '<line class="ch-mark" x1="' + g.today.x.toFixed(1) + '" x2="' + g.today.x.toFixed(1) + '" y1="' + mt + '" y2="' + (H - mb) + '"/>';
-    s += '<text class="ch-lbl" x="' + g.today.x.toFixed(1) + '" y="11" text-anchor="' + (g.today.x > W - 50 ? "end" : "middle") + '">오늘</text>';
+    s += '<text class="ch-lbl" x="' + g.today.x.toFixed(1) + '" y="11" text-anchor="' + anchorAt(g.today.x, W, ml) + '">오늘</text>';
   }
   if (g.goal.show) {
     s += '<line class="ch-mark" x1="' + g.goal.x.toFixed(1) + '" x2="' + g.goal.x.toFixed(1) + '" y1="' + mt + '" y2="' + (H - mb) + '"/>';
-    if (!g.today.show || Math.abs(g.goal.x - g.today.x) > 40) s += '<text class="ch-lbl" x="' + g.goal.x.toFixed(1) + '" y="11" text-anchor="' + (g.goal.x > W - 50 ? "end" : "middle") + '">목표</text>';
+    if (!g.today.show || Math.abs(g.goal.x - g.today.x) > 40) s += '<text class="ch-lbl" x="' + g.goal.x.toFixed(1) + '" y="11" text-anchor="' + anchorAt(g.goal.x, W, ml) + '">목표</text>';
   }
   s += '<circle class="ch-dot" cx="' + g.dot.x.toFixed(1) + '" cy="' + g.dot.y.toFixed(1) + '" r="4.5"/>';
   s += '<text class="ch-lbl" x="' + ml + '" y="' + (H - 8) + '" text-anchor="start">' + fmtShort(g.xStart) + "</text>";
@@ -405,7 +413,7 @@ function bookView(id){
   stats.push(['읽은 기간',m.days?m.days+'일':'—',m.start?'시작 '+fmt(m.start):'시작일 미정']);
   var pace='—', paceSub='챕터를 완료하면 계산돼요';
   if(m.rate){
-    pace=m.rate>=1?'하루 '+m.rate.toFixed(1)+'챕터':'챕터당 '+(1/m.rate).toFixed(1)+'일';
+    pace=paceText(m.rate);
     paceSub=m.status==='done'?'시작일부터 종료일까지 평균':'시작일부터 오늘까지 평균';
   }
   stats.push(['읽는 속도',pace,paceSub]);
@@ -462,7 +470,7 @@ function formView(id){
         '<label class="fld"><span>총 쪽수 (선택)</span><input id="f-pages" type="number" inputmode="numeric" min="1" value="'+esc(v.pages)+'"></label>'+
       '</div>'+
       '<div class="row2">'+
-        '<label class="fld"><span>읽기 시작일 (읽기 전이면 비워 두세요)</span><input id="f-start" type="date" value="'+esc(v.start)+'"></label>'+
+        '<label class="fld"><span>읽기 시작일 (선택)</span><input id="f-start" type="date" value="'+esc(v.start)+'"></label>'+
         '<label class="fld"><span>목표 완독일 (선택)</span><input id="f-goal" type="date" value="'+esc(v.goal)+'"></label>'+
       '</div>'+
       '<label class="fld"><span>목차</span><textarea id="f-toc" spellcheck="false">'+esc(v.toc)+'</textarea></label>'+
