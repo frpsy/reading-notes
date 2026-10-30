@@ -1,8 +1,22 @@
 // parent-survey 의 firestore.rules 맨 아래(match /databases/{database}/documents { ... } 안)에 이 블록을 추가해 게시합니다.
 // 책갈피 데이터는 readingUsers/{uid}/books/{bookId} 에만 저장되며, 본인 구글 계정(허용 이메일)만 읽고 쓸 수 있습니다.
+// 쓰기는 normalizeBook(js/core.js) 이 만드는 모양만 받습니다. 필드를 바꾸면 이 목록도 같이 고칩니다(tests 가 확인).
 match /readingUsers/{uid}/books/{bookId} {
-  allow read, write: if request.auth != null
-    && request.auth.uid == uid
-    && request.auth.token.email_verified == true
-    && request.auth.token.email in ['lgpsy83@gmail.com'];
+  function owner() {
+    return request.auth != null
+      && request.auth.uid == uid
+      && request.auth.token.email_verified == true
+      && request.auth.token.email in ['lgpsy83@gmail.com'];
+  }
+  function validBook(d) {
+    return d.keys().hasOnly(['id', 'title', 'author', 'totalPages', 'startDate', 'endDate', 'endAuto', 'goalDate', 'rating', 'note', 'createdAt', 'updatedAt', 'chapters'])
+      && d.id == bookId
+      && d.title is string && d.title.size() <= 200
+      && (!('author' in d) || (d.author is string && d.author.size() <= 100))
+      && (!('note' in d) || (d.note is string && d.note.size() <= 20000))
+      && (!('rating' in d) || (d.rating is int && d.rating >= 0 && d.rating <= 5))
+      && d.chapters is list && d.chapters.size() <= 3000;
+  }
+  allow read, delete: if owner();
+  allow create, update: if owner() && validBook(request.resource.data);
 }
