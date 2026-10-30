@@ -1,8 +1,8 @@
 // 책갈피 화면 코드. 순수 로직은 core.js, 저장소는 store.js 에 있습니다.
 import {
-  escapeHtml, todayStr, dnum, fmtDate, fmtShort, agoText, parseToc,
+  escapeHtml, todayStr, dnum, fmtDate, fmtShort, agoText, newId, parseToc, tocText, parseCatalogText,
   isGroup, leavesOf, descLeaves, metrics as calcMetrics, autoDates, toggleChapter as toggle,
-  goalInfo, chartGeometry, normalizeBook, parseCatalogText,
+  goalInfo, chartGeometry, normalizeBook,
 } from "./core.js";
 import * as store from "./store.js";
 
@@ -94,7 +94,7 @@ function onSnap(list, meta) {
     if (meta && meta.fromCache && meta.empty) { if (!readyTimer) readyTimer = setTimeout(markReady, 1200); return; }
     markReady(); return;
   }
-  if (changed) render();
+  if (changed && currentRoute().name !== "form") render();
 }
 function enterApp(m) {
   mode = m; phase = "app"; ready = false;
@@ -156,6 +156,8 @@ function addFromCatalog(id) {
 /* ---------- 라우팅 ---------- */
 function currentRoute() {
   var h = location.hash.replace(/^#/, ""), m;
+  if (h === "add") return { name: "form", id: null };
+  if ((m = /^edit-(.+)$/.exec(h))) return { name: "form", id: m[1] };
   if ((m = /^book-(.+)$/.exec(h))) return { name: "book", id: m[1] };
   return { name: "library" };
 }
@@ -213,7 +215,7 @@ function libraryView(){
     if(x.m.status==='done'&&x.m.endStr&&x.m.endStr.slice(0,4)===yr)doneYear++;
     x.m.doneDates.forEach(function(d){var n=dnum(d);if(n!=null&&n>=t-6&&n<=t)week++});
   });
-  var head='<div class="lib-head"><h1 class="page">내 서재</h1></div>';
+  var head='<div class="lib-head"><h1 class="page">내 서재</h1><a class="btn primary" href="#add">책 추가</a></div>';
   var note=(mode==='local'?'<p class="notice">체험 모드입니다. 기록이 이 브라우저에만 저장됩니다.</p>':'')+
     catalogHtml()+'<div class="tools">'+
     (mode==='firebase'?'<button type="button" class="btn sm" data-act="logout">로그아웃'+(userEmail?' ('+esc(userEmail)+')':'')+'</button>':'')+'</div>';
@@ -321,7 +323,7 @@ function bookView(id){
   var rating='<option value="0">평점 없음</option>'+[1,2,3,4,5].map(function(n){return '<option value="'+n+'"'+((b.rating||0)===n?' selected':'')+'>'+n+' / 5</option>'}).join('');
   return '<a class="back" href="#library">← 서재</a>'+
     '<div class="head">'+coverHtml(b,true)+'<div><h1>'+esc(b.title)+(b.example?' <span class="chip">예시</span>':'')+'</h1>'+
-    '<div class="by">'+(b.author?esc(b.author)+' · ':'')+chipHtml(m)+(stale?' <span class="chip warn">7일 넘게 기록 없음</span>':'')+(b.totalPages?' · '+b.totalPages+'쪽':'')+'</div></div>'+'</div>'+
+    '<div class="by">'+(b.author?esc(b.author)+' · ':'')+chipHtml(m)+(stale?' <span class="chip warn">7일 넘게 기록 없음</span>':'')+(b.totalPages?' · '+b.totalPages+'쪽':'')+'</div></div>'+'<div class="head-actions"><a class="btn sm" href="#edit-'+esc(b.id)+'">정보·목차 수정</a></div></div>'+
     '<section class="panel" aria-label="진척 현황"><div class="prog"><span class="big">'+pct+'%</span><span class="of">'+m.D+' / '+m.L+' 챕터</span>'+alt+'</div>'+
     '<div class="bar lg'+(m.status==='done'?' ok':'')+'"><i style="width:'+pct+'%"></i></div>'+goalHtml(b,m)+statsHtml+'</section>'+
     '<section class="panel" aria-label="날짜"><div class="dates">'+
@@ -338,6 +340,93 @@ function bookView(id){
     '<div style="margin-top:28px">'+del+'</div>';
 }
 
+function previewHtml(items){
+  if(!items.length)return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
+  var leaves=leavesOf(items).length, groups=items.length-leaves, pages=items.filter(function(c){return c.p!=null}).length;
+  var rows=items.slice(0,14).map(function(c,i){
+    return '<li style="--lv:'+c.lv+'">'+(isGroup(items,i)?'<b>'+esc(c.t)+'</b>':esc(c.t))+(c.p!=null?' <span class="pg">p.'+c.p+'</span>':'')+'</li>';
+  }).join('');
+  return '<p>읽을 챕터 <b>'+leaves+'</b>개 · 묶음 <b>'+groups+'</b>개'+(pages?' · 시작 페이지 '+pages+'개 인식':'')+'</p><ul class="pv-list">'+rows+'</ul>'+
+    (items.length>14?'<p class="muted" style="margin-top:8px">외 '+(items.length-14)+'개 항목</p>':'');
+}
+
+function formView(id){
+  var b=id?books.get(id):null;
+  if(id&&!b)return notFound();
+  var v={title:b?b.title:'',author:b?(b.author||''):'',pages:b&&b.totalPages?b.totalPages:'',start:b?(b.startDate||''):todayStr(),goal:b?(b.goalDate||''):'',toc:b?tocText(b):''};
+  return '<a class="back" href="'+(b?'#book-'+esc(b.id):'#library')+'">← '+(b?'책으로 돌아가기':'서재')+'</a>'+
+    '<h1 class="page">'+(b?'정보·목차 수정':'책 추가')+'</h1>'+
+    '<form class="form" id="bookForm" novalidate>'+
+      (b?'':'<label class="fld"><span>준비된 책에서 불러오기 (선택)</span><select id="f-cat"><option value="">직접 입력</option></select></label>')+
+      '<label class="fld"><span>제목</span><input id="f-title" type="text" value="'+esc(v.title)+'" autocomplete="off"></label>'+
+      '<div class="row2">'+
+        '<label class="fld"><span>저자 (선택)</span><input id="f-author" type="text" value="'+esc(v.author)+'" autocomplete="off"></label>'+
+        '<label class="fld"><span>총 쪽수 (선택)</span><input id="f-pages" type="number" inputmode="numeric" min="1" value="'+esc(v.pages)+'"></label>'+
+      '</div>'+
+      '<div class="row2">'+
+        '<label class="fld"><span>읽기 시작일 (읽기 전이면 비워 두세요)</span><input id="f-start" type="date" value="'+esc(v.start)+'"></label>'+
+        '<label class="fld"><span>목표 완독일 (선택)</span><input id="f-goal" type="date" value="'+esc(v.goal)+'"></label>'+
+      '</div>'+
+      '<label class="fld"><span>목차</span><textarea id="f-toc" spellcheck="false">'+esc(v.toc)+'</textarea></label>'+
+      '<p class="hint" style="margin:-8px 0 0">한 줄에 항목 하나. 공백 두 칸 또는 탭으로 들여쓰면 하위 항목이 되고, 1.1 같은 번호도 단계로 인식합니다. 줄 끝에 "........ 123"처럼 쓰면 시작 쪽수로 인식합니다.</p>'+
+      '<div class="pv" id="toc-preview" aria-live="polite"></div>'+
+      '<p class="err" id="f-err" role="alert" hidden></p>'+
+      '<div class="form-actions"><button class="btn primary" type="submit">'+(b?'저장':'책 추가')+'</button><a class="btn" href="'+(b?'#book-'+esc(b.id):'#library')+'">취소</a></div>'+
+    '</form>';
+}
+
+function bindForm(id){
+  var ta=document.getElementById('f-toc'), out=document.getElementById('toc-preview');
+  ta.placeholder='1부. 시작하기 ........ 9\n  1장. 왜 읽는가 ........ 11\n  2장. 무엇을 읽는가 ........ 27\n2부. 깊이 읽기 ........ 45\n  3장. 질문하며 읽기 ........ 47';
+  function upd(){out.innerHTML=previewHtml(parseToc(ta.value))}
+  var cat=document.getElementById('f-cat');
+  if(cat){
+    fetch('catalog/index.json').then(function(r){return r.json()}).then(function(list){
+      list.forEach(function(x){var o=document.createElement('option');o.value=x.file;o.textContent=x.label;cat.appendChild(o)});
+    }).catch(function(){});
+    cat.addEventListener('change',function(){
+      if(!cat.value)return;
+      fetch('catalog/'+encodeURIComponent(cat.value)).then(function(r){return r.text()}).then(function(t){
+        var c=parseCatalogText(t);
+        document.getElementById('f-title').value=c.title;
+        document.getElementById('f-author').value=c.author;
+        document.getElementById('f-pages').value=c.totalPages||'';
+        ta.value=c.toc;upd();
+      }).catch(function(){showErr('목록을 불러오지 못했습니다.')});
+    });
+  }
+  ta.addEventListener('input',upd);upd();
+  var form=document.getElementById('bookForm'), err=document.getElementById('f-err');
+  function showErr(msg){err.textContent=msg;err.hidden=false}
+  form.addEventListener('submit',function(ev){
+    ev.preventDefault();
+    var title=document.getElementById('f-title').value.trim();
+    var items=parseToc(ta.value);
+    if(!title){showErr('제목을 입력해 주세요.');return}
+    if(!items.length){showErr('목차를 한 줄 이상 입력해 주세요.');return}
+    var pages=parseInt(document.getElementById('f-pages').value,10);
+    var b=id?books.get(id):null, isNew=!b;
+    if(isNew)b={id:newId(),createdAt:Date.now(),rating:0,note:'',endDate:null,endAuto:false};
+    else{
+      var pool=new Map();
+      b.chapters.forEach(function(c){if(!pool.has(c.t))pool.set(c.t,[]);pool.get(c.t).push(c)});
+      items.forEach(function(it){
+        var q=pool.get(it.t);
+        if(q&&q.length){var o=q.shift();it.done=o.done||null;it.memo=o.memo||''}
+      });
+    }
+    b.title=title;
+    b.author=document.getElementById('f-author').value.trim();
+    b.totalPages=pages>0?pages:null;
+    b.startDate=document.getElementById('f-start').value||null;
+    b.goalDate=document.getElementById('f-goal').value||null;
+    b.chapters=items;
+    autoDates(b);
+    books.set(b.id,b);
+    persist(b);
+    location.hash='book-'+b.id;
+  });
+}
 /* ---------- 렌더 ---------- */
 function render() {
   var ae = document.activeElement, fk = null;
@@ -349,8 +438,10 @@ function render() {
   else if (phase !== "app") html = loginView();
   else if (!ready) html = loadingView();
   else if (r.name === "library") html = libraryView();
-  else html = bookView(r.id);
+  else if (r.name === "book") html = bookView(r.id);
+  else html = formView(r.id);
   view.innerHTML = html;
+  if (phase === "app" && ready && r.name === "form" && (!r.id || books.has(r.id))) bindForm(r.id);
   if (fk) { var n = view.querySelector(fk); if (n) n.focus({ preventScroll: true }); }
 }
 
