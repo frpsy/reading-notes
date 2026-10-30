@@ -1,3 +1,10 @@
 [
-  { "file": "insaeng-yeoksa.txt", "label": "인생의 역사 · 신형철" }
+  {
+    "file": "insaeng-yeoksa.txt",
+    "label": "인생의 역사 · 신형철"
+  },
+  {
+    "file": "pragmatic-programmer-20th.txt",
+    "label": "실용주의 프로그래머(20주년 기념판) · 데이비드 토머스, 앤드류 헌트"
+  }
 ]
