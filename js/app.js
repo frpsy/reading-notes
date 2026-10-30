@@ -1,8 +1,8 @@
 // 책갈피 화면 코드. 순수 로직은 core.js, 저장소는 store.js 에 있습니다.
 import {
-  escapeHtml, todayStr, dnum, fmtDate, fmtShort, agoText, newId, parseToc, tocText,
+  escapeHtml, todayStr, dnum, fmtDate, fmtShort, agoText, newId, parseToc, tocText, parseCatalogText,
   isGroup, leavesOf, descLeaves, metrics as calcMetrics, autoDates, toggleChapter as toggle,
-  goalInfo, chartGeometry, normalizeBook, parseCatalogText, makeBackup, parseBackup,
+  goalInfo, chartGeometry, normalizeBook,
 } from "./core.js";
 import * as store from "./store.js";
 
@@ -19,7 +19,7 @@ function hue(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.
 var books = new Map(), lastJson = new Map(), dirty = new Set(), timers = new Map(), inflight = new Set();
 var mode = "pending";      // firebase | local
 var phase = "boot";        // boot | login | denied | error | app
-var ready = false, readyTimer = null, unsub = null, authMsg = "", userEmail = "", flash = "";
+var ready = false, readyTimer = null, unsub = null, authMsg = "", userEmail = "";
 var ui = { filter: "all", onlyRemaining: false, openMemo: new Set(), confirmDel: null };
 
 /* ---------- 저장 ---------- */
@@ -123,6 +123,36 @@ function onAuth(st) {
   render();
 }
 
+/* ---------- 준비된 책(catalog): Claude가 repo에 추가, 여기서 서재에 담음 ---------- */
+var catalog = [];
+function loadCatalog() {
+  fetch("catalog/index.json").then(function (r) { return r.json(); }).then(function (list) {
+    return Promise.all(list.map(function (x) {
+      return fetch("catalog/" + encodeURIComponent(x.file)).then(function (r) { return r.text(); }).then(function (t) {
+        return { id: "c-" + x.file.replace(/\.txt$/, ""), c: parseCatalogText(t) };
+      });
+    }));
+  }).then(function (all) { catalog = all.filter(function (x) { return x.c.title && x.c.toc; }); render(); }).catch(function () {});
+}
+function catalogHtml() {
+  var rest = catalog.filter(function (x) { return !books.has(x.id); });
+  if (!rest.length) return "";
+  return '<div class="sec-h"><h2 class="sec">담을 수 있는 책</h2></div><div class="books">' + rest.map(function (x) {
+    return '<div class="book"><span class="cover" style="--h:' + hue(x.c.title) + '" aria-hidden="true">' + esc(x.c.title.charAt(0)) + '</span>' +
+      '<span class="book-main"><span class="book-title">' + esc(x.c.title) + '</span><span class="book-sub">' + esc(x.c.author) + '</span></span>' +
+      '<span class="book-side"><button type="button" class="btn sm primary" data-act="catadd" data-id="' + esc(x.id) + '">서재에 담기</button></span></div>';
+  }).join("") + "</div>";
+}
+function addFromCatalog(id) {
+  var x = catalog.find(function (y) { return y.id === id; });
+  if (!x || books.has(id)) return;
+  var b = normalizeBook({
+    id: id, title: x.c.title, author: x.c.author, totalPages: x.c.totalPages,
+    chapters: parseToc(x.c.toc), createdAt: Date.now(),
+  });
+  books.set(id, b); persist(b); render();
+}
+
 /* ---------- 라우팅 ---------- */
 function currentRoute() {
   var h = location.hash.replace(/^#/, ""), m;
@@ -131,7 +161,7 @@ function currentRoute() {
   if ((m = /^book-(.+)$/.exec(h))) return { name: "book", id: m[1] };
   return { name: "library" };
 }
-window.addEventListener("hashchange", function () { ui.confirmDel = null; flash = ""; render(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", function () { ui.confirmDel = null; render(); window.scrollTo(0, 0); });
 
 function loginView() {
   var trial = '<button type="button" class="btn" data-act="trial">로그인 없이 체험하기 (이 브라우저에만 저장)</button>';
@@ -186,15 +216,11 @@ function libraryView(){
     x.m.doneDates.forEach(function(d){var n=dnum(d);if(n!=null&&n>=t-6&&n<=t)week++});
   });
   var head='<div class="lib-head"><h1 class="page">내 서재</h1><a class="btn primary" href="#add">책 추가</a></div>';
-  var note=(mode==='local'?'<p class="notice">체험 모드입니다. 기록이 이 브라우저에만 저장됩니다.</p>':'')+(flash?'<p class="msg" role="status">'+esc(flash)+'</p>':'')+
-    '<div class="tools"><button type="button" class="btn sm" data-act="export">백업 내려받기</button>'+
-    '<label class="btn sm" for="importFile">백업 가져오기</label><input type="file" id="importFile" accept="application/json,.json" data-act="import">'+
+  var note=(mode==='local'?'<p class="notice">체험 모드입니다. 기록이 이 브라우저에만 저장됩니다.</p>':'')+
+    catalogHtml()+'<div class="tools">'+
     (mode==='firebase'?'<button type="button" class="btn sm" data-act="logout">로그아웃'+(userEmail?' ('+esc(userEmail)+')':'')+'</button>':'')+'</div>';
   if(!all.length){
-    return head+'<div class="empty"><h2>읽을 책의 목차를 넣어 보세요</h2>'+
-      '<p>책의 공식 목차를 붙여 넣으면 챕터별로 읽은 날짜를 남기고, 진척과 완독 예상일을 볼 수 있습니다.</p>'+
-      '<ol><li>책 추가에서 제목과 목차를 입력합니다.</li><li>읽은 챕터를 체크하면 오늘 날짜가 기록됩니다.</li><li>상세 화면에서 속도와 예상 완독일을 확인합니다.</li></ol>'+
-      '<a class="btn primary" href="#add">첫 책 추가</a></div>'+note;
+    return head+'<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>책은 Claude에게 \'책 이름\'을 말해 추가합니다. 추가되면 아래에 나타나고, 담기를 누르면 서재에 들어옵니다.</p></div>'+note;
   }
   var strip='<div class="strip"><div class="s"><b>'+cnt.reading+'</b><span>읽는 중</span></div>'+
     '<div class="s"><b>'+cnt.done+'</b><span>완독</span></div>'+
@@ -297,8 +323,7 @@ function bookView(id){
   var rating='<option value="0">평점 없음</option>'+[1,2,3,4,5].map(function(n){return '<option value="'+n+'"'+((b.rating||0)===n?' selected':'')+'>'+n+' / 5</option>'}).join('');
   return '<a class="back" href="#library">← 서재</a>'+
     '<div class="head">'+coverHtml(b,true)+'<div><h1>'+esc(b.title)+(b.example?' <span class="chip">예시</span>':'')+'</h1>'+
-    '<div class="by">'+(b.author?esc(b.author)+' · ':'')+chipHtml(m)+(stale?' <span class="chip warn">7일 넘게 기록 없음</span>':'')+(b.totalPages?' · '+b.totalPages+'쪽':'')+'</div></div>'+
-    '<div class="head-actions"><a class="btn sm" href="#edit-'+esc(b.id)+'">정보·목차 수정</a></div></div>'+
+    '<div class="by">'+(b.author?esc(b.author)+' · ':'')+chipHtml(m)+(stale?' <span class="chip warn">7일 넘게 기록 없음</span>':'')+(b.totalPages?' · '+b.totalPages+'쪽':'')+'</div></div>'+'<div class="head-actions"><a class="btn sm" href="#edit-'+esc(b.id)+'">정보·목차 수정</a></div></div>'+
     '<section class="panel" aria-label="진척 현황"><div class="prog"><span class="big">'+pct+'%</span><span class="of">'+m.D+' / '+m.L+' 챕터</span>'+alt+'</div>'+
     '<div class="bar lg'+(m.status==='done'?' ok':'')+'"><i style="width:'+pct+'%"></i></div>'+goalHtml(b,m)+statsHtml+'</section>'+
     '<section class="panel" aria-label="날짜"><div class="dates">'+
@@ -420,13 +445,6 @@ function render() {
   if (fk) { var n = view.querySelector(fk); if (n) n.focus({ preventScroll: true }); }
 }
 
-function download(name, text) {
-  var a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
-  a.download = name; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-}
-
 /* ---------- 이벤트 ---------- */
 view.addEventListener("click", function (e) {
   var el = e.target.closest("[data-act]");
@@ -442,7 +460,7 @@ view.addEventListener("click", function (e) {
       break;
     case "trial": enterApp("local"); break;
     case "logout": store.signOut(); break;
-    case "export": download("chaekgalpi-" + todayStr() + ".json", makeBackup(Array.from(books.values()))); break;
+    case "catadd": addFromCatalog(el.dataset.id); break;
     case "toggle":
       if (b) { toggleChapter(b, +el.dataset.i); persist(b); render(); }
       break;
@@ -466,20 +484,6 @@ view.addEventListener("click", function (e) {
 view.addEventListener("change", function (e) {
   var el = e.target, act = el.dataset && el.dataset.act;
   if (!act) return;
-  if (act === "import") {
-    var f = el.files && el.files[0];
-    if (!f) return;
-    f.text().then(function (t) {
-      var list = parseBackup(t);
-      list.forEach(function (nb) {
-        var ex = books.get(nb.id);
-        if (ex && (ex.updatedAt || 0) >= (nb.updatedAt || 0)) return;
-        books.set(nb.id, nb); persist(nb);
-      });
-      flash = list.length + "권을 가져왔습니다. (같은 책은 더 최근 기록을 유지합니다)";
-    }).catch(function (err) { flash = err.message; }).then(render);
-    return;
-  }
   var r = currentRoute();
   if (r.name !== "book") return;
   var b = books.get(r.id);
@@ -496,4 +500,5 @@ view.addEventListener("change", function (e) {
 });
 
 render();
+loadCatalog();
 store.start(onAuth);

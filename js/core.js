@@ -312,21 +312,3 @@ export function parseCatalogText(text) {
     toc: lines.slice(i).join("\n").trim(),
   };
 }
-
-/* ---------- 백업 ---------- */
-export const BACKUP_APP = "chaekgalpi";
-
-export function makeBackup(books, now = Date.now()) {
-  return JSON.stringify({ app: BACKUP_APP, version: 1, exportedAt: now, books }, null, 2);
-}
-
-export function parseBackup(text) {
-  let data;
-  try { data = JSON.parse(text); } catch (e) { throw new Error("JSON 파일이 아닙니다."); }
-  const list = Array.isArray(data) ? data : (data && data.app === BACKUP_APP && Array.isArray(data.books) ? data.books : null);
-  if (!list) throw new Error("책갈피 백업 파일이 아닙니다.");
-  const books = list.map(normalizeBook).filter((b) => b.title && b.chapters.length);
-  if (!books.length) throw new Error("가져올 책이 없습니다.");
-  books.forEach((b) => { if (!b.id) b.id = newId(); });
-  return books;
-}

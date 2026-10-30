@@ -9,3 +9,5 @@
 - Firebase 프로젝트는 parent-survey 와 공유합니다(`parent-survey-d21e7`). 그 저장소의 코드와 섞지 않습니다.
 - 변경 후 `npm test` 통과 확인 → feature 브랜치 → PR → squash 머지. 묻지 않고 끝까지 진행하고 배포까지 확인 후 보고합니다.
 - 문구는 존댓말, 간결하게. CSS를 바꾸면 `index.html` 의 `style.css?v=N` 번호를 올립니다.
+
+- 책 추가는 직접 목차 붙여넣기(책 추가 화면) 또는 `catalog/` 준비된 책 담기입니다. 백업 기능은 두지 않습니다. 새 준비된 책은 `catalog/` 에 문안과 index.json 항목을 추가하면 서재의 "담을 수 있는 책"에 나타납니다(책 id는 `c-파일이름`).
