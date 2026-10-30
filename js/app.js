@@ -132,6 +132,12 @@ function markReady() {
   clearTimeout(readyTimer);
   render();
 }
+// 로그아웃·계정 전환 때 이전 계정의 저장 대기 상태가 남아 새 데이터를 막지 않도록 비웁니다.
+function resetSaving() {
+  timers.forEach(function (t) { clearTimeout(t); });
+  timers.clear(); dirty.clear(); inflight.clear();
+  books.clear(); lastJson.clear();
+}
 function onSnap(list, meta) {
   var changed = false, seen = new Set();
   list.forEach(function (raw) {
@@ -154,7 +160,7 @@ function onSnap(list, meta) {
 }
 function enterApp(m) {
   mode = m; phase = "app"; ready = false;
-  books.clear(); lastJson.clear();
+  resetSaving();
   if (m === "firebase") {
     setSync("saved");
     if (unsub) unsub();
@@ -173,7 +179,7 @@ function onAuth(st) {
   if (st.state === "login" && (phase === "denied" || phase === "error")) return;
   if (st.state === "ready") { userEmail = st.email || ""; enterApp(st.mode); return; }
   if (unsub) { unsub(); unsub = null; }
-  phase = st.state; ready = false; books.clear(); lastJson.clear();
+  phase = st.state; ready = false; resetSaving(); hideToast();
   authMsg = st.state === "denied" ? (st.email + " 계정은 이 앱을 쓸 수 없습니다.") : (st.message || "");
   setSync("pending"); syncEl.textContent = "로그인 필요";
   render();
