@@ -46,6 +46,7 @@ a{color:var(--accent)}
 .sync{font:500 12px/1 var(--sans);color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:7px 11px;cursor:default;white-space:nowrap}
 .sync[data-state="error"]{color:var(--danger);border-color:var(--danger);cursor:pointer}
 .sync[data-state="local"]{color:var(--warn);border-color:var(--warn)}
+.sync[data-state="offline"]{color:var(--warn);border-color:var(--warn)}
 
 .btn{font:600 14px/1 var(--sans);min-height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
 .btn:hover{background:var(--surface-2)}

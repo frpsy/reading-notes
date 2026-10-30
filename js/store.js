@@ -1,8 +1,8 @@
 // 저장소 접근은 이 파일 한 곳에서만 합니다.
 // Firebase(Firestore, 구글 로그인) 또는 localStorage(체험 모드).
-import { firebaseConfig, allowedEmails } from "./config.js";
+import { firebaseConfig, allowedEmails } from "./config.js?v=10";
 
-const FB = "https://www.gstatic.com/firebasejs/10.12.2";
+export const FB = "https://www.gstatic.com/firebasejs/10.12.2"; // 바꾸면 sw.js 의 FB 도 같이 바꿉니다
 const LS_KEY = "chaekgalpi-v1";
 
 export const firebaseConfigured = !!(firebaseConfig && firebaseConfig.apiKey);
@@ -19,7 +19,12 @@ async function load() {
   ]);
   const a = app.initializeApp(firebaseConfig);
   auth = au.getAuth(a);
-  db = fs.getFirestore(a);
+  // 기기 저장(IndexedDB)을 켜서 오프라인에서도 기록을 보고 체크할 수 있게 합니다. 쓸 수 없는 브라우저는 메모리 캐시로 동작합니다.
+  try {
+    db = fs.initializeFirestore(a, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) });
+  } catch (e) {
+    db = fs.getFirestore(a);
+  }
   sdk = { au, fs };
   return sdk;
 }

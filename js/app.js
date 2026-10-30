@@ -3,8 +3,8 @@ import {
   escapeHtml, todayStr, dnum, fmtDate, fmtShort, agoText, newId, parseToc, tocText, parseCatalogText,
   isGroup, leavesOf, descLeaves, nextLeafIndex, activityByDate, currentStreak, longestStreak, heatmapWeeks, metrics as calcMetrics, autoDates, toggleChapter as toggle, completeThrough,
   goalInfo, chartGeometry, normalizeBook,
-} from "./core.js";
-import * as store from "./store.js";
+} from "./core.js?v=10";
+import * as store from "./store.js?v=10";
 
 var view = document.getElementById("view");
 var syncEl = document.getElementById("sync");
@@ -78,8 +78,10 @@ function restoreUndo() {
 document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-undo]")) restoreUndo(); });
 
 /* ---------- 저장 ---------- */
-var SYNC_TEXT = { pending: "연결 중…", saved: "저장됨", saving: "저장 중…", error: "저장 실패 · 다시 시도", local: "이 브라우저에만 저장" };
+var SYNC_TEXT = { pending: "연결 중…", saved: "저장됨", saving: "저장 중…", error: "저장 실패 · 다시 시도", local: "이 브라우저에만 저장", offline: "오프라인 · 기기에 보관 중" };
 function setSync(s, msg) {
+  // 오프라인에서 쓴 기록은 기기(IndexedDB)에 남아 있다가 연결되면 자동으로 올라갑니다.
+  if (s === "saving" && mode === "firebase" && navigator.onLine === false) { s = "offline"; msg = "연결되면 자동으로 저장합니다."; }
   syncEl.dataset.state = s;
   syncEl.textContent = SYNC_TEXT[s];
   syncEl.title = msg || (s === "local" ? "체험 모드: 이 브라우저에만 저장합니다." : "");
@@ -123,6 +125,9 @@ function removeBook(id) {
   backendDel(id).then(function () { if (!dirty.size && !inflight.size) setSync(okState()); })
     .catch(function (e) { setSync("error", (e && e.message) || ""); });
 }
+function onNet() { if (phase === "app" && mode === "firebase" && (dirty.size || inflight.size)) setSync("saving"); }
+window.addEventListener("online", onNet);
+window.addEventListener("offline", onNet);
 syncEl.addEventListener("click", function () {
   if (syncEl.dataset.state === "error") { dirty.forEach(function (id) { flush(id); }); setSync("saving"); }
 });
@@ -625,3 +630,8 @@ view.addEventListener("change", function (e) {
 render();
 loadCatalog();
 store.start(onAuth);
+
+// 화면 파일을 기기에 보관해 오프라인에서도 앱이 열리게 합니다(https 또는 localhost 에서만 동작).
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  navigator.serviceWorker.register("sw.js").catch(function () {});
+}
