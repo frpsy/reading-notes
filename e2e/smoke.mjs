@@ -15,8 +15,9 @@ const server = createServer(async (req, res) => {
   if (p.endsWith("/")) p += "index.html";
   const file = normalize(join(root, p));
   if (!file.startsWith(root)) { res.writeHead(403).end(); return; }
-  try { res.writeHead(200, { "content-type": TYPES[extname(file)] || "application/octet-stream" }).end(await readFile(file)); }
-  catch { res.writeHead(404).end(); }
+  let body;
+  try { body = await readFile(file); } catch { res.writeHead(404).end(); return; }
+  res.writeHead(200, { "content-type": TYPES[extname(file)] || "application/octet-stream" }).end(body);
 });
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const base = `http://localhost:${server.address().port}/`;
