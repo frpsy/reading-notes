@@ -266,3 +266,33 @@ test("읽기 알림: 오늘 읽음·끊길 위험·쉬는 중·기록 없음", (
   assert.deepEqual(streakStatus(m, "2026-11-03"), { state: "lapsed", streak: 0, gap: 4 });
   assert.deepEqual(streakStatus({}, "2026-10-31"), { state: "none", streak: 0, gap: 0 });
 });
+
+test("오류 안내: Firebase 코드는 한국어로, 앱의 한국어 문장은 그대로", async () => {
+  const { friendlyError } = await import("../js/core.js");
+  assert.match(friendlyError({ code: "permission-denied", message: "Missing or insufficient permissions." }), /다시 로그인/);
+  assert.match(friendlyError({ code: "unavailable", message: "Failed to get document because the client is offline." }), /연결/);
+  assert.match(friendlyError({ code: "auth/popup-blocked" }), /팝업 차단/);
+  assert.match(friendlyError(new Error("Failed to get document because the client is offline.")), /연결/);
+  assert.equal(friendlyError(new Error("다른 기기에서 삭제한 책입니다.")), "다른 기기에서 삭제한 책입니다.");
+  assert.equal(friendlyError(new Error("Something odd"), "기본 안내"), "기본 안내");
+  assert.ok(!/[A-Za-z]{4,}/.test(friendlyError(undefined)), "영문 원문이 남지 않음");
+});
+
+test("목차 수정: 같은 제목으로 기록을 옮기고 사라지는 기록을 알려 줌", async () => {
+  const { carryOver } = await import("../js/core.js");
+  const old = [
+    { t: "1장", lv: 0, p: 1, done: "2026-10-01", memo: "첫 메모" },
+    { t: "2장", lv: 0, p: 5, done: "2026-10-02", memo: "" },
+    { t: "같은 제목", lv: 0, p: 9, done: null, memo: "앞" },
+    { t: "같은 제목", lv: 0, p: 12, done: null, memo: "뒤" },
+    { t: "기록 없음", lv: 0, p: 15, done: null, memo: "" },
+  ];
+  const items = C.parseToc("1장\n두 번째 장\n같은 제목\n같은 제목\n새 장");
+  const r = carryOver(old, items);
+  assert.equal(r.items[0].memo, "첫 메모"); assert.equal(r.items[0].done, "2026-10-01");
+  assert.equal(r.items[1].done, null);
+  assert.deepEqual(r.items.slice(2, 4).map((x) => x.memo), ["앞", "뒤"]);
+  assert.deepEqual(r.lost, [{ t: "2장", done: "2026-10-02", memo: "" }]); // 기록 없는 챕터는 경고 대상 아님
+  assert.deepEqual(carryOver(old, C.parseToc(old.map((c) => c.t).join("\n"))).lost, []);
+  assert.equal(old[0].memo, "첫 메모", "원본은 바꾸지 않음");
+});

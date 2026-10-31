@@ -1,5 +1,5 @@
 // 책갈피 설정. firebaseConfig 는 공개되어도 되는 식별 정보이며, 데이터 보호는 Firestore 보안 규칙이 담당합니다.
-// apiKey 를 비우면 이 브라우저에만 저장하는 체험 모드로 동작합니다.
+// apiKey 를 비우면 로그인 설정 오류를 표시합니다(체험 모드는 없습니다).
 // 책갈피 전용 Firebase 프로젝트(chaekgalpi-reading)를 씁니다. 다른 사이트와 데이터·규칙을 공유하지 않습니다.
 export const firebaseConfig = {
   apiKey: "AIzaSyBDu8ehpieVaNn8sxsWKr5Ys_cUaqyYMlw",

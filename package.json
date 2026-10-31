@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node --test tests/*.test.js",
     "start": "python3 -m http.server 8080",
-    "e2e": "node e2e/smoke.mjs"
+    "e2e": "node e2e/smoke.mjs",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-chaekgalpi \"node --test rules-test/*.test.mjs\""
   }
 }

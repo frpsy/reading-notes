@@ -356,3 +356,8 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
   .memo-row{padding-right:10px}
   .memo-foot{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 }
+.memo-saved.bad{color:var(--danger)}
+.lost-warn{border:1px solid var(--danger);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.6}
+.lost-warn p{margin:0}
+.lost-warn ul{margin:8px 0 0;padding-left:20px}
+.lost-warn li{overflow-wrap:anywhere}

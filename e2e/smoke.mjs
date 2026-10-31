@@ -243,6 +243,43 @@ try {
     assert.equal(await page.locator('#d-note').inputValue(), '저장 공간 복구 후 남는 메모');
   });
 
+  await step('목차에서 기록 있는 챕터 제목을 바꾸면 저장 전 경고, 확인해야 저장', async () => {
+    const id = page.url().split('#book-')[1];
+    const leaf = await page.evaluate(id => {
+      const docs = JSON.parse(localStorage.getItem('e2e-books')), ch = docs[id].chapters;
+      const i = ch.findIndex(c => c.done || c.memo); return i < 0 ? null : ch[i].t;
+    }, id);
+    assert.ok(leaf, '기록 있는 챕터가 있어야 함');
+    await page.goto(page.url().replace(/#.*/, '#edit-' + id));
+    const toc = await page.locator('#f-toc').inputValue();
+    await page.fill('#f-toc', toc.replace(leaf, leaf + ' (바꾼 제목)'));
+    await page.click('#f-submit');
+    await page.locator('#f-lost', { hasText: leaf }).waitFor();
+    assert.equal(await page.locator('#f-submit').innerText(), '기록 삭제하고 저장');
+    assert.match(page.url(), /#edit-/, '경고만 보이고 저장되지 않음');
+    await page.locator('#f-toc').press('End'); await page.locator('#f-toc').type(' ');
+    assert.equal(await page.locator('#f-lost').isVisible(), false, '목차를 다시 고치면 경고 초기화');
+    await page.click('a.btn[href="#book-' + id + '"]');
+    await page.waitForURL(/#book-/);
+    const kept = await page.evaluate(([id, t]) => JSON.parse(localStorage.getItem('e2e-books'))[id].chapters.some(c => c.t === t), [id, leaf]);
+    assert.ok(kept, '취소하면 원래 기록 유지');
+  });
+
+  await step('메모 저장 문구는 실제 기기 보관 결과를 따름', async () => {
+    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    const ta = page.locator('textarea[data-act="memotext"]').first();
+    await ta.fill('보관 확인');
+    assert.equal(await page.locator('[data-memo-saved]').innerText(), '기기에 보관됨');
+    await page.evaluate(() => { window.__realSet = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k.startsWith('chaekgalpi-pending')) throw new Error('quota'); return window.__realSet.call(this, k, v); }; });
+    await ta.fill('보관 실패');
+    assert.match(await page.locator('[data-memo-saved]').innerText(), /보관하지 못했습니다/);
+    await page.evaluate(() => { Storage.prototype.setItem = window.__realSet; });
+    await ta.fill('보관 확인');
+    assert.equal(await page.locator('[data-memo-saved]').innerText(), '기기에 보관됨');
+    await page.locator('button.memo-done').click();
+    await page.locator('#sync[data-state="saved"]').waitFor();
+  });
+
   await step('동시 목차 충돌은 원본을 보존하고 새 책으로 복구', async () => {
     const id = page.url().split('#book-')[1];
     await page.locator('.book-menu > summary').click();
@@ -255,6 +292,7 @@ try {
     }, id);
     await page.fill('#f-toc', '이 기기의 목차\n' + toc.split('\n').slice(1).join('\n'));
     await page.click('#bookForm button[type="submit"]');
+    if (await page.locator('#f-lost').isVisible()) await page.click('#f-submit'); // 첫 챕터 기록이 있으면 삭제 경고를 확인
     await page.locator('#sync[data-state="error"]').waitFor();
     assert.equal(await page.locator('#sync-copy').isVisible(), true);
     await page.click('#sync-copy');
