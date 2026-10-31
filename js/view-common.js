@@ -1,6 +1,6 @@
 // 여러 화면이 함께 쓰는 조각(표지, 칩, 로그인 화면 등)입니다.
-import { state } from "./state.js?v=18";
-import { esc, hue } from "./util.js?v=18";
+import { state } from "./state.js?v=19";
+import { esc, hue } from "./util.js?v=19";
 
 export var CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 export var DASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>';
@@ -21,12 +21,11 @@ export function paceText(rate) {
 }
 
 export function loginView() {
-  var trial = '<button type="button" class="btn" data-act="trial">로그인 없이 체험하기 (이 브라우저에만 저장)</button>';
   if (state.phase === "denied" || state.phase === "error") {
     return '<div class="login"><h1>책갈피</h1><p class="err">' + esc(state.authMsg) + '</p>' +
-      '<button type="button" class="btn primary" data-act="login">다른 구글 계정으로 로그인</button>' + trial + '</div>';
+      '<button type="button" class="btn primary" data-act="login">다른 구글 계정으로 로그인</button>' + '</div>';
   }
   return '<div class="login"><h1>책갈피</h1><p class="muted">읽은 책의 목차와 진도를 기록하는 개인 독서 노트입니다. 구글 계정으로 로그인하면 어느 기기에서나 같은 기록을 봅니다.</p>' +
     (state.authMsg ? '<p class="err">' + esc(state.authMsg) + '</p>' : '') +
-    '<button type="button" class="btn primary" data-act="login">구글로 로그인</button>' + trial + '</div>';
+    '<button type="button" class="btn primary" data-act="login">구글로 로그인</button>' + '</div>';
 }

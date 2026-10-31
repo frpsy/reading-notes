@@ -1,19 +1,19 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=18";
-import { state } from "./state.js?v=18";
-import { setRenderer, render } from "./bus.js?v=18";
-import { initPrefs, saveFolded } from "./prefs.js?v=18";
-import { initUndo, mutate, hideToast } from "./undo.js?v=18";
-import { initSync, persist, removeBook } from "./sync.js?v=18";
-import { onAuth, enterApp } from "./session.js?v=18";
-import { currentRoute } from "./router.js?v=18";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=18";
-import { loginView, loadingView } from "./view-common.js?v=18";
-import { libraryView } from "./view-library.js?v=18";
-import { bookView, refreshMemos } from "./view-book.js?v=18";
-import { yearView } from "./view-year.js?v=18";
-import { formView, bindForm } from "./view-form.js?v=18";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates } from "./core.js?v=18";
+import * as store from "./store.js?v=19";
+import { state } from "./state.js?v=19";
+import { setRenderer, render } from "./bus.js?v=19";
+import { initPrefs, saveFolded } from "./prefs.js?v=19";
+import { initUndo, mutate, hideToast } from "./undo.js?v=19";
+import { initSync, persist, removeBook } from "./sync.js?v=19";
+import { onAuth } from "./session.js?v=19";
+import { currentRoute } from "./router.js?v=19";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=19";
+import { loginView, loadingView } from "./view-common.js?v=19";
+import { libraryView } from "./view-library.js?v=19";
+import { bookView, refreshMemos } from "./view-book.js?v=19";
+import { yearView } from "./view-year.js?v=19";
+import { formView, bindForm } from "./view-form.js?v=19";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates } from "./core.js?v=19";
 
 var view = document.getElementById("view");
 
@@ -57,7 +57,6 @@ view.addEventListener("click", function (e) {
         render();
       });
       break;
-    case "trial": enterApp("local"); break;
     case "logout": store.signOut(); break;
     case "catadd": addFromCatalog(el.dataset.id); break;
     case "upto":
@@ -104,6 +103,13 @@ view.addEventListener("click", function (e) {
 });
 view.addEventListener("input", function (e) {
   if (e.target.dataset && e.target.dataset.act === "search") { state.ui.q = e.target.value; render(); }
+  var el = e.target, act = el.dataset && el.dataset.act;
+  if (act !== 'note' && act !== 'memotext') return;
+  var r = currentRoute(), b = r.name === 'book' ? state.books.get(r.id) : null;
+  if (!b) return;
+  if (act === 'note') b.note = el.value;
+  else { b.chapters[+el.dataset.i].memo = el.value.trim(); refreshMemos(b); }
+  persist(b);
 });
 view.addEventListener("change", function (e) {
   var el = e.target, act = el.dataset && el.dataset.act;
@@ -117,9 +123,9 @@ view.addEventListener("change", function (e) {
     case "end": b.endDate = calcMetrics(b).status === "done" ? (el.value || null) : null; b.endAuto = false; persist(b); render(); break;
     case "goal": b.goalDate = el.value || null; persist(b); render(); break;
     case "chdate": b.chapters[+el.dataset.i].done = el.value || null; autoDates(b); persist(b); render(); break;
-    case "memotext": b.chapters[+el.dataset.i].memo = el.value.trim(); persist(b); refreshMemos(b); break;
+    case "memotext": break; // input에서 기기에 즉시 보관
     case "rating": b.rating = parseInt(el.value, 10) || 0; persist(b); break;
-    case "note": b.note = el.value; persist(b); break;
+    case "note": break; // input에서 기기에 즉시 보관
   }
 });
 

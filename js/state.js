@@ -2,10 +2,13 @@
 export const state = {
   books: new Map(),
   lastJson: new Map(),
-  dirty: new Set(),
-  timers: new Map(),
-  inflight: new Set(),
-  mode: "pending",      // pending | firebase | local
+  pending: new Map(),
+  conflicts: new Set(),
+  flushing: false,
+  activeKey: null,
+  flushTimer: null,
+  epoch: 0,
+  mode: "pending",      // pending | firebase
   phase: "boot",        // boot | login | denied | error | app
   ready: false,
   readyTimer: null,

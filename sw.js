@@ -1,12 +1,13 @@
 // 책갈피 서비스 워커: 화면 파일을 기기에 보관해 오프라인에서도 앱이 열리게 합니다.
 // 같은 출처 파일은 항상 네트워크를 먼저 확인하고(새 배포가 바로 반영됨), 연결이 없을 때만 보관본을 씁니다.
 // 기록 데이터는 여기서 다루지 않습니다(Firestore 가 기기 저장을 따로 합니다).
-const CACHE = "chaekgalpi-v1";
+const CACHE_PREFIX = "chaekgalpi-reading-";
+const CACHE = CACHE_PREFIX + "v2";
 const FB = "https://www.gstatic.com/firebasejs/10.12.2"; // js/store.js 의 FB 와 같아야 합니다
 const SHELL = [
   "./", "index.html", "manifest.webmanifest",
   "css/style.css", "js/app.js", "js/core.js", "js/store.js", "js/config.js",
-  "js/store-core.js", "js/state.js", "js/bus.js", "js/util.js", "js/prefs.js", "js/sync.js", "js/undo.js",
+  "js/store-core.js", "js/sync-core.js", "js/state.js", "js/bus.js", "js/util.js", "js/prefs.js", "js/sync.js", "js/undo.js",
   "js/session.js", "js/router.js", "js/catalog.js", "js/view-common.js", "js/view-library.js",
   "js/view-book.js", "js/view-year.js", "js/view-form.js",
   "icons/icon.svg", "icons/icon-192.png", "catalog/index.json",
@@ -35,7 +36,7 @@ self.addEventListener("install", (e) => {
 self.addEventListener("activate", (e) => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    await Promise.all(keys.filter((k) => k.startsWith(CACHE_PREFIX) && k !== CACHE).map((k) => caches.delete(k)));
     await self.clients.claim();
   })());
 });

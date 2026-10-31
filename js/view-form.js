@@ -1,9 +1,9 @@
 // 책 추가·정보 수정 화면: 목차 붙여넣기, 미리보기, 준비된 책 불러오기.
-import { state } from "./state.js?v=18";
-import { esc } from "./util.js?v=18";
-import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates } from "./core.js?v=18";
-import { persist } from "./sync.js?v=18";
-import { notFound } from "./view-common.js?v=18";
+import { state } from "./state.js?v=19";
+import { esc } from "./util.js?v=19";
+import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook } from "./core.js?v=19";
+import { persist } from "./sync.js?v=19";
+import { notFound } from "./view-common.js?v=19";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
@@ -23,9 +23,9 @@ export function formView(id) {
     '<h1 class="page">' + (b ? '정보·목차 수정' : '책 추가') + '</h1>' +
     '<form class="form" id="bookForm" novalidate>' +
       (b ? '' : '<label class="fld"><span>준비된 책에서 불러오기 (선택)</span><select id="f-cat"><option value="">직접 입력</option></select></label>') +
-      '<label class="fld"><span>제목</span><input id="f-title" type="text" value="' + esc(v.title) + '" autocomplete="off"></label>' +
+      '<label class="fld"><span>제목</span><input id="f-title" type="text" maxlength="200" value="' + esc(v.title) + '" autocomplete="off"></label>' +
       '<div class="row2">' +
-        '<label class="fld"><span>저자 (선택)</span><input id="f-author" type="text" value="' + esc(v.author) + '" autocomplete="off"></label>' +
+        '<label class="fld"><span>저자 (선택)</span><input id="f-author" type="text" maxlength="100" value="' + esc(v.author) + '" autocomplete="off"></label>' +
         '<label class="fld"><span>총 쪽수 (선택)</span><input id="f-pages" type="number" inputmode="numeric" min="1" value="' + esc(v.pages) + '"></label>' +
       '</div>' +
       '<div class="row2">' +
@@ -73,7 +73,7 @@ export function bindForm(id) {
     if (!title) { showErr('제목을 입력해 주세요.'); return }
     if (!items.length) { showErr('목차를 한 줄 이상 입력해 주세요.'); return }
     var pages = parseInt(document.getElementById('f-pages').value, 10);
-    var b = id ? state.books.get(id) : null, isNew = !b;
+    var b = id ? structuredClone(state.books.get(id)) : null, isNew = !b;
     if (isNew) b = { id: newId(), createdAt: Date.now(), rating: 0, note: '', endDate: null, endAuto: false };
     else {
       var pool = new Map();
@@ -90,6 +90,8 @@ export function bindForm(id) {
     b.goalDate = document.getElementById('f-goal').value || null;
     b.chapters = items;
     autoDates(b);
+    var error = validateBook(b);
+    if (error) { showErr(error); return; }
     state.books.set(b.id, b);
     persist(b);
     location.hash = 'book-' + b.id;
