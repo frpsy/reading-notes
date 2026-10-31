@@ -1,20 +1,20 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=38";
-import { state } from "./state.js?v=38";
-import { setRenderer, render } from "./bus.js?v=38";
-import { initPrefs, saveFolded } from "./prefs.js?v=38";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=38";
-import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=38";
-import { onAuth } from "./session.js?v=38";
-import { currentRoute } from "./router.js?v=38";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=38";
-import { loginView, loadingView } from "./view-common.js?v=38";
-import { libraryView } from "./view-library.js?v=38";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=38";
-import { yearView } from "./view-year.js?v=38";
-import { patchView, resetPatch } from "./patch.js?v=38";
-import { formView, bindForm } from "./view-form.js?v=38";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=38";
+import * as store from "./store.js?v=39";
+import { state } from "./state.js?v=39";
+import { setRenderer, render } from "./bus.js?v=39";
+import { initPrefs, saveFolded } from "./prefs.js?v=39";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=39";
+import { initSync, persist, removeBook } from "./sync.js?v=39";
+import { onAuth } from "./session.js?v=39";
+import { currentRoute } from "./router.js?v=39";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=39";
+import { loginView, loadingView } from "./view-common.js?v=39";
+import { libraryView } from "./view-library.js?v=39";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=39";
+import { yearView } from "./view-year.js?v=39";
+import { patchView, resetPatch } from "./patch.js?v=39";
+import { formView, bindForm } from "./view-form.js?v=39";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=39";
 
 var view = document.getElementById("view");
 
@@ -211,11 +211,10 @@ view.addEventListener("input", function (e) {
   if (act === 'note') { b.note = el.value; persist(b); return; }
   b.chapters[+el.dataset.i].memo = el.value.trim(); refreshMemos(b);
   growMemo(el);
-  // 문구는 실제 기기 보관 결과를 따릅니다. 서버 저장 여부는 상단 상태 표시가 알려 줍니다.
-  var kept = persist(b);
-  var row = el.closest('.memo-row'), cnt = row && row.querySelector('[data-memo-count]'), sv = row && row.querySelector('[data-memo-saved]');
+  // 입력창에는 저장 상태를 보여 주지 않습니다. 보관·저장에 실패하면 상단 저장 표시와 안내가 알려 줍니다.
+  persist(b);
+  var row = el.closest('.memo-row'), cnt = row && row.querySelector('[data-memo-count]');
   if (cnt) cnt.textContent = Array.from(el.value).length + '/2000';
-  if (sv) { sv.dataset.touched = '1'; sv.classList.toggle('bad', !kept); sv.textContent = kept ? memoStatusText(document.getElementById('sync').dataset.state) : '보관하지 못했습니다 · 상단 안내를 확인해 주세요'; }
 });
 // 접힌 목록(메모 모아보기)은 펼칠 때 채웁니다. toggle 은 버블링되지 않아 캡처로 받습니다.
 view.addEventListener("toggle", function (e) {

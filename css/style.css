@@ -320,7 +320,7 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .memo-row{scroll-margin-top:110px;scroll-margin-bottom:24px}
 .memo-row textarea{min-height:132px;max-height:60vh;line-height:1.7;border-color:var(--accent);overflow-y:auto}
 .memo-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px}
-.memo-meta{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:12px;color:var(--muted)}
+.memo-meta{display:flex;align-items:center;min-width:0;font-size:12px;color:var(--muted)}
 .memo-count{font-family:var(--mono)}
 .memo-tap{display:block;width:100%;margin:0;padding:6px 0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:text;-webkit-tap-highlight-color:transparent}
 .memo-tap:active{background:var(--surface-2)}
@@ -329,7 +329,6 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
   .memo-row{padding-right:10px}
   .memo-foot{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px))}
 }
-.memo-saved.bad{color:var(--danger)}
 .lost-warn{border:1px solid var(--danger);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.6}
 .lost-warn p{margin:0}
 .lost-warn ul{margin:8px 0 0;padding-left:20px}

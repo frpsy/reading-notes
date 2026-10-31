@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=38";
-import { esc, fmt, ago } from "./util.js?v=38";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=38";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=38";
+import { state } from "./state.js?v=39";
+import { esc, fmt, ago } from "./util.js?v=39";
+import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=39";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=39";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -97,7 +97,7 @@ function chaptersHtml(b, m) {
           (!c.done && nextLeaf >= 0 && i > nextLeaf ? '<button type="button" class="opt-btn" data-act="upto" data-i="' + i + '">여기까지 읽음</button>' : '') +
           '</div></details>' : '') + '</div></li>';
       if (open) out += '<li class="memo-row" style="--lv:' + c.lv + '"><textarea maxlength="2000" data-act="memotext" data-i="' + i + '" aria-label="' + esc(c.t) + ' 메모" placeholder="이 챕터에서 남기고 싶은 말" rows="4">' + esc(c.memo) + '</textarea>' +
-        '<div class="memo-foot"><span class="memo-meta"><span class="memo-count" data-memo-count>' + Array.from(c.memo || '').length + '/2000</span><span class="memo-saved" data-memo-saved>입력하면 기기에 바로 보관됩니다</span></span>' +
+        '<div class="memo-foot"><span class="memo-meta"><span class="memo-count" data-memo-count>' + Array.from(c.memo || '').length + '/2000</span></span>' +
         '<span class="memo-btns"><button type="button" class="memo-del" data-act="memodel" data-i="' + i + '" aria-label="' + esc(c.t) + ' 메모 삭제">삭제</button>' +
         '<button type="button" class="btn primary sm memo-done" data-act="memo" data-i="' + i + '">완료</button></span></div></li>';
     }

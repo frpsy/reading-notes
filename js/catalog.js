@@ -1,9 +1,9 @@
 // 준비된 책(catalog/): Claude가 repo에 추가하면 여기서 서재에 담습니다.
-import { state } from "./state.js?v=38";
-import { render } from "./bus.js?v=38";
-import { persist } from "./sync.js?v=38";
-import { esc, hue } from "./util.js?v=38";
-import { parseToc, parseCatalogText, normalizeBook } from "./core.js?v=38";
+import { state } from "./state.js?v=39";
+import { render } from "./bus.js?v=39";
+import { persist } from "./sync.js?v=39";
+import { esc, hue } from "./util.js?v=39";
+import { parseToc, parseCatalogText, normalizeBook } from "./core.js?v=39";
 
 export function loadCatalog() {
   fetch("catalog/index.json").then(function (r) { return r.json(); }).then(function (list) {
