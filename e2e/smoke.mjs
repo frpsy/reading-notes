@@ -552,6 +552,46 @@ try {
     await page.click('[data-undo]');
   });
 
+  await step('묶음 책에서 여러 줄이 한꺼번에 바뀌어도 줄이 중복·뒤섞이지 않음(화면 = 새로 그린 결과)', async () => {
+    await page.goto(page.url().replace(/#.*/, '#add'));
+    await page.fill('#f-title', '묶음 점검용 책');
+    const toc = [1, 2, 3, 4].map(g => g + '부 그룹\n' + [1, 2, 3, 4, 5].map(i => '  ' + g + '부 ' + i + '장').join('\n')).join('\n');
+    await page.fill('#f-toc', toc);
+    await page.click('#f-submit');
+    await page.waitForURL(/#book-/);
+    await page.locator('.chapters > li.leaf').first().waitFor();
+    const id = page.url().split('#book-')[1];
+    const rowsOf = () => page.evaluate(() => [...document.querySelectorAll('.chapters > li')].map(li => (li.querySelector('.ch-title') || {}).textContent.replace(/\s*다음$/, '').trim() + ':' + li.querySelector('.chk').getAttribute('aria-checked')));
+    const expectedRows = () => page.evaluate(async (id) => {
+      const v = '?v=' + /app\.js\?v=(\d+)/.exec(document.querySelector('script[src*="app.js"]').src)[1];
+      const { bookView } = await import('/js/view-book.js' + v);
+      const t = document.createElement('template'); t.innerHTML = bookView(id);
+      return [...t.content.querySelectorAll('.chapters > li')].map(li => (li.querySelector('.ch-title') || {}).textContent.replace(/\s*다음$/, '').trim() + ':' + li.querySelector('.chk').getAttribute('aria-checked'));
+    }, id);
+    for (const act of ['leaf', 'leaf', 'group', 'next', 'leaf', 'fold', 'undo']) {
+      if (act === 'leaf') await page.locator('.chapters > li.leaf .chk').nth(1).click();
+      if (act === 'group') await page.locator('.chapters > li.group .chk').nth(1).click();
+      if (act === 'next') await page.click('[data-act="nextdone"]');
+      if (act === 'fold') await page.locator('.fold-btn').first().click();
+      if (act === 'undo' && await page.locator('#toast [data-undo]').count()) await page.click('#toast [data-undo]');
+      await page.waitForTimeout(150);
+      assert.deepEqual(await rowsOf(), await expectedRows(), act + ' 뒤 줄이 새로 그린 결과와 다름');
+    }
+  });
+
+  await step('되돌리기 알림창은 좁은 화면에서도 한 줄 막대(다음 챕터를 가리지 않음)', async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(page.url().replace(/#.*/, '#library'));
+    await view.locator('a.book', { hasText: '묶음 점검용 책' }).click();
+    await page.waitForURL(/#book-/);
+    await page.click('[data-act="nextdone"]');
+    const box = await page.locator('#toast').boundingBox();
+    assert.ok(box.height < 72, '알림창 높이 ' + box.height);
+    assert.ok(box.width > 330, '알림창 너비 ' + box.width);
+    assert.ok(box.x >= 0 && box.x + box.width <= 390);
+    await page.click('[data-undo]');
+  });
+
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
   await ctx.close();
 } finally {
