@@ -44,8 +44,10 @@ try {
   await step("체험 버튼 없이 구글 로그인 후 시작", async () => {
     await page.locator('[data-act="login"]').waitFor();
     assert.equal(await page.locator('[data-act="trial"]').count(), 0);
+    assert.equal(await page.locator('#sync-copy').isVisible(), false);
     await page.click('[data-act="login"]');
     await view.getByText("내 서재").waitFor();
+    assert.equal(await page.locator('#sync-copy').isVisible(), false);
   });
 
   await step("준비된 책 담기", async () => {
@@ -208,8 +210,10 @@ try {
     await page.fill('#f-toc', '이 기기의 목차\n' + toc.split('\n').slice(1).join('\n'));
     await page.click('#bookForm button[type="submit"]');
     await page.locator('#sync[data-state="error"]').waitFor();
+    assert.equal(await page.locator('#sync-copy').isVisible(), true);
     await page.click('#sync-copy');
     await page.locator('#sync[data-state="saved"]').waitFor();
+    assert.equal(await page.locator('#sync-copy').isVisible(), false);
     const result = await page.evaluate(id => {
       const docs = JSON.parse(localStorage.getItem('e2e-books'));
       return { original:docs[id].chapters[0].t, copies:Object.entries(docs).filter(([k])=>k!==id).map(([,b])=>b.chapters[0].t) };
