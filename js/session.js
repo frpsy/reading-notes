@@ -1,11 +1,11 @@
 // 로그인 상태와 저장소 실시간 목록을 연결합니다.
-import * as store from "./store.js?v=37";
-import { state } from "./state.js?v=37";
-import { render } from "./bus.js?v=37";
-import { setSync, hasPending, restorePending, flush } from "./sync.js?v=37";
-import { hideToast, showNotice } from "./undo.js?v=37";
-import { currentRoute } from "./router.js?v=37";
-import { normalizeBook, friendlyError } from "./core.js?v=37";
+import * as store from "./store.js?v=38";
+import { state } from "./state.js?v=38";
+import { render } from "./bus.js?v=38";
+import { setSync, hasPending, restorePending, flush, RECENT_MS } from "./sync.js?v=38";
+import { hideToast, showNotice } from "./undo.js?v=38";
+import { currentRoute } from "./router.js?v=38";
+import { normalizeBook, friendlyError } from "./core.js?v=38";
 
 function markReady() {
   if (state.ready) return;
@@ -19,19 +19,38 @@ function resetSaving() {
   clearTimeout(state.flushTimer); state.flushTimer = null; state.activeKey = null;
   clearTimeout(state.retryTimer); state.retryTimer = null; state.retryCount = 0;
   clearTimeout(state.readyTimer); state.readyTimer = null;
-  state.books.clear(); state.lastJson.clear();
+  state.books.clear(); state.lastJson.clear(); state.recent.clear();
+}
+// 저장 직후에는 서버가 이전 내용을 먼저 보내는 경우가 있어, 그대로 반영하면 화면이 '체크 → 해제 → 체크'로 두 번 뒤집힙니다.
+// 방금 저장·삭제한 책은 일정 시간 동안 더 오래된 응답을 무시하고, 그 시간이 지난 뒤 한 번 다시 받아 최신으로 맞춥니다.
+var recheckTimer = null;
+function isRecent(id) {
+  var r = state.recent.get(id);
+  if (!r) return null;
+  if (Date.now() - r.t > RECENT_MS) { state.recent.delete(id); return null; }
+  return r;
+}
+function recheckLater() {
+  clearTimeout(recheckTimer);
+  var epoch = state.epoch;
+  recheckTimer = setTimeout(function () { if (epoch === state.epoch) store.refresh().catch(function () {}); }, RECENT_MS + 300);
 }
 function onSnap(list, meta) {
   var changed = false, seen = new Set();
   list.forEach(function (raw) {
     var id = raw.id; seen.add(id);
     if (hasPending(id)) return;
+    var rec = isRecent(id), local = state.books.get(id);
+    if (rec && (rec.deleted || (local && (raw.updatedAt || 0) < (local.updatedAt || 0)))) { recheckLater(); return; }
     var b = normalizeBook(raw); b.id = id;
     var j = JSON.stringify(b);
     if (state.lastJson.get(id) !== j) { state.books.set(id, b); state.lastJson.set(id, j); changed = true; }
   });
   Array.from(state.books.keys()).forEach(function (id) {
-    if (!seen.has(id) && !hasPending(id)) { state.books.delete(id); state.lastJson.delete(id); changed = true; }
+    if (!seen.has(id) && !hasPending(id)) {
+      if (isRecent(id)) { recheckLater(); return; } // 방금 만든 책이 오래된 응답에 없다고 사라지지 않게
+      state.books.delete(id); state.lastJson.delete(id); changed = true;
+    }
   });
   if (!state.ready) {
     if (meta && meta.fromCache && meta.empty) { if (!state.readyTimer) state.readyTimer = setTimeout(markReady, 1200); return; }

@@ -1,20 +1,20 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=37";
-import { state } from "./state.js?v=37";
-import { setRenderer, render } from "./bus.js?v=37";
-import { initPrefs, saveFolded } from "./prefs.js?v=37";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=37";
-import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=37";
-import { onAuth } from "./session.js?v=37";
-import { currentRoute } from "./router.js?v=37";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=37";
-import { loginView, loadingView } from "./view-common.js?v=37";
-import { libraryView } from "./view-library.js?v=37";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=37";
-import { yearView } from "./view-year.js?v=37";
-import { patchView, resetPatch } from "./patch.js?v=37";
-import { formView, bindForm } from "./view-form.js?v=37";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=37";
+import * as store from "./store.js?v=38";
+import { state } from "./state.js?v=38";
+import { setRenderer, render } from "./bus.js?v=38";
+import { initPrefs, saveFolded } from "./prefs.js?v=38";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=38";
+import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=38";
+import { onAuth } from "./session.js?v=38";
+import { currentRoute } from "./router.js?v=38";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=38";
+import { loginView, loadingView } from "./view-common.js?v=38";
+import { libraryView } from "./view-library.js?v=38";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=38";
+import { yearView } from "./view-year.js?v=38";
+import { patchView, resetPatch } from "./patch.js?v=38";
+import { formView, bindForm } from "./view-form.js?v=38";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=38";
 
 var view = document.getElementById("view");
 
