@@ -3,7 +3,7 @@
 - 빌드 단계 없는 정적 사이트(바닐라 JS ES 모듈). 외부 라이브러리는 Firebase SDK(gstatic CDN)와 구글 폰트만 씁니다.
 - 순수 로직은 `js/core.js`, 검증은 `tests/core.test.js`.
 - 화면 코드는 기능별 모듈로 나뉩니다. `js/app.js` 는 진입점(그리기·이벤트 연결)만 맡고, 전역 상태는 `js/state.js` 의 `state` 객체 하나에만 둡니다. 다른 모듈은 `state.` 으로 읽고 바꿉니다.
-  - `bus.js`(다시 그리기 연결), `sync.js`(저장), `undo.js`(되돌리기), `session.js`(로그인·실시간 목록), `prefs.js`(테마·접기), `router.js`(해시 주소), `catalog.js`(준비된 책), `util.js`(작은 도우미)
+  - `bus.js`(다시 그리기 연결), `sync.js`(저장), `undo.js`(되돌리기), `session.js`(로그인·실시간 목록), `prefs.js`(테마·접기), `router.js`(해시 주소 `#/<앱>/<화면>`, 예전 주소는 자동 전환), `apps.js`(앱 목록·아래 탭 바), `catalog.js`(준비된 책), `util.js`(작은 도우미)
   - 화면 조각: `view-common.js`, `view-library.js`, `view-book.js`, `view-year.js`, `view-form.js`
   - 새 모듈을 추가하면 `sw.js` 의 `SHELL` 목록에 넣고, 이 파일 모듈 목록도 함께 고칩니다. 모듈 import 의 `?v=` 는 `index.html` 의 app.js 버전과 같아야 합니다.
 - 저장소 접근은 `js/store.js` 와 `js/store-core.js` 에서만. `store-core.js` 의 `createStore` 가 컬렉션 경로·허용 계정·로컬 저장 키를 받아 씁니다. `store.js` 는 독서 앱 경로(`readingUsers`/`books`)만 정합니다. Firebase 설정(apiKey)이 비어 있으면 localStorage 체험 모드.

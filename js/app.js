@@ -1,21 +1,23 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=14";
-import { state } from "./state.js?v=14";
-import { setRenderer, render } from "./bus.js?v=14";
-import { initPrefs, saveFolded } from "./prefs.js?v=14";
-import { initUndo, mutate, hideToast } from "./undo.js?v=14";
-import { initSync, persist, removeBook } from "./sync.js?v=14";
-import { onAuth, enterApp } from "./session.js?v=14";
-import { currentRoute } from "./router.js?v=14";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=14";
-import { loginView, loadingView } from "./view-common.js?v=14";
-import { libraryView } from "./view-library.js?v=14";
-import { bookView, refreshMemos } from "./view-book.js?v=14";
-import { yearView } from "./view-year.js?v=14";
-import { formView, bindForm } from "./view-form.js?v=14";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates } from "./core.js?v=14";
+import * as store from "./store.js?v=15";
+import { state } from "./state.js?v=15";
+import { setRenderer, render } from "./bus.js?v=15";
+import { initPrefs, saveFolded } from "./prefs.js?v=15";
+import { initUndo, mutate, hideToast } from "./undo.js?v=15";
+import { initSync, persist, removeBook } from "./sync.js?v=15";
+import { onAuth, enterApp } from "./session.js?v=15";
+import { currentRoute, redirectLegacy } from "./router.js?v=15";
+import { tabBarHtml } from "./apps.js?v=15";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=15";
+import { loginView, loadingView } from "./view-common.js?v=15";
+import { libraryView } from "./view-library.js?v=15";
+import { bookView, refreshMemos } from "./view-book.js?v=15";
+import { yearView } from "./view-year.js?v=15";
+import { formView, bindForm } from "./view-form.js?v=15";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates } from "./core.js?v=15";
 
 var view = document.getElementById("view");
+var tabs = document.getElementById("tabs");
 
 function draw() {
   var ae = document.activeElement, fk = null;
@@ -23,6 +25,7 @@ function draw() {
     fk = '[data-act="' + ae.dataset.act + '"]' + (ae.dataset.i != null ? '[data-i="' + ae.dataset.i + '"]' : "");
   }
   var r = currentRoute(), html;
+  tabs.innerHTML = tabBarHtml(r.app);
   if (state.phase === "boot") html = loadingView();
   else if (state.phase !== "app") html = loginView();
   else if (!state.ready) html = loadingView();
@@ -42,7 +45,7 @@ function draw() {
 }
 setRenderer(draw);
 
-window.addEventListener("hashchange", function () { state.ui.confirmDel = null; hideToast(); render(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", function () { if (redirectLegacy()) return; state.ui.confirmDel = null; hideToast(); render(); window.scrollTo(0, 0); });
 
 /* ---------- 이벤트 ---------- */
 view.addEventListener("click", function (e) {
@@ -93,7 +96,7 @@ view.addEventListener("click", function (e) {
     case "del": if (b) { state.ui.confirmDel = b.id; render(); } break;
     case "delno": state.ui.confirmDel = null; render(); break;
     case "delyes":
-      if (b) { state.ui.confirmDel = null; removeBook(b.id); location.hash = "library"; }
+      if (b) { state.ui.confirmDel = null; removeBook(b.id); location.hash = "/reading/library"; }
       break;
   }
 });
@@ -118,6 +121,7 @@ view.addEventListener("change", function (e) {
   }
 });
 
+redirectLegacy();
 initPrefs();
 initUndo();
 initSync();
