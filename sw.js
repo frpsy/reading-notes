@@ -6,6 +6,9 @@ const FB = "https://www.gstatic.com/firebasejs/10.12.2"; // js/store.js ì˜ FB ì
 const SHELL = [
   "./", "index.html", "manifest.webmanifest",
   "css/style.css", "js/app.js", "js/core.js", "js/store.js", "js/config.js",
+  "js/state.js", "js/bus.js", "js/util.js", "js/prefs.js", "js/sync.js", "js/undo.js",
+  "js/session.js", "js/router.js", "js/catalog.js", "js/view-common.js", "js/view-library.js",
+  "js/view-book.js", "js/view-year.js", "js/view-form.js",
   "icons/icon.svg", "icons/icon-192.png", "catalog/index.json",
 ];
 const SDK = ["firebase-app.js", "firebase-auth.js", "firebase-firestore.js"].map((f) => `${FB}/${f}`);
