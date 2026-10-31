@@ -338,3 +338,21 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
   .ch-tools{gap:8px;padding-top:8px}
   .ch-tools .chapter-options-body input[type=date]{font-size:16px;max-width:100%;height:44px;min-height:44px}
 }
+
+/* ---------- 메모 입력 경험 ---------- */
+.memo-row{scroll-margin-top:110px;scroll-margin-bottom:24px}
+.memo-row textarea{min-height:132px;max-height:60vh;line-height:1.7;border-color:var(--accent);overflow-y:auto}
+.memo-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px}
+.memo-meta{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:12px;color:var(--muted)}
+.memo-count{font-family:var(--mono)}
+.memo-done{min-height:44px;min-width:96px;flex:none}
+.memo-tap{display:block;width:100%;margin:0;padding:6px 0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:text;-webkit-tap-highlight-color:transparent}
+.memo-tap:active{background:var(--surface-2)}
+.memo-tap .memo-text{margin:0}
+@media (pointer:coarse){
+  .ch-tools>.memo-btn{min-height:44px;min-width:64px}
+}
+@media(max-width:600px){
+  .memo-row{padding-right:10px}
+  .memo-foot{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+}
