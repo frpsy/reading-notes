@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=19";
-import { esc, fmt, ago } from "./util.js?v=19";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=19";
-import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=19";
+import { state } from "./state.js?v=20";
+import { esc, fmt, ago } from "./util.js?v=20";
+import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=20";
+import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=20";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -52,6 +52,21 @@ function chartSvg(b, m) {
   return s + "</svg>";
 }
 
+// 긴 메모는 앞 160자를 미리 보여주고 원문은 펼쳐 읽습니다.
+function longMemo(text) { return Array.from(text || '').length > 160 || (text || '').split(/\r?\n/).length > 3; }
+function memoExcerpt(text) {
+  var chars = Array.from(text || '');
+  return chars.slice(0, 160).join('').replace(/\s+/g, ' ').trim() + (chars.length > 160 ? '…' : '');
+}
+function memoPreview(text, index) {
+  if (!longMemo(text)) return '<p class="memo-text">' + esc(text) + '</p>';
+  var excerpt = memoExcerpt(text);
+  return '<details class="memo-preview" data-memo-index="' + index + '"><summary><span class="memo-excerpt">' + esc(excerpt) + '</span><span class="memo-expand">전체 보기</span><span class="memo-collapse">접기</span></summary><p class="memo-text">' + esc(text) + '</p></details>';
+}
+function noteEditor(note) {
+  return '<details class="note-editor"' + (longMemo(note) ? '' : ' open') + '><summary><span class="memo-excerpt">' + esc(note ? memoExcerpt(note) : '독서 메모') + '</span><span class="memo-expand">전체 보기 · 수정</span><span class="memo-collapse">접기</span></summary><label class="fld" style="margin-top:12px"><span>전체 느낌, 남기고 싶은 문장</span><textarea maxlength="20000" id="d-note" data-act="note">' + esc(note || '') + '</textarea></label></details>';
+}
+
 function chaptersHtml(b, m) {
   var ui = state.ui;
   var ch = b.chapters, nextLeaf = m.status === 'done' ? -1 : m.leafIdx.find(function (i) { return !ch[i].done });
@@ -72,7 +87,7 @@ function chaptersHtml(b, m) {
       var key = b.id + ':' + i, open = ui.openMemo.has(key);
       out += '<li class="ch leaf' + (c.done ? ' done' : '') + '" style="--lv:' + c.lv + '"><button type="button" class="chk" role="checkbox" aria-checked="' + (c.done ? 'true' : 'false') + '" data-act="toggle" data-i="' + i + '" aria-label="' + esc(c.t) + ' 완료 표시">' + (c.done ? CHECK : '') + '</button>' +
         '<div class="ch-main"><span class="ch-title">' + esc(c.t) + (i === nextLeaf ? ' <span class="chip reading">다음</span>' : '') + '</span>' + page +
-        (c.memo && !open ? '<span class="ch-memo">' + esc(c.memo) + '</span>' : '') + '</div>' +
+        (c.memo && !open ? '<div class="ch-memo">' + memoPreview(c.memo, i) + '</div>' : '') + '</div>' +
         '<div class="ch-tools">' + (c.done ? '<input type="date" data-act="chdate" data-i="' + i + '" value="' + esc(c.done) + '" aria-label="' + esc(c.t) + ' 완료일">' : '') +
         (!c.done && nextLeaf >= 0 && i > nextLeaf ? '<button type="button" class="memo-btn" data-act="upto" data-i="' + i + '">여기까지 읽음</button>' : '') +
         '<button type="button" class="memo-btn' + (open ? ' save' : (c.memo ? ' has' : '')) + '" data-act="memo" data-i="' + i + '" aria-expanded="' + open + '">' + (open ? '메모 저장' : '메모') + '</button></div></li>';
@@ -87,7 +102,7 @@ function memosHtml(b) {
   var list = memosOf(b);
   if (!list.length) return '';
   return '<details class="panel memos"><summary>챕터 메모 모아보기 <em>' + list.length + '</em></summary><ul>' + list.map(function (x) {
-    return '<li><div class="memo-h"><b>' + esc(x.t) + '</b>' + (x.done ? '<span class="mono">' + esc(fmt(x.done)) + '</span>' : '') + '</div><p>' + esc(x.memo) + '</p></li>';
+    return '<li><div class="memo-h"><b>' + esc(x.t) + '</b>' + (x.done ? '<span class="mono">' + esc(fmt(x.done)) + '</span>' : '') + '</div>' + memoPreview(x.memo, x.i) + '</li>';
   }).join('') + '</ul></details>';
 }
 
@@ -95,8 +110,10 @@ function memosHtml(b) {
 export function refreshMemos(b) {
   var box = document.getElementById('memos-box'); if (!box) return;
   var d = box.querySelector('details'), open = d && d.open;
+  var expanded = Array.from(box.querySelectorAll('.memo-preview[open]')).map(function (el) { return el.dataset.memoIndex; });
   box.innerHTML = memosHtml(b);
   if (open && (d = box.querySelector('details'))) d.open = true;
+  box.querySelectorAll('.memo-preview').forEach(function (el) { el.open = expanded.includes(el.dataset.memoIndex); });
 }
 
 export function bookView(id) {
@@ -137,6 +154,6 @@ export function bookView(id) {
     chaptersHtml(b, m) + '<div id="memos-box">' + memosHtml(b) + '</div>' +
     '<div class="sec-h"><h2 class="sec">독서 메모</h2></div>' +
     '<div class="panel" style="margin-top:0"><div class="dates"><label class="fld"><span>평점</span><select id="d-rating" data-act="rating">' + rating + '</select></label></div>' +
-    '<label class="fld" style="margin-top:12px"><span>전체 느낌, 남기고 싶은 문장</span><textarea maxlength="20000" id="d-note" data-act="note">' + esc(b.note || '') + '</textarea></label></div>' +
+    noteEditor(b.note) + '</div>' +
     '<div style="margin-top:28px">' + del + '</div>';
 }

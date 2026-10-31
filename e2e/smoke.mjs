@@ -108,12 +108,12 @@ try {
 
   await step("메모 모아보기", async () => {
     await view.locator("a.book", { hasText: "제목 <img" }).click();
-    await page.locator("details.memos summary").click();
+    await page.locator("details.memos > summary").click();
     await page.locator("details.memos li", { hasText: "<img src=x" }).waitFor();
     await page.locator('textarea[data-act="memotext"]').fill("다시 쓴 메모");
     await page.locator('button.memo-btn.save', { hasText: "메모 저장" }).click(); // 저장하면 자동으로 닫힘
     assert.equal(await page.locator('textarea[data-act="memotext"]').count(), 0);
-    if (!(await page.locator("details.memos[open]").count())) await page.locator("details.memos summary").click(); // 다시 그리면 접힘
+    if (!(await page.locator("details.memos[open]").count())) await page.locator("details.memos > summary").click(); // 다시 그리면 접힘
     await page.locator("details.memos[open] li", { hasText: "다시 쓴 메모" }).waitFor();
     assert.equal(await page.locator("button.memo-btn", { hasText: "메모 닫기" }).count(), 0);
   });
@@ -220,6 +220,39 @@ try {
     }, id);
     assert.equal(result.original, '다른 기기의 목차');
     assert.ok(result.copies.includes('이 기기의 목차'));
+  });
+
+  await step('긴 메모 미리보기·펼치기·접기와 원문 보존', async () => {
+    const long = '🙂 긴 메모의 앞부분입니다. '.repeat(15) + '\n마지막 문장 <img src=x onerror="window.__xss=1">';
+    await page.locator('[data-act="memo"]').first().click();
+    await page.locator('textarea[data-act="memotext"]').first().fill(long);
+    await page.locator('button.memo-btn.save').first().click();
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    const preview = page.locator('.chapters .memo-preview').first();
+    assert.equal(await preview.locator('.memo-text').isVisible(), false);
+    assert.ok((await preview.locator('.memo-excerpt').innerText()).endsWith('…'));
+    await preview.locator('summary').click();
+    assert.equal(await preview.locator('.memo-text').innerText(), long);
+    await preview.locator('summary').press('Enter');
+    assert.equal(await preview.locator('.memo-text').isVisible(), false);
+    await page.locator('details.memos > summary').click();
+    const collected = page.locator('details.memos .memo-preview').first();
+    assert.equal(await collected.locator('.memo-text').isVisible(), false);
+    await collected.locator('summary').click();
+    assert.equal(await collected.locator('.memo-text').innerText(), long);
+    await page.fill('#d-note', long);
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.reload();
+    await page.locator('.note-editor').waitFor();
+    assert.equal(await page.locator('#d-note').isVisible(), false);
+    await page.locator('.note-editor > summary').click();
+    assert.equal(await page.locator('#d-note').inputValue(), long);
+    await page.locator('.note-editor > summary').click();
+    assert.equal(await page.locator('#d-note').isVisible(), false);
+    await page.setViewportSize({width:390,height:844});
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+    assert.equal(await page.evaluate(() => window.__xss), undefined);
+    assert.equal(await view.locator('img').count(), 0);
   });
 
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
