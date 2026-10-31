@@ -7,6 +7,7 @@
     "test": "node --test tests/*.test.js",
     "start": "python3 -m http.server 8080",
     "e2e": "node e2e/smoke.mjs",
-    "perf": "node e2e/perf.mjs"
+    "perf": "node e2e/perf.mjs",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-chaekgalpi \"node --test rules-test/*.test.mjs\""
   }
 }

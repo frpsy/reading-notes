@@ -1,11 +1,11 @@
 // 로그인 상태와 저장소 실시간 목록을 연결합니다.
-import * as store from "./store.js?v=23";
-import { state } from "./state.js?v=23";
-import { render } from "./bus.js?v=23";
-import { setSync, hasPending, restorePending, flush } from "./sync.js?v=23";
-import { hideToast } from "./undo.js?v=23";
-import { currentRoute } from "./router.js?v=23";
-import { normalizeBook } from "./core.js?v=23";
+import * as store from "./store.js?v=24";
+import { state } from "./state.js?v=24";
+import { render } from "./bus.js?v=24";
+import { setSync, hasPending, restorePending, flush } from "./sync.js?v=24";
+import { hideToast } from "./undo.js?v=24";
+import { currentRoute } from "./router.js?v=24";
+import { normalizeBook, friendlyError } from "./core.js?v=24";
 
 function markReady() {
   if (state.ready) return;
@@ -47,10 +47,10 @@ export async function enterApp() {
   resetSaving();
   setSync('saved');
   const epoch = state.epoch;
-  try { await restorePending(epoch); } catch (e) { if (epoch !== state.epoch) return; state.phase = 'error'; state.authMsg = e.message; render(); return; }
+  try { await restorePending(epoch); } catch (e) { if (epoch !== state.epoch) return; state.phase = 'error'; state.authMsg = friendlyError(e, '기기에 보관된 변경을 읽지 못했습니다. 새로고침해 주세요.'); render(); return; }
   if (epoch !== state.epoch) return;
   if (state.unsub) state.unsub();
-  state.unsub = store.watch(onSnap, e => { setSync('error', e.message || '기록을 불러오지 못했습니다.'); markReady(); });
+  state.unsub = store.watch(onSnap, e => { setSync('error', friendlyError(e, '기록을 불러오지 못했습니다. 연결을 확인한 뒤 상단의 상태 버튼을 눌러 다시 시도해 주세요.')); markReady(); });
   flush(); render();
 }
 

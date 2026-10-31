@@ -1,9 +1,9 @@
 // 책 추가·정보 수정 화면: 목차 붙여넣기, 미리보기, 준비된 책 불러오기.
-import { state } from "./state.js?v=23";
-import { esc } from "./util.js?v=23";
-import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook } from "./core.js?v=23";
-import { persist } from "./sync.js?v=23";
-import { notFound } from "./view-common.js?v=23";
+import { state } from "./state.js?v=24";
+import { esc } from "./util.js?v=24";
+import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver } from "./core.js?v=24";
+import { persist } from "./sync.js?v=24";
+import { notFound } from "./view-common.js?v=24";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
@@ -35,8 +35,9 @@ export function formView(id) {
       '<label class="fld"><span>목차</span><textarea id="f-toc" spellcheck="false">' + esc(v.toc) + '</textarea></label>' +
       '<p class="hint" style="margin:-8px 0 0">한 줄에 항목 하나. 공백 두 칸 또는 탭으로 들여쓰면 하위 항목이 되고, 1.1 같은 번호도 단계로 인식합니다. 줄 끝에 "........ 123"처럼 쓰면 시작 쪽수로 인식합니다.</p>' +
       '<div class="pv" id="toc-preview" aria-live="polite"></div>' +
+      '<div class="lost-warn" id="f-lost" role="alert" hidden></div>' +
       '<p class="err" id="f-err" role="alert" hidden></p>' +
-      '<div class="form-actions"><button class="btn primary" type="submit">' + (b ? '저장' : '책 추가') + '</button><a class="btn" href="' + (b ? '#book-' + esc(b.id) : '#library') + '">취소</a></div>' +
+      '<div class="form-actions"><button class="btn primary" type="submit" id="f-submit">' + (b ? '저장' : '책 추가') + '</button><a class="btn" href="' + (b ? '#book-' + esc(b.id) : '#library') + '">취소</a></div>' +
     '</form>';
 }
 
@@ -63,9 +64,12 @@ export function bindForm(id) {
       }).catch(function () { showErr('목록을 불러오지 못했습니다.') });
     });
   }
-  ta.addEventListener('input', upd); upd();
   var form = document.getElementById('bookForm'), err = document.getElementById('f-err');
+  var lostBox = document.getElementById('f-lost'), submitBtn = document.getElementById('f-submit'), lostAck = null;
   function showErr(msg) { err.textContent = msg; err.hidden = false }
+  // 목차를 다시 고치면 경고 확인을 처음부터 다시 받습니다.
+  function resetLost() { lostAck = null; lostBox.hidden = true; lostBox.textContent = ''; submitBtn.textContent = id ? '저장' : '책 추가'; submitBtn.classList.remove('danger'); }
+  ta.addEventListener('input', function () { upd(); resetLost(); }); upd();
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
     var title = document.getElementById('f-title').value.trim();
@@ -76,12 +80,21 @@ export function bindForm(id) {
     var b = id ? structuredClone(state.books.get(id)) : null, isNew = !b;
     if (isNew) b = { id: newId(), createdAt: Date.now(), rating: 0, note: '', endDate: null, endAuto: false };
     else {
-      var pool = new Map();
-      b.chapters.forEach(function (c) { if (!pool.has(c.t)) pool.set(c.t, []); pool.get(c.t).push(c) });
-      items.forEach(function (it) {
-        var q = pool.get(it.t);
-        if (q && q.length) { var o = q.shift(); it.done = o.done || null; it.memo = o.memo || '' }
-      });
+      var moved = carryOver(b.chapters, items);
+      items = moved.items;
+      if (moved.lost.length) {
+        // 제목이 바뀌거나 지운 챕터의 완료일·메모는 옮길 곳이 없어 사라지므로, 저장 전에 한 번 더 확인받습니다.
+        var sig = JSON.stringify(moved.lost.map(function (x) { return x.t }));
+        if (lostAck !== sig) {
+          lostAck = sig;
+          var names = moved.lost.slice(0, 5).map(function (x) { return '<li>' + esc(x.t) + ' <span class="muted">(' + [x.done ? '완료일' : '', x.memo ? '메모' : ''].filter(Boolean).join('·') + ')</span></li>' }).join('');
+          lostBox.innerHTML = '<p><b>목차에서 사라지는 챕터 ' + moved.lost.length + '개의 기록이 함께 삭제됩니다.</b> 챕터 제목을 바꾸면 기록을 옮기지 못합니다. 기록을 남기려면 원래 제목으로 두세요.</p><ul>' + names + '</ul>' + (moved.lost.length > 5 ? '<p class="muted">외 ' + (moved.lost.length - 5) + '개</p>' : '');
+          lostBox.hidden = false; err.hidden = true;
+          submitBtn.textContent = '기록 삭제하고 저장'; submitBtn.classList.add('danger');
+          lostBox.scrollIntoView({ block: 'center' });
+          return;
+        }
+      }
     }
     b.title = title;
     b.author = document.getElementById('f-author').value.trim();

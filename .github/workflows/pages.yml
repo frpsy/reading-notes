@@ -30,9 +30,25 @@ jobs:
           npx playwright install --with-deps chromium
           npm run e2e
 
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Firestore 규칙 에뮬레이터 테스트(운영 프로젝트 미접속)
+        run: |
+          npm i --no-save firebase-tools@15.34.2 @firebase/rules-unit-testing@6.0.0 firebase@13
+          PATH="$PWD/node_modules/.bin:$PATH" npm run test:rules
+
   deploy:
     if: github.event_name != 'pull_request'
-    needs: test
+    needs: [test, rules]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

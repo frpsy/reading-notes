@@ -440,3 +440,48 @@ export function validateBook(b) {
   if (new TextEncoder().encode(JSON.stringify(b)).length > 900000) return '책의 기록이 너무 큽니다. 목차나 메모를 줄여 주세요.';
   return '';
 }
+
+/* ---------- 오류 안내 ---------- */
+// Firebase·브라우저 오류를 사용자가 대응할 수 있는 한국어 문장으로 바꿉니다. 앱이 만든 한국어 문장은 그대로 둡니다.
+const ERROR_TEXT = {
+  "permission-denied": "저장 권한이 없습니다. 로그아웃 후 다시 로그인해 주세요. 변경은 기기에 보관되어 있습니다.",
+  "unauthenticated": "로그인이 만료되었습니다. 다시 로그인해 주세요. 변경은 기기에 보관되어 있습니다.",
+  "unavailable": "서버에 연결하지 못했습니다. 연결을 확인한 뒤 상단의 상태 버튼을 눌러 다시 시도해 주세요. 변경은 기기에 보관되어 있습니다.",
+  "deadline-exceeded": "서버 응답이 늦습니다. 잠시 후 상단의 상태 버튼을 눌러 다시 시도해 주세요. 변경은 기기에 보관되어 있습니다.",
+  "resource-exhausted": "서버 사용량 한도에 걸렸습니다. 잠시 후 다시 시도해 주세요. 변경은 기기에 보관되어 있습니다.",
+  "aborted": "다른 저장과 겹쳤습니다. 상단의 상태 버튼을 눌러 다시 시도해 주세요. 변경은 기기에 보관되어 있습니다.",
+  "failed-precondition": "이 브라우저에서 저장소를 열지 못했습니다. 다른 탭을 닫고 새로고침해 주세요.",
+  "invalid-argument": "저장할 수 없는 형식입니다. 목차나 메모 길이를 확인해 주세요.",
+  "auth/popup-blocked": "로그인 창이 차단되었습니다. 브라우저의 팝업 차단을 해제한 뒤 다시 눌러 주세요.",
+  "auth/popup-closed-by-user": "로그인 창이 닫혔습니다. 다시 눌러 로그인해 주세요.",
+  "auth/cancelled-popup-request": "로그인 창이 닫혔습니다. 다시 눌러 로그인해 주세요.",
+  "auth/network-request-failed": "인터넷에 연결되어 있지 않아 로그인하지 못했습니다. 연결을 확인해 주세요.",
+  "auth/unauthorized-domain": "이 주소에서는 로그인할 수 없습니다. 관리자에게 Firebase 승인 도메인 설정을 확인해 달라고 알려 주세요.",
+  "auth/too-many-requests": "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+  "auth/user-disabled": "사용이 중지된 계정입니다.",
+  "auth/internal-error": "로그인 중 문제가 생겼습니다. 새로고침한 뒤 다시 시도해 주세요.",
+};
+export function friendlyError(e, fallback = "저장하지 못했습니다. 상단의 상태 버튼을 눌러 다시 시도해 주세요. 변경은 기기에 보관되어 있습니다.") {
+  const code = String((e && e.code) || "").replace(/^firestore\//, "");
+  if (ERROR_TEXT[code]) return ERROR_TEXT[code];
+  const msg = String((e && e.message) || "");
+  if (/[가-힣]/.test(msg)) return msg;
+  if (/offline/i.test(msg)) return ERROR_TEXT.unavailable;
+  if (/permission|insufficient/i.test(msg)) return ERROR_TEXT["permission-denied"];
+  return fallback;
+}
+
+/* ---------- 목차 수정 시 기록 이전 ---------- */
+// 같은 제목의 챕터(같은 제목이 여러 개면 순서대로)에 완료일·메모를 옮깁니다.
+// 옮길 곳이 없어 사라지는 기록은 lost 로 돌려주어 저장 전에 알릴 수 있게 합니다.
+export function carryOver(oldChapters, items) {
+  const pool = new Map();
+  (oldChapters || []).forEach((c) => { if (!pool.has(c.t)) pool.set(c.t, []); pool.get(c.t).push(c); });
+  const next = items.map((it) => {
+    const q = pool.get(it.t), o = q && q.length ? q.shift() : null;
+    return Object.assign({}, it, { done: o ? o.done || null : it.done || null, memo: o ? o.memo || "" : it.memo || "" });
+  });
+  const lost = [];
+  pool.forEach((q) => q.forEach((c) => { if (c.done || c.memo) lost.push({ t: c.t, done: c.done || null, memo: c.memo || "" }); }));
+  return { items: next, lost };
+}

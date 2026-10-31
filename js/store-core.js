@@ -67,7 +67,7 @@ export function createStore(opts) {
         onState({ state: "ready", mode: "firebase", email: u.email });
       });
     } catch (e) {
-      onState({ state: "error", message: (e && e.message) || "Firebase를 불러오지 못했습니다." });
+      onState({ state: "error", message: "로그인 기능을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해 주세요." });
     }
   }
 

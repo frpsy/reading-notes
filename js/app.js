@@ -1,19 +1,19 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=23";
-import { state } from "./state.js?v=23";
-import { setRenderer, render } from "./bus.js?v=23";
-import { initPrefs, saveFolded } from "./prefs.js?v=23";
-import { initUndo, mutate, hideToast } from "./undo.js?v=23";
-import { initSync, persist, removeBook } from "./sync.js?v=23";
-import { onAuth } from "./session.js?v=23";
-import { currentRoute } from "./router.js?v=23";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=23";
-import { loginView, loadingView } from "./view-common.js?v=23";
-import { libraryView } from "./view-library.js?v=23";
-import { bookView, refreshMemos } from "./view-book.js?v=23";
-import { yearView } from "./view-year.js?v=23";
-import { formView, bindForm } from "./view-form.js?v=23";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates } from "./core.js?v=23";
+import * as store from "./store.js?v=24";
+import { state } from "./state.js?v=24";
+import { setRenderer, render } from "./bus.js?v=24";
+import { initPrefs, saveFolded } from "./prefs.js?v=24";
+import { initUndo, mutate, hideToast } from "./undo.js?v=24";
+import { initSync, persist, removeBook } from "./sync.js?v=24";
+import { onAuth } from "./session.js?v=24";
+import { currentRoute } from "./router.js?v=24";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=24";
+import { loginView, loadingView } from "./view-common.js?v=24";
+import { libraryView } from "./view-library.js?v=24";
+import { bookView, refreshMemos } from "./view-book.js?v=24";
+import { yearView } from "./view-year.js?v=24";
+import { formView, bindForm } from "./view-form.js?v=24";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=24";
 
 var view = document.getElementById("view");
 
@@ -63,7 +63,7 @@ view.addEventListener("click", function (e) {
     case "login":
       state.authMsg = "";
       store.signIn().catch(function (err) {
-        state.phase = "error"; state.authMsg = (err && err.code === "auth/popup-closed-by-user") ? "로그인 창이 닫혔습니다." : ((err && err.message) || "로그인하지 못했습니다.");
+        state.phase = "error"; state.authMsg = friendlyError(err, "로그인하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         render();
       });
       break;
@@ -130,15 +130,14 @@ view.addEventListener("input", function (e) {
   if (act !== 'note' && act !== 'memotext') return;
   var r = currentRoute(), b = r.name === 'book' ? state.books.get(r.id) : null;
   if (!b) return;
-  if (act === 'note') b.note = el.value;
-  else {
-    b.chapters[+el.dataset.i].memo = el.value.trim(); refreshMemos(b);
-    growMemo(el);
-    var row = el.closest('.memo-row'), cnt = row && row.querySelector('[data-memo-count]'), sv = row && row.querySelector('[data-memo-saved]');
-    if (cnt) cnt.textContent = Array.from(el.value).length + '/2000';
-    if (sv) sv.textContent = '기기에 저장됨';
-  }
-  persist(b);
+  if (act === 'note') { b.note = el.value; persist(b); return; }
+  b.chapters[+el.dataset.i].memo = el.value.trim(); refreshMemos(b);
+  growMemo(el);
+  // 문구는 실제 기기 보관 결과를 따릅니다. 서버 저장 여부는 상단 상태 표시가 알려 줍니다.
+  var kept = persist(b);
+  var row = el.closest('.memo-row'), cnt = row && row.querySelector('[data-memo-count]'), sv = row && row.querySelector('[data-memo-saved]');
+  if (cnt) cnt.textContent = Array.from(el.value).length + '/2000';
+  if (sv) { sv.textContent = kept ? '기기에 보관됨' : '보관하지 못했습니다 · 상단 안내를 확인해 주세요'; sv.classList.toggle('bad', !kept); }
 });
 view.addEventListener("change", function (e) {
   var el = e.target, act = el.dataset && el.dataset.act;

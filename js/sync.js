@@ -1,8 +1,8 @@
 // 로그인 계정의 변경을 즉시 기기에 보관한 뒤 서버로 전송합니다.
-import * as store from "./store.js?v=23";
-import { state } from "./state.js?v=23";
-import { validateBook, newId } from "./core.js?v=23";
-import { render } from "./bus.js?v=23";
+import * as store from "./store.js?v=24";
+import { state } from "./state.js?v=24";
+import { validateBook, newId, friendlyError } from "./core.js?v=24";
+import { render } from "./bus.js?v=24";
 const TEXT = { pending: '연결 중…', saved: '저장됨', saving: '저장 중…', error: '저장 실패 · 다시 시도', offline: '오프라인 · 기기에 보관 중' };
 let sequence = 0;
 export function setSync(s, msg = '') {
@@ -57,7 +57,7 @@ export async function flush() {
         if (epoch !== state.epoch) return;
         blocked.add(record.id);
         if (e && e.code === 'sync-conflict') state.conflicts.add(record.id);
-        setSync('error', (e && e.message) || '저장하지 못했습니다. 다시 시도해 주세요.');
+        setSync('error', friendlyError(e));
       } finally {
         if (epoch === state.epoch) state.activeKey = null;
       }
@@ -67,7 +67,7 @@ export async function flush() {
       state.flushing = false;
       if (!state.pending.size) {
         setSync('saved');
-        store.refresh().catch(e => { if (epoch === state.epoch) setSync('error', e.message); });
+        store.refresh().catch(e => { if (epoch === state.epoch) setSync('error', friendlyError(e, '기록을 불러오지 못했습니다. 연결을 확인한 뒤 상단의 상태 버튼을 눌러 다시 시도해 주세요.')); });
       }
     }
   }
@@ -95,7 +95,7 @@ export function initSync() {
       state.books.set(copy.id, copy);
       try {
         for (const record of [...state.pending.values()]) if (record.id === id) { store.discardPending(record); state.pending.delete(record.key); }
-      } catch (e) { setSync('error', e.message); return; }
+      } catch (e) { setSync('error', friendlyError(e)); return; }
       state.conflicts.delete(id); state.books.delete(id); state.lastJson.delete(id);
       location.hash = 'book-' + copy.id;
     }
@@ -107,7 +107,7 @@ export function initSync() {
       if (state.pending.size) flush();
       else {
         const epoch = state.epoch;
-        store.refresh().then(() => { if (epoch === state.epoch) setSync('saved'); }).catch(e => { if (epoch === state.epoch) setSync('error', e.message); });
+        store.refresh().then(() => { if (epoch === state.epoch) setSync('saved'); }).catch(e => { if (epoch === state.epoch) setSync('error', friendlyError(e, '기록을 불러오지 못했습니다. 연결을 확인한 뒤 상단의 상태 버튼을 눌러 다시 시도해 주세요.')); });
       }
     }
   });
