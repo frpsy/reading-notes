@@ -1,20 +1,20 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=31";
-import { state } from "./state.js?v=31";
-import { setRenderer, render } from "./bus.js?v=31";
-import { initPrefs, saveFolded } from "./prefs.js?v=31";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=31";
-import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=31";
-import { onAuth } from "./session.js?v=31";
-import { currentRoute } from "./router.js?v=31";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=31";
-import { loginView, loadingView } from "./view-common.js?v=31";
-import { libraryView } from "./view-library.js?v=31";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=31";
-import { yearView } from "./view-year.js?v=31";
-import { patchView, resetPatch } from "./patch.js?v=31";
-import { formView, bindForm } from "./view-form.js?v=31";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=31";
+import * as store from "./store.js?v=32";
+import { state } from "./state.js?v=32";
+import { setRenderer, render } from "./bus.js?v=32";
+import { initPrefs, saveFolded } from "./prefs.js?v=32";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=32";
+import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=32";
+import { onAuth } from "./session.js?v=32";
+import { currentRoute } from "./router.js?v=32";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=32";
+import { loginView, loadingView } from "./view-common.js?v=32";
+import { libraryView } from "./view-library.js?v=32";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=32";
+import { yearView } from "./view-year.js?v=32";
+import { patchView, resetPatch } from "./patch.js?v=32";
+import { formView, bindForm } from "./view-form.js?v=32";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=32";
 
 var view = document.getElementById("view");
 
@@ -86,7 +86,7 @@ document.addEventListener('click', function (e) {
   view.querySelectorAll('.book-menu[open], .chapter-options[open]').forEach(function (menu) { if (!menu.contains(e.target)) menu.open = false; });
 });
 view.addEventListener('keydown', function (e) {
-  var menu = e.target.closest('.book-menu[open]');
+  var menu = e.target.closest('.book-menu[open], .chapter-options[open]');
   if (e.key === 'Escape' && menu) { menu.open = false; menu.querySelector('summary').focus(); }
 });
 view.addEventListener("click", function (e) {

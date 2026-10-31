@@ -41,6 +41,15 @@ try {
   await page.goto(base);
   const view = page.locator("#view");
 
+  await step('로그인 화면: 작은 모바일과 확대 화면에서 가로 넘침 없음', async () => {
+    await page.locator('[data-act="login"]').waitFor();
+    for (const width of [320, 390, 768, 1280]) {
+      await page.setViewportSize({width, height:844});
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+      assert.ok((await page.locator('[data-act="login"]').boundingBox()).height >= 44);
+    }
+  });
+
   await step("로그인 실패는 한국어로 안내", async () => {
     await page.locator('[data-act="login"]').waitFor();
     await page.evaluate(() => { window.__loginFail = 'auth/popup-blocked'; });
@@ -111,7 +120,8 @@ try {
     await options.locator('input[type=date]').fill('2026-10-30');
     await options.locator('input[type=date]').press('Tab');
     assert.equal(await page.locator('.chapter-options').first().getAttribute('open'), '');
-    await page.locator('.chapter-options').first().locator('summary').click();
+    await page.locator('.chapter-options').first().locator('summary').press('Escape');
+    assert.equal(await page.locator('.chapter-options').first().getAttribute('open'), null);
     await page.locator('.book-insights > summary').click();
     assert.equal(await page.locator('#d-start').isVisible(), true);
     await page.locator('.book-insights > summary').click();

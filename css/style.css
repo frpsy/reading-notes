@@ -1,9 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&family=Noto+Serif+KR:wght@600;700&display=swap");
 /* Layout: 한 열 앱. 서재(읽는 책 우선) → 책 상세(이어 읽기·챕터·메모·접힌 통계) → 책 추가/수정 폼. */
 :root{
-  --bg:#EBEFF0; --surface:#F7F9F9; --surface-2:#E1E8E9; --line:#CBD5D7;
+  --bg:#F7F6F2; --surface:#FFFFFF; --surface-2:#EDEFE8; --line:#D8DDD3;
   --ink:#15201F; --muted:#465859;
-  --accent:#3347A6; --accent-ink:#FFFFFF; --accent-soft:#D9DEF3;
+  --accent:#28594B; --accent-ink:#FFFFFF; --accent-soft:#E1ECE4;
   --ok:#1B7A53; --ok-soft:#D2EADD; --warn:#8F5400; --warn-soft:#F4E3C2; --danger:#B3261E;
   --serif:"Noto Serif KR","Nanum Myeongjo",serif;
   --sans:"IBM Plex Sans KR","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
@@ -13,7 +13,7 @@
   :root:not([data-theme="light"]){
     --bg:#101617; --surface:#182021; --surface-2:#202A2C; --line:#2C393B;
     --ink:#E5EBEB; --muted:#AAB9BB;
-    --accent:#8D9FF0; --accent-ink:#0E1330; --accent-soft:#222C55;
+    --accent:#9BD1B7; --accent-ink:#102B20; --accent-soft:#213D31;
     --ok:#5CC796; --ok-soft:#173B2C; --warn:#E3B05A; --warn-soft:#3A2D14; --danger:#F08A82;
     color-scheme:dark;
   }
@@ -21,7 +21,7 @@
 :root[data-theme="dark"]{
   --bg:#101617; --surface:#182021; --surface-2:#202A2C; --line:#2C393B;
   --ink:#E5EBEB; --muted:#AAB9BB;
-  --accent:#8D9FF0; --accent-ink:#0E1330; --accent-soft:#222C55;
+  --accent:#9BD1B7; --accent-ink:#102B20; --accent-soft:#213D31;
   --ok:#5CC796; --ok-soft:#173B2C; --warn:#E3B05A; --warn-soft:#3A2D14; --danger:#F08A82;
   color-scheme:dark;
 }
@@ -410,3 +410,64 @@ input,select,textarea{border-color:var(--field)}
 .memo-btns{display:flex;align-items:center;gap:6px;flex:none}
 .memo-del{min-height:40px;padding:0 12px;border:0;border-radius:8px;background:none;color:var(--danger);font:600 14px var(--sans);cursor:pointer;-webkit-tap-highlight-color:transparent}
 .memo-del:hover,.memo-del:active{background:color-mix(in srgb,var(--danger) 12%,transparent)}
+
+
+/* 편안한 서재 · 작은 화면에서도 체크와 입력이 우선입니다. */
+html{scroll-padding-top:24px}
+button,a,input,select,textarea,summary{touch-action:manipulation}
+.btn,.btn.sm,.tab,.tbtn,.sync{min-height:44px}
+.btn{border-radius:12px;line-height:1.4}
+.top{padding-bottom:18px;margin-bottom:28px}
+.book{padding:20px 10px;border-radius:10px;transition:background .15s}
+.book-sub,.book-meta,.head .by{overflow-wrap:anywhere}
+.back{min-height:44px;display:inline-flex;align-items:center}
+.login{max-width:720px;margin:clamp(32px,7vh,72px) auto 0;gap:22px}
+.login-intro{max-width:480px}
+.login .eyebrow{font-size:12px;letter-spacing:.16em;color:var(--accent);font-weight:600;margin-bottom:16px}
+.login h1{font-size:clamp(28px,5vw,40px);line-height:1.5;letter-spacing:-.04em;text-wrap:balance}
+.login-intro .muted{margin-top:16px;line-height:1.8}
+.login .btn{min-height:52px;max-width:440px}
+.login-caption{font-size:13px;color:var(--muted)}
+.login-preview{border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:24px;margin-top:8px;box-shadow:0 12px 32px rgba(28,48,34,.04)}
+.preview-label{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;margin-bottom:18px}
+.preview-book{display:flex;align-items:center;gap:18px}
+.preview-cover{width:58px;height:80px;flex:none;border-radius:3px 8px 8px 3px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:600 24px var(--serif);box-shadow:inset 5px 0 rgba(0,0,0,.12)}
+.preview-body{min-width:0;flex:1}.preview-body strong{font:600 18px/1.5 var(--serif)}
+.preview-body p{font-size:13px;color:var(--muted);margin-top:6px}
+.preview-track{height:6px;border-radius:8px;background:var(--surface-2);margin-top:12px}
+.preview-track span{display:block;width:40%;height:100%;border-radius:8px;background:var(--accent)}
+.preview-chapter{display:flex;gap:12px;align-items:center;border-top:1px solid var(--line);padding-top:16px;margin-top:20px;font-size:14px}
+.preview-check{color:var(--accent);background:var(--accent-soft);border-radius:7px;width:28px;height:28px;display:grid;place-items:center;flex:none}
+.preview-note{font-size:13px;color:var(--muted);padding-left:40px;margin-top:6px!important}
+.ch-hit{min-height:44px}
+.fold-btn,.chapter-options>summary{width:44px;height:44px}
+.ch{grid-template-columns:32px minmax(0,1fr) 44px}
+.chk{margin-top:6px}
+.chk::after{inset:-6px}
+.chapter-options-body{top:48px;max-height:65dvh;overflow-y:auto;overscroll-behavior:contain}
+.opt-btn,.opt-fld input[type=date]{min-height:44px}
+.toast-msg{white-space:normal;overflow-wrap:anywhere}
+.toast button{min-height:44px}
+@media(max-width:600px){
+  body{padding-top:max(12px,env(safe-area-inset-top,0px))}
+  .top{gap:8px;margin-bottom:22px;padding-bottom:12px}
+  .top-r{gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .tbtn,.sync{padding-left:10px;padding-right:10px}
+  .login{margin-top:28px;gap:18px}
+  .login-preview{padding:18px;border-radius:16px}
+  .login-intro .muted{font-size:15px}
+  .book{padding:18px 0;gap:6px 12px}
+  .book-title{font-size:16px}.pct{font-size:20px}
+  .head{grid-template-columns:48px minmax(0,1fr) 44px}
+  .book-menu>summary{width:44px;height:44px}
+  .panel.next{position:static;box-shadow:none}
+  .panel.next .next-title{white-space:normal}
+  .next-act{flex-wrap:wrap;justify-content:flex-end}
+  .memo-row{padding-left:calc(16px + min(var(--lv,0),4) * 12px)}
+  .memo-foot{position:static;flex-wrap:wrap}
+  .memo-btns{margin-left:auto;flex-wrap:wrap}
+  input,select,textarea,#f-toc{font-size:16px}
+  .ch{padding-left:calc(10px + min(var(--lv,0),4) * 12px);gap:0 10px}
+  .memo-btn{min-height:44px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
