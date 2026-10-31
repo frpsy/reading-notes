@@ -1,19 +1,19 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=25";
-import { state } from "./state.js?v=25";
-import { setRenderer, render } from "./bus.js?v=25";
-import { initPrefs, saveFolded } from "./prefs.js?v=25";
-import { initUndo, mutate, hideToast } from "./undo.js?v=25";
-import { initSync, persist, removeBook } from "./sync.js?v=25";
-import { onAuth } from "./session.js?v=25";
-import { currentRoute } from "./router.js?v=25";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=25";
-import { loginView, loadingView } from "./view-common.js?v=25";
-import { libraryView } from "./view-library.js?v=25";
-import { bookView, refreshMemos } from "./view-book.js?v=25";
-import { yearView } from "./view-year.js?v=25";
-import { formView, bindForm } from "./view-form.js?v=25";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=25";
+import * as store from "./store.js?v=26";
+import { state } from "./state.js?v=26";
+import { setRenderer, render } from "./bus.js?v=26";
+import { initPrefs, saveFolded } from "./prefs.js?v=26";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=26";
+import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=26";
+import { onAuth } from "./session.js?v=26";
+import { currentRoute } from "./router.js?v=26";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=26";
+import { loginView, loadingView } from "./view-common.js?v=26";
+import { libraryView } from "./view-library.js?v=26";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=26";
+import { yearView } from "./view-year.js?v=26";
+import { formView, bindForm } from "./view-form.js?v=26";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=26";
 
 var view = document.getElementById("view");
 
@@ -44,7 +44,39 @@ function draw() {
 }
 setRenderer(draw);
 
-window.addEventListener("hashchange", function () { state.ui.confirmDel = null; hideToast(); render(); window.scrollTo(0, 0); });
+// 화면별 스크롤 위치를 기억해 서재·연간 기록으로 돌아오면 보던 자리로 되돌립니다.
+var scrollPos = {}, scrollQueued = false;
+window.addEventListener("scroll", function () {
+  if (scrollQueued) return; scrollQueued = true;
+  requestAnimationFrame(function () { scrollQueued = false; scrollPos[location.hash || "#library"] = window.scrollY; });
+}, { passive: true });
+function applyJump() {
+  var j = state.ui.jump, r = currentRoute();
+  if (!j || r.name !== "book" || r.id !== j.id) return false;
+  state.ui.jump = null;
+  if (j.i < 0) { var note = document.querySelector(".note-panel"); if (note) note.scrollIntoView({ block: "start" }); return true; }
+  var b = state.books.get(j.id), changed = false;
+  if (b && state.ui.onlyRemaining && b.chapters[j.i] && b.chapters[j.i].done) { state.ui.onlyRemaining = false; changed = true; }
+  if (b && b.chapters[j.i]) {
+    // 접어 둔 묶음 안의 챕터라면 그 묶음들을 펼칩니다.
+    for (var g = j.i - 1, lv = b.chapters[j.i].lv; g >= 0 && lv > 0; g--) {
+      if (b.chapters[g].lv < lv) { lv = b.chapters[g].lv; if (state.ui.folded.delete(b.id + ":" + g)) changed = true; }
+    }
+  }
+  if (changed) { saveFolded(); render(); }
+  var li = document.getElementById("ch-" + j.i);
+  if (!li) return false;
+  li.scrollIntoView({ block: "center" });
+  li.classList.add("flash"); setTimeout(function () { li.classList.remove("flash"); }, 1600);
+  var pv = li.querySelector(".memo-preview"); if (pv) pv.open = true;
+  return true;
+}
+window.addEventListener("hashchange", function () {
+  state.ui.confirmDel = null; hideToast(); render();
+  if (applyJump()) return;
+  var r = currentRoute(), keep = r.name === "library" || r.name === "year";
+  window.scrollTo(0, keep ? (scrollPos[location.hash || "#library"] || 0) : 0);
+});
 
 /* ---------- 이벤트 ---------- */
 document.addEventListener('click', function (e) {
@@ -97,18 +129,33 @@ view.addEventListener("click", function (e) {
           var ta0 = view.querySelector('textarea[data-act="memotext"][data-i="' + el.dataset.i + '"]'), ch0 = b.chapters[+el.dataset.i];
           if (ta0 && (ch0.memo || "") !== ta0.value.trim()) { ch0.memo = ta0.value.trim(); persist(b); }
           state.ui.openMemo.delete(k);
-        } else state.ui.openMemo.add(k);
+          var orig = state.ui.memoOrig.get(k) || ""; state.ui.memoOrig.delete(k);
+          if (orig && !ch0.memo) {
+            // 메모를 모두 지우면 바로 저장되므로, 잠시 되돌릴 기회를 줍니다.
+            var mi = +el.dataset.i, bid = b.id;
+            offerUndo("메모를 지웠습니다", function () {
+              var bb = state.books.get(bid); if (!bb || !bb.chapters[mi] || bb.chapters[mi].memo) return;
+              bb.chapters[mi].memo = orig; persist(bb); render();
+            });
+          }
+        } else { state.ui.openMemo.add(k); state.ui.memoOrig.set(k, b.chapters[+el.dataset.i].memo || ""); }
         render();
         if (state.ui.openMemo.has(k)) {
           var ta = view.querySelector('textarea[data-act="memotext"][data-i="' + el.dataset.i + '"]');
           if (ta) {
-            growMemo(ta); ta.focus();
+            growMemo(ta, true); ta.focus();
             ta.setSelectionRange(ta.value.length, ta.value.length);
             // 키보드가 올라온 뒤에도 입력란이 보이도록 화면 가운데로
             setTimeout(function () { if (document.activeElement === ta) ta.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 300);
           }
         }
       }
+      break;
+    case "jump":
+      // 메모 검색 결과·이어 읽기 '위치': 해당 책을 열고 그 챕터로 스크롤합니다(주소는 책 화면 그대로).
+      e.preventDefault();
+      state.ui.jump = { id: el.dataset.id, i: +el.dataset.i };
+      if (location.hash !== "#book-" + el.dataset.id) location.hash = "book-" + el.dataset.id; else applyJump();
       break;
     case "filter": state.ui.filter = el.dataset.v; render(); break;
     case "remaining": state.ui.onlyRemaining = !state.ui.onlyRemaining; render(); break;
@@ -120,7 +167,12 @@ view.addEventListener("click", function (e) {
   }
 });
 // 메모 입력란은 글 길이에 맞게 늘어난다(화면 높이의 60%까지)
-function growMemo(ta) {
+function growMemo(ta, force) {
+  // 글이 넘칠 때만 늘립니다(입력마다 높이를 다시 재면 큰 책에서 느려짐). 열 때와 글이 크게 줄었을 때만 다시 잽니다.
+  var len = ta.value.length, last = +(ta.dataset.len || 0);
+  ta.dataset.len = len;
+  if (!force && len >= last && ta.scrollHeight <= ta.clientHeight) return;
+  if (!force && len < last && last - len < 200) return;
   ta.style.height = 'auto';
   ta.style.height = Math.min(ta.scrollHeight + 2, Math.round(window.innerHeight * 0.6)) + 'px';
 }
@@ -137,8 +189,15 @@ view.addEventListener("input", function (e) {
   var kept = persist(b);
   var row = el.closest('.memo-row'), cnt = row && row.querySelector('[data-memo-count]'), sv = row && row.querySelector('[data-memo-saved]');
   if (cnt) cnt.textContent = Array.from(el.value).length + '/2000';
-  if (sv) { sv.textContent = kept ? '기기에 보관됨' : '보관하지 못했습니다 · 상단 안내를 확인해 주세요'; sv.classList.toggle('bad', !kept); }
+  if (sv) { sv.dataset.touched = '1'; sv.classList.toggle('bad', !kept); sv.textContent = kept ? memoStatusText(document.getElementById('sync').dataset.state) : '보관하지 못했습니다 · 상단 안내를 확인해 주세요'; }
 });
+// 접힌 목록(메모 모아보기)은 펼칠 때 채웁니다. toggle 은 버블링되지 않아 캡처로 받습니다.
+view.addEventListener("toggle", function (e) {
+  var d = e.target;
+  if (!d.open || !d.matches || !d.matches("details.memos[data-lazy]")) return;
+  var r = currentRoute(), b = r.name === "book" ? state.books.get(r.id) : null;
+  if (b) fillMemos(d, b);
+}, true);
 view.addEventListener("change", function (e) {
   var el = e.target, act = el.dataset && el.dataset.act;
   if (!act) return;

@@ -1,6 +1,6 @@
 // 여러 화면이 함께 쓰는 조각(표지, 칩, 로그인 화면 등)입니다.
-import { state } from "./state.js?v=25";
-import { esc, hue } from "./util.js?v=25";
+import { state } from "./state.js?v=26";
+import { esc, hue } from "./util.js?v=26";
 
 export var CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 export var DASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>';

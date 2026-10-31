@@ -281,13 +281,14 @@ try {
     await page.locator('.memo-btn[data-act="memo"]').first().click();
     const ta = page.locator('textarea[data-act="memotext"]').first();
     await ta.fill('보관 확인');
-    assert.equal(await page.locator('[data-memo-saved]').innerText(), '기기에 보관됨');
+    assert.match(await page.locator('[data-memo-saved]').innerText(), /기기에 보관됨|저장됨/);
     await page.evaluate(() => { window.__realSet = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k.startsWith('chaekgalpi-pending')) throw new Error('quota'); return window.__realSet.call(this, k, v); }; });
     await ta.fill('보관 실패');
     assert.match(await page.locator('[data-memo-saved]').innerText(), /보관하지 못했습니다/);
     await page.evaluate(() => { Storage.prototype.setItem = window.__realSet; });
     await ta.fill('보관 확인');
-    assert.equal(await page.locator('[data-memo-saved]').innerText(), '기기에 보관됨');
+    assert.match(await page.locator('[data-memo-saved]').innerText(), /기기에 보관됨|저장됨/);
+    await page.locator('[data-memo-saved]', { hasText: /^저장됨$/ }).waitFor(); // 서버 저장이 끝나면 '저장됨'
     await page.locator('button.memo-done').click();
     await page.locator('#sync[data-state="saved"]').waitFor();
   });
@@ -334,6 +335,45 @@ try {
     assert.equal(await page.locator('textarea[data-act="memotext"]').first().inputValue(), '짧은 메모');
     await page.locator('button.memo-done').click();
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+  });
+
+  await step('메모를 모두 지우면 되돌리기로 복구', async () => {
+    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    const ta = page.locator('textarea[data-act="memotext"]').first();
+    await ta.fill('지울 메모'); await page.locator('button.memo-done').click();
+    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await page.locator('textarea[data-act="memotext"]').first().fill('');
+    await page.locator('button.memo-done').click();
+    await page.locator('#toast', { hasText: '메모를 지웠습니다' }).waitFor();
+    await page.click('[data-undo]');
+    await page.locator('.memo-tap', { hasText: '지울 메모' }).waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor();
+  });
+
+  await step('서재 메모 검색 → 해당 챕터로 이동, 뒤로 가면 서재 스크롤 복원', async () => {
+    const id = page.url().split('#book-')[1];
+    await page.goto(page.url().replace(/#.*/, '#library'));
+    await page.locator('input[data-act="search"]').fill('지울');
+    await page.locator('.memo-hits a', { hasText: '지울 메모' }).click();
+    await page.waitForURL(new RegExp('#book-' + id));
+    await page.locator('.ch.flash .memo-tap', { hasText: '지울 메모' }).waitFor();
+    await page.goto(page.url().replace(/#.*/, '#library'));
+    await page.locator('input[data-act="search"]').fill('');
+    await page.evaluate(() => { document.body.style.minHeight = '3000px'; window.scrollTo(0, 400); });
+    await page.waitForTimeout(100);
+    await page.locator('a.book').first().click();
+    await page.waitForURL(/#book-/);
+    await page.goBack();
+    await page.waitForURL(/#library/);
+    await page.waitForFunction(() => Math.abs(window.scrollY - 400) < 5);
+    await page.evaluate(() => { document.body.style.minHeight = ''; });
+  });
+
+  await step('이어 읽기의 위치 버튼은 다음 챕터로 스크롤', async () => {
+    await page.locator('a.book').first().click();
+    await page.waitForURL(/#book-/);
+    await page.click('.next-act a[data-act="jump"]');
+    await page.locator('.ch.flash .chip.reading').waitFor();
   });
 
   await step('긴 메모 미리보기·펼치기·접기와 원문 보존', async () => {

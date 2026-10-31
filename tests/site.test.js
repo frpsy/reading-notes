@@ -28,3 +28,13 @@ test("Firestore 규칙의 필드 목록이 normalizeBook 과 같음", () => {
   const keys = list.split(",").map((s) => s.trim().replace(/'/g, ""));
   assert.deepEqual([...keys].sort(), Object.keys(normalizeBook({})).sort());
 });
+
+test("index.html 미리 받기(modulepreload): 앱 모듈 버전 일치, 파일 존재, SDK 버전 일치", () => {
+  const html = read("index.html");
+  const v = /js\/app\.js\?v=(\d+)/.exec(html)[1];
+  const local = [...html.matchAll(/rel="modulepreload" href="(js\/[\w-]+\.js)\?v=(\d+)"/g)];
+  assert.ok(local.length > 5);
+  for (const [, file, ver] of local) { assert.equal(ver, v, file); assert.ok(existsSync(new URL("../" + file, import.meta.url)), file); }
+  const fb = /const FB = "([^"]+)"/.exec(read("js/store.js"))[1];
+  for (const [, url] of html.matchAll(/rel="modulepreload" href="(https:[^"]+)"/g)) assert.ok(url.startsWith(fb + "/"), url);
+});
