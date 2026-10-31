@@ -3,8 +3,8 @@ import {
   escapeHtml, todayStr, dnum, fmtDate, fmtShort, agoText, newId, parseToc, tocText, parseCatalogText,
   isGroup, leavesOf, descLeaves, nextLeafIndex, activityByDate, currentStreak, longestStreak, heatmapWeeks, metrics as calcMetrics, autoDates, toggleChapter as toggle, completeThrough,
   goalInfo, chartGeometry, normalizeBook, memosOf, matchBook, yearSummary,
-} from "./core.js?v=12";
-import * as store from "./store.js?v=12";
+} from "./core.js?v=13";
+import * as store from "./store.js?v=13";
 
 var view = document.getElementById("view");
 var syncEl = document.getElementById("sync");
@@ -192,7 +192,7 @@ function onAuth(st) {
 }
 
 /* ---------- 준비된 책(catalog): Claude가 repo에 추가, 여기서 서재에 담음 ---------- */
-var catalog = [];
+var catalog = [], catalogFailed = false;
 function loadCatalog() {
   fetch("catalog/index.json").then(function (r) { return r.json(); }).then(function (list) {
     return Promise.all(list.map(function (x) {
@@ -200,11 +200,11 @@ function loadCatalog() {
         return { id: "c-" + x.file.replace(/\.txt$/, ""), c: parseCatalogText(t) };
       });
     }));
-  }).then(function (all) { catalog = all.filter(function (x) { return x.c.title && x.c.toc; }); render(); }).catch(function () {});
+  }).then(function (all) { catalog = all.filter(function (x) { return x.c.title && x.c.toc; }); catalogFailed = false; render(); }).catch(function () { catalogFailed = true; render(); });
 }
 function catalogHtml() {
   var rest = catalog.filter(function (x) { return !books.has(x.id); });
-  if (!rest.length) return "";
+  if (!rest.length) return catalogFailed ? '<div class="sec-h"><h2 class="sec">담을 수 있는 책</h2></div><p class="err" role="status">책 목록을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해 주세요.</p>' : "";
   return '<div class="sec-h"><h2 class="sec">담을 수 있는 책</h2></div><div class="books">' + rest.map(function (x) {
     return '<div class="book"><span class="cover" style="--h:' + hue(x.c.title) + '" aria-hidden="true">' + esc(x.c.title.charAt(0)) + '</span>' +
       '<span class="book-main"><span class="book-title">' + esc(x.c.title) + '</span><span class="book-sub">' + esc(x.c.author) + '</span></span>' +
@@ -535,7 +535,10 @@ function bindForm(id){
   if(cat){
     fetch('catalog/index.json').then(function(r){return r.json()}).then(function(list){
       list.forEach(function(x){var o=document.createElement('option');o.value=x.file;o.textContent=x.label;cat.appendChild(o)});
-    }).catch(function(){});
+    }).catch(function(){
+      var e=document.getElementById('f-err');
+      if(e){e.textContent='준비된 책 목록을 불러오지 못했습니다. 목차를 직접 붙여넣어 주세요.';e.hidden=false}
+    });
     cat.addEventListener('change',function(){
       if(!cat.value)return;
       fetch('catalog/'+encodeURIComponent(cat.value)).then(function(r){return r.text()}).then(function(t){

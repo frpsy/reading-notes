@@ -1,6 +1,6 @@
 // 저장소 접근은 이 파일 한 곳에서만 합니다.
 // Firebase(Firestore, 구글 로그인) 또는 localStorage(체험 모드).
-import { firebaseConfig, allowedEmails } from "./config.js?v=12";
+import { firebaseConfig, allowedEmails } from "./config.js?v=13";
 
 export const FB = "https://www.gstatic.com/firebasejs/10.12.2"; // 바꾸면 sw.js 의 FB 도 같이 바꿉니다
 const LS_KEY = "chaekgalpi-v1";
