@@ -95,6 +95,7 @@ export function createStore(opts) {
     }, e => { if (uid === user) onError(e); });
   }
 
+  const QUARANTINE = 'chaekgalpi-quarantine-v1:';
   function requireUser() { if (!uid) throw new Error('로그인이 필요합니다.'); return uid; }
   function prefix(user = requireUser()) { return 'chaekgalpi-pending-v1:' + firebaseConfig.projectId + ':' + user + ':'; }
   function writePending(record) {
@@ -108,17 +109,27 @@ export function createStore(opts) {
       const active = locks ? new Set((await locks.query()).held.map(x => x.name)) : new Set();
       if (uid !== user) return [];
       const p = prefix(user), records = [], ls = storage();
-      for (let i = 0; i < ls.length; i++) {
-        const key = ls.key(i);
-        if (!key.startsWith(p)) continue;
-        const record = JSON.parse(ls.getItem(key));
-        if (!record || !record.key || key !== p + record.key || !['save', 'delete'].includes(record.kind) || !record.id || (record.kind === 'save' && (!record.item || record.item.id !== record.id))) throw new Error('기기에 보관된 변경을 읽지 못했습니다. 저장 데이터를 지우지 말고 확인해 주세요.');
+      let quarantined = 0;
+      const keys = [];
+      for (let i = 0; i < ls.length; i++) { const k = ls.key(i); if (k && k.startsWith(p)) keys.push(k); }
+      for (const key of keys) {
+        const raw = ls.getItem(key);
+        let record = null;
+        try { record = JSON.parse(raw); } catch (e) { /* 아래에서 격리 */ }
+        if (!record || !record.key || key !== p + record.key || !['save', 'delete'].includes(record.kind) || !record.id || (record.kind === 'save' && (!record.item || record.item.id !== record.id))) {
+          // 손상된 기록 하나 때문에 앱 전체가 멈추지 않도록 원문을 별도 키로 옮겨 보존하고 나머지는 계속 처리합니다.
+          try { ls.setItem(QUARANTINE + key, raw); ls.removeItem(key); } catch (e) { /* 옮기지 못하면 원래 자리에 둡니다 */ }
+          quarantined++;
+          continue;
+        }
         if (record.owner !== owner && active.has(ownerLock(user) + record.owner)) continue;
         record.owner = owner;
         ls.setItem(key, JSON.stringify(record));
         records.push(record);
       }
-      return records.sort((a, b) => a.key.localeCompare(b.key));
+      records.sort((a, b) => a.key.localeCompare(b.key));
+      Object.defineProperty(records, 'quarantined', { value: quarantined }); // 배열 모양은 그대로 두고 격리 건수만 덧붙입니다
+      return records;
     }
     return locks ? locks.request(prefix(user), read) : read();
   }

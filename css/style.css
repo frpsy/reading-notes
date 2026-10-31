@@ -361,3 +361,4 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .lost-warn p{margin:0}
 .lost-warn ul{margin:8px 0 0;padding-left:20px}
 .lost-warn li{overflow-wrap:anywhere}
+.toast-msg.wrap{white-space:normal;overflow:visible}

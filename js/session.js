@@ -1,11 +1,11 @@
 // 로그인 상태와 저장소 실시간 목록을 연결합니다.
-import * as store from "./store.js?v=24";
-import { state } from "./state.js?v=24";
-import { render } from "./bus.js?v=24";
-import { setSync, hasPending, restorePending, flush } from "./sync.js?v=24";
-import { hideToast } from "./undo.js?v=24";
-import { currentRoute } from "./router.js?v=24";
-import { normalizeBook, friendlyError } from "./core.js?v=24";
+import * as store from "./store.js?v=25";
+import { state } from "./state.js?v=25";
+import { render } from "./bus.js?v=25";
+import { setSync, hasPending, restorePending, flush } from "./sync.js?v=25";
+import { hideToast, showNotice } from "./undo.js?v=25";
+import { currentRoute } from "./router.js?v=25";
+import { normalizeBook, friendlyError } from "./core.js?v=25";
 
 function markReady() {
   if (state.ready) return;
@@ -17,6 +17,7 @@ function markReady() {
 function resetSaving() {
   state.epoch++; state.pending.clear(); state.conflicts.clear(); state.flushing = false;
   clearTimeout(state.flushTimer); state.flushTimer = null; state.activeKey = null;
+  clearTimeout(state.retryTimer); state.retryTimer = null; state.retryCount = 0;
   clearTimeout(state.readyTimer); state.readyTimer = null;
   state.books.clear(); state.lastJson.clear();
 }
@@ -47,11 +48,13 @@ export async function enterApp() {
   resetSaving();
   setSync('saved');
   const epoch = state.epoch;
-  try { await restorePending(epoch); } catch (e) { if (epoch !== state.epoch) return; state.phase = 'error'; state.authMsg = friendlyError(e, '기기에 보관된 변경을 읽지 못했습니다. 새로고침해 주세요.'); render(); return; }
+  let quarantined = 0;
+  try { quarantined = await restorePending(epoch); } catch (e) { if (epoch !== state.epoch) return; state.phase = 'error'; state.authMsg = friendlyError(e, '기기에 보관된 변경을 읽지 못했습니다. 새로고침해 주세요.'); render(); return; }
   if (epoch !== state.epoch) return;
   if (state.unsub) state.unsub();
   state.unsub = store.watch(onSnap, e => { setSync('error', friendlyError(e, '기록을 불러오지 못했습니다. 연결을 확인한 뒤 상단의 상태 버튼을 눌러 다시 시도해 주세요.')); markReady(); });
   flush(); render();
+  if (quarantined) showNotice('읽을 수 없는 보관 기록 ' + quarantined + '건을 따로 옮겨 두었습니다. 나머지 기록은 정상입니다.');
 }
 
 export function onAuth(st) {

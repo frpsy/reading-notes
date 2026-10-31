@@ -1,19 +1,19 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=24";
-import { state } from "./state.js?v=24";
-import { setRenderer, render } from "./bus.js?v=24";
-import { initPrefs, saveFolded } from "./prefs.js?v=24";
-import { initUndo, mutate, hideToast } from "./undo.js?v=24";
-import { initSync, persist, removeBook } from "./sync.js?v=24";
-import { onAuth } from "./session.js?v=24";
-import { currentRoute } from "./router.js?v=24";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=24";
-import { loginView, loadingView } from "./view-common.js?v=24";
-import { libraryView } from "./view-library.js?v=24";
-import { bookView, refreshMemos } from "./view-book.js?v=24";
-import { yearView } from "./view-year.js?v=24";
-import { formView, bindForm } from "./view-form.js?v=24";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=24";
+import * as store from "./store.js?v=25";
+import { state } from "./state.js?v=25";
+import { setRenderer, render } from "./bus.js?v=25";
+import { initPrefs, saveFolded } from "./prefs.js?v=25";
+import { initUndo, mutate, hideToast } from "./undo.js?v=25";
+import { initSync, persist, removeBook } from "./sync.js?v=25";
+import { onAuth } from "./session.js?v=25";
+import { currentRoute } from "./router.js?v=25";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=25";
+import { loginView, loadingView } from "./view-common.js?v=25";
+import { libraryView } from "./view-library.js?v=25";
+import { bookView, refreshMemos } from "./view-book.js?v=25";
+import { yearView } from "./view-year.js?v=25";
+import { formView, bindForm } from "./view-form.js?v=25";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=25";
 
 var view = document.getElementById("view");
 

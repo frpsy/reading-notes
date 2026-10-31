@@ -209,6 +209,18 @@ try {
     assert.equal(await page.locator('#d-note').inputValue(), '오프라인에서 쓴 메모');
   });
 
+  await step('일시 오류는 한국어로 안내하고 자동으로 다시 보내 저장', async () => {
+    await page.evaluate(() => { window.__transientFailures = 1; });
+    await page.fill('#d-note', '자동 재시도 확인');
+    await page.locator('#sync[data-state="error"]').waitFor();
+    const msg = await page.locator('#sync-detail').innerText();
+    assert.match(msg, /서버에 연결하지 못했습니다.*자동으로 다시 보냅니다/);
+    assert.ok(!/client is offline/.test(msg), '영문 원문 미노출');
+    await page.locator('#sync[data-state="saved"]').waitFor({ timeout: 10000 });
+    const saved = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('e2e-books'))).some(b => b.note === '자동 재시도 확인'));
+    assert.ok(saved);
+  });
+
   await step('삭제 실패 기록을 보관하고 버튼으로 다시 삭제', async () => {
     await page.evaluate(() => { window.__failWrites = true; });
     await page.locator('.book-menu > summary').click();

@@ -29,6 +29,7 @@ export async function deleteDoc(id) {
 }
 export async function runTransaction(_, fn) {
   if (window.__failWrites) throw Error('테스트 저장 실패');
+  if (window.__transientFailures > 0) { window.__transientFailures--; throw Object.assign(Error('Failed to get document because the client is offline.'), { code: 'unavailable' }); }
   if (window.__writeDelay) await new Promise(r=>setTimeout(r,window.__writeDelay));
   return navigator.locks.request('e2e-firestore', async () => {
     const docs = read();

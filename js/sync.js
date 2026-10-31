@@ -1,10 +1,23 @@
 // 로그인 계정의 변경을 즉시 기기에 보관한 뒤 서버로 전송합니다.
-import * as store from "./store.js?v=24";
-import { state } from "./state.js?v=24";
-import { validateBook, newId, friendlyError } from "./core.js?v=24";
-import { render } from "./bus.js?v=24";
+import * as store from "./store.js?v=25";
+import { state } from "./state.js?v=25";
+import { validateBook, newId, friendlyError } from "./core.js?v=25";
+import { render } from "./bus.js?v=25";
 const TEXT = { pending: '연결 중…', saved: '저장됨', saving: '저장 중…', error: '저장 실패 · 다시 시도', offline: '오프라인 · 기기에 보관 중' };
 let sequence = 0;
+// 연결·서버 사정으로 잠시 실패한 경우만 자동으로 다시 보냅니다(권한·형식·충돌 오류는 사용자 조치가 필요하므로 제외).
+const TRANSIENT = new Set(['unavailable', 'deadline-exceeded', 'aborted', 'resource-exhausted', 'internal', 'cancelled', 'unknown']);
+export function isTransient(e) {
+  const code = String((e && e.code) || '').replace(/^firestore\//, '');
+  return TRANSIENT.has(code) || (!code && /offline|network|fetch|timeout/i.test(String((e && e.message) || '')));
+}
+export function retryDelay(n) { return Math.min(60000, 2000 * 2 ** n); }
+function scheduleRetry() {
+  clearTimeout(state.retryTimer);
+  const ms = retryDelay(state.retryCount++);
+  state.retryTimer = setTimeout(() => { state.retryTimer = null; flush(); }, ms);
+  return ms;
+}
 export function setSync(s, msg = '') {
   if (s === 'saving' && navigator.onLine === false) s = 'offline';
   const el = document.getElementById('sync');
@@ -41,6 +54,7 @@ export async function flush() {
   const epoch = state.epoch;
   state.flushing = true;
   const attempted = new Set(), blocked = new Set();
+  let retryMsg = '';
   try {
     while (epoch === state.epoch) {
       const record = [...state.pending.values()].find(x => !attempted.has(x.key) && !blocked.has(x.id));
@@ -53,10 +67,12 @@ export async function flush() {
         await store.sendPending(record);
         if (epoch !== state.epoch) return;
         state.pending.delete(record.key);
+        state.retryCount = 0;
       } catch (e) {
         if (epoch !== state.epoch) return;
         blocked.add(record.id);
         if (e && e.code === 'sync-conflict') state.conflicts.add(record.id);
+        if (isTransient(e)) retryMsg = friendlyError(e);
         setSync('error', friendlyError(e));
       } finally {
         if (epoch === state.epoch) state.activeKey = null;
@@ -65,6 +81,7 @@ export async function flush() {
   } finally {
     if (epoch === state.epoch) {
       state.flushing = false;
+      if (retryMsg && state.pending.size) setSync('error', retryMsg + ' ' + Math.round(scheduleRetry() / 1000) + '초 뒤 자동으로 다시 보냅니다.');
       if (!state.pending.size) {
         setSync('saved');
         store.refresh().catch(e => { if (epoch === state.epoch) setSync('error', friendlyError(e, '기록을 불러오지 못했습니다. 연결을 확인한 뒤 상단의 상태 버튼을 눌러 다시 시도해 주세요.')); });
@@ -81,6 +98,7 @@ export async function restorePending(epoch = state.epoch) {
     else { state.books.set(record.id, record.item); state.lastJson.set(record.id, JSON.stringify(record.item)); }
   }
   if (state.pending.size) setSync('saving');
+  return records.quarantined || 0;
 }
 export function initSync() {
   window.addEventListener('online', () => { if (state.pending.size) { setSync('saving'); flush(); } });
