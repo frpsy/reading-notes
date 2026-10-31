@@ -400,13 +400,13 @@ try {
     await page.locator('textarea[data-act="memotext"]').first().fill(long);
     await page.locator('button.memo-btn.save').first().click();
     await page.locator('#sync[data-state="saved"]').waitFor();
-    const preview = page.locator('.chapters .memo-preview').first();
-    assert.equal(await preview.locator('.memo-text').isVisible(), false);
-    assert.ok((await preview.locator('.memo-excerpt').innerText()).endsWith('…'));
-    await preview.locator('summary').click();
-    assert.equal(await preview.locator('.memo-text').innerText(), long);
-    await preview.locator('summary').press('Enter');
-    assert.equal(await preview.locator('.memo-text').isVisible(), false);
+    // 챕터 목록에서는 진도가 우선이라 메모를 2줄로만 보여 주고, 누르면 전체 글을 편집합니다.
+    const preview = page.locator('.chapters .ch-memo .memo-tap').first();
+    assert.ok((await preview.boundingBox()).height < 80, '목록 메모는 2줄 미리보기');
+    assert.equal(await preview.locator('.memo-text').textContent(), long, '원문은 그대로');
+    await preview.click();
+    assert.equal(await page.locator('textarea[data-act="memotext"]').first().inputValue(), long);
+    await page.locator('button.memo-done').click();
     await page.locator('details.memos > summary').click();
     const collected = page.locator('details.memos .memo-preview').first();
     assert.equal(await collected.locator('.memo-text').isVisible(), false);
@@ -475,6 +475,21 @@ try {
     await sub.locator('.chapters .ch').first().waitFor();
     assert.equal(new URL(sub.url()).pathname, '/reading-notes/');
     await sub.close();
+  });
+
+  await step('챕터 제목을 눌러도 체크·해제(누르는 영역 확대)', async () => {
+    await page.goto(page.url().replace(/#.*/, '#library'));
+    await view.locator('a.book').first().click();
+    await page.waitForURL(/#book-/);
+    const row = page.locator('.ch.next');
+    const title = await row.locator('.ch-hit').innerText();
+    await row.locator('.ch-hit').click();
+    const li = page.locator('.ch.leaf', { has: page.locator('.ch-hit', { hasText: title.replace(/\s*다음$/, '') }) }).first();
+    assert.equal(await li.locator('.chk').getAttribute('aria-checked'), 'true');
+    await page.click('[data-undo]');
+    assert.equal(await li.locator('.chk').getAttribute('aria-checked'), 'false');
+    const box = await page.locator('.ch.leaf .chk').first().boundingBox();
+    assert.ok(box.width >= 32, '체크 버튼 32px 이상');
   });
 
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });

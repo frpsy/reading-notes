@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=29";
-import { esc, fmt, ago } from "./util.js?v=29";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=29";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=29";
+import { state } from "./state.js?v=30";
+import { esc, fmt, ago } from "./util.js?v=30";
+import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=30";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=30";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -87,11 +87,11 @@ function chaptersHtml(b, m) {
       var key = b.id + ':' + i, open = ui.openMemo.has(key);
       var opts = c.done || (nextLeaf >= 0 && i > nextLeaf);
       // 정보 줄: 쪽수 · 읽은 날 · 메모 버튼(작은 글자 버튼). 날짜 수정·여기까지 읽음은 '⋯' 팝업에 둡니다.
-      out += '<li id="ch-' + i + '" class="ch leaf' + (c.done ? ' done' : '') + '" style="--lv:' + c.lv + '"><button type="button" class="chk" role="checkbox" aria-checked="' + (c.done ? 'true' : 'false') + '" data-act="toggle" data-i="' + i + '" aria-label="' + esc(c.t) + ' 완료 표시">' + (c.done ? CHECK : '') + '</button>' +
-        '<div class="ch-main"><span class="ch-title">' + esc(c.t) + (i === nextLeaf ? ' <span class="chip reading">다음</span>' : '') + '</span>' +
+      out += '<li id="ch-' + i + '" class="ch leaf' + (c.done ? ' done' : '') + (i === nextLeaf ? ' next' : '') + '" style="--lv:' + c.lv + '"><button type="button" class="chk" role="checkbox" aria-checked="' + (c.done ? 'true' : 'false') + '" data-act="toggle" data-i="' + i + '" aria-label="' + esc(c.t) + ' 완료 표시">' + (c.done ? CHECK : '') + '</button>' +
+        '<div class="ch-main"><button type="button" class="ch-title ch-hit" data-act="toggle" data-i="' + i + '" tabindex="-1" aria-hidden="true">' + esc(c.t) + (i === nextLeaf ? ' <span class="chip reading">다음</span>' : '') + '</button>' +
         '<span class="ch-meta">' + page + (c.done ? '<span class="ch-date">' + esc(c.done.slice(5).replace('-', '.')) + ' 읽음</span>' : '') +
         '<button type="button" class="memo-btn' + (open ? ' save' : (c.memo ? ' has' : '')) + '" data-act="memo" data-i="' + i + '" aria-expanded="' + open + '" aria-label="' + esc(c.t) + (open ? ' 메모 저장' : c.memo ? ' 메모 수정' : ' 메모 쓰기') + '">' + (open ? '메모 저장' : (c.memo ? '메모 수정' : '메모')) + '</button></span>' +
-        (c.memo && !open ? '<div class="ch-memo">' + (longMemo(c.memo) ? memoPreview(c.memo, i) : '<button type="button" class="memo-tap" data-act="memo" data-i="' + i + '" aria-label="' + esc(c.t) + ' 메모 수정"><span class="memo-text">' + esc(c.memo) + '</span></button>') + '</div>' : '') + '</div>' +
+        (c.memo && !open ? '<div class="ch-memo"><button type="button" class="memo-tap" data-act="memo" data-i="' + i + '" aria-label="' + esc(c.t) + ' 메모 수정"><span class="memo-text">' + esc(c.memo) + '</span></button></div>' : '') + '</div>' +
         '<div class="ch-opt">' + (opts ? '<details class="chapter-options" data-disclosure="chapter-' + esc(b.id) + '-' + i + '"><summary aria-label="' + esc(c.t) + ' 추가 작업">' + DOTS + '</summary><div class="chapter-options-body">' +
           (c.done ? '<label class="opt-fld"><span>읽은 날</span><input type="date" data-act="chdate" data-i="' + i + '" value="' + esc(c.done) + '" aria-label="' + esc(c.t) + ' 완료일"></label>' : '') +
           (!c.done && nextLeaf >= 0 && i > nextLeaf ? '<button type="button" class="opt-btn" data-act="upto" data-i="' + i + '">여기까지 읽음</button>' : '') +
