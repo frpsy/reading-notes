@@ -1,6 +1,6 @@
 // 기록 저장: 바꾼 책을 350ms 뒤에 저장소에 올리고, 상단의 저장 상태를 맞춥니다.
-import * as store from "./store.js?v=14";
-import { state } from "./state.js?v=14";
+import * as store from "./store.js?v=17";
+import { state } from "./state.js?v=17";
 
 var SYNC_TEXT = { pending: "연결 중…", saved: "저장됨", saving: "저장 중…", error: "저장 실패 · 다시 시도", local: "이 브라우저에만 저장", offline: "오프라인 · 기기에 보관 중" };
 
