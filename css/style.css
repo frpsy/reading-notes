@@ -393,3 +393,16 @@ input,select,textarea{border-color:var(--field)}
 .chapters{overflow:visible}
 .chapters>li:first-child{border-radius:12px 12px 0 0}
 .chapters>li:last-child{border-radius:0 0 12px 12px}
+/* ---------- 진도 체크 우선: 체크·제목이 가장 크게, 메모는 보조 ---------- */
+.ch{grid-template-columns:32px minmax(0,1fr) 36px}
+.chk{width:32px;height:32px;margin-top:0;border-radius:8px}
+.chk::after{inset:-8px}
+.ch-hit{display:block;width:100%;margin:0;padding:4px 0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;overflow-wrap:anywhere}
+.ch-hit:active{opacity:.6}
+.ch.leaf .ch-title{font-size:16px;line-height:1.5}
+.ch.done .ch-title{color:var(--muted)}
+.ch.next{background:color-mix(in srgb,var(--accent-soft) 45%,var(--surface));box-shadow:inset 3px 0 0 var(--accent)}
+.ch.next .ch-title{font-weight:600}
+.ch-meta{min-height:24px}
+.ch-memo{padding:6px 10px}
+.ch-memo .memo-text{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;font-size:14px;line-height:1.6;color:color-mix(in srgb,var(--ink) 78%,var(--surface))}

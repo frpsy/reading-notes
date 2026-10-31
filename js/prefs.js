@@ -1,5 +1,5 @@
 // 테마와 접은 묶음을 기기에 기억합니다. 저장소를 못 써도 화면은 동작합니다.
-import { state } from "./state.js?v=29";
+import { state } from "./state.js?v=30";
 
 var THEME_TEXT = { auto: "테마 자동", light: "밝게", dark: "어둡게" };
 var curTheme = "auto"; // 저장소를 못 써도 이번 화면에서는 순환되도록 변수로 들고 있습니다

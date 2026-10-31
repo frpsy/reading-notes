@@ -1,19 +1,19 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=29";
-import { state } from "./state.js?v=29";
-import { setRenderer, render } from "./bus.js?v=29";
-import { initPrefs, saveFolded } from "./prefs.js?v=29";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=29";
-import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=29";
-import { onAuth } from "./session.js?v=29";
-import { currentRoute } from "./router.js?v=29";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=29";
-import { loginView, loadingView } from "./view-common.js?v=29";
-import { libraryView } from "./view-library.js?v=29";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=29";
-import { yearView } from "./view-year.js?v=29";
-import { formView, bindForm } from "./view-form.js?v=29";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=29";
+import * as store from "./store.js?v=30";
+import { state } from "./state.js?v=30";
+import { setRenderer, render } from "./bus.js?v=30";
+import { initPrefs, saveFolded } from "./prefs.js?v=30";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=30";
+import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=30";
+import { onAuth } from "./session.js?v=30";
+import { currentRoute } from "./router.js?v=30";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=30";
+import { loginView, loadingView } from "./view-common.js?v=30";
+import { libraryView } from "./view-library.js?v=30";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=30";
+import { yearView } from "./view-year.js?v=30";
+import { formView, bindForm } from "./view-form.js?v=30";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=30";
 
 var view = document.getElementById("view");
 
