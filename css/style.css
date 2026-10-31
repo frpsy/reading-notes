@@ -542,3 +542,8 @@ button,a,input,select,textarea,summary{touch-action:manipulation}
   .next-act{width:100%;display:grid;grid-template-columns:1fr 1fr}
   a.book{padding:16px 14px}
 }
+/* 알림창(되돌리기): 좁은 화면에서 3줄로 접혀 목록을 가리지 않도록 화면 너비 한 줄 막대로 */
+.toast{left:12px;right:12px;width:auto;max-width:none;transform:none;justify-content:space-between;bottom:max(14px,env(safe-area-inset-bottom,0px))}
+.toast-msg{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.toast-msg.wrap{white-space:normal;overflow-wrap:anywhere}
+@media(min-width:640px){.toast{left:50%;right:auto;width:max-content;max-width:520px;transform:translateX(-50%)}}

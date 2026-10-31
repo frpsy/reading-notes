@@ -32,7 +32,9 @@ export function patchView(view, html, key) {
     var pa = prev[n], pb = sigs[n], live = view.children[n];
     if (pb.kids) {
       if (pa.kids.length !== pb.kids.length || live.children.length !== pb.kids.length) { live.replaceWith(nodes[n]); continue; }
-      for (var j = 0; j < pb.kids.length; j++) if (pa.kids[j] !== pb.kids[j]) live.children[j].replaceWith(nodes[n].children[j]);
+      // replaceWith 는 새 줄을 원래 목록에서 떼어 내므로, 번호가 밀리지 않게 미리 배열로 잡아 둡니다.
+      var fresh = Array.from(nodes[n].children), old = Array.from(live.children);
+      for (var j = 0; j < pb.kids.length; j++) if (pa.kids[j] !== pb.kids[j]) old[j].replaceWith(fresh[j]);
     } else if (pa.html !== pb.html) live.replaceWith(nodes[n]);
   }
   prev = sigs;
