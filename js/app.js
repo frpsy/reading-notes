@@ -1,20 +1,20 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=35";
-import { state } from "./state.js?v=35";
-import { setRenderer, render } from "./bus.js?v=35";
-import { initPrefs, saveFolded } from "./prefs.js?v=35";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=35";
-import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=35";
-import { onAuth } from "./session.js?v=35";
-import { currentRoute } from "./router.js?v=35";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=35";
-import { loginView, loadingView } from "./view-common.js?v=35";
-import { libraryView } from "./view-library.js?v=35";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=35";
-import { yearView } from "./view-year.js?v=35";
-import { patchView, resetPatch } from "./patch.js?v=35";
-import { formView, bindForm } from "./view-form.js?v=35";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=35";
+import * as store from "./store.js?v=36";
+import { state } from "./state.js?v=36";
+import { setRenderer, render } from "./bus.js?v=36";
+import { initPrefs, saveFolded } from "./prefs.js?v=36";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=36";
+import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=36";
+import { onAuth } from "./session.js?v=36";
+import { currentRoute } from "./router.js?v=36";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=36";
+import { loginView, loadingView } from "./view-common.js?v=36";
+import { libraryView } from "./view-library.js?v=36";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=36";
+import { yearView } from "./view-year.js?v=36";
+import { patchView, resetPatch } from "./patch.js?v=36";
+import { formView, bindForm } from "./view-form.js?v=36";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=36";
 
 var view = document.getElementById("view");
 
@@ -92,6 +92,11 @@ view.addEventListener('keydown', function (e) {
 });
 view.addEventListener("click", function (e) {
   var el = e.target.closest("[data-act]");
+  if (!el) {
+    // 챕터 줄의 빈 곳(쪽수 줄·여백)을 눌러도 체크됩니다. 버튼·링크·메모·옵션은 제외합니다.
+    var row = e.target.closest(".chapters > li.ch.leaf");
+    if (row && !e.target.closest("button, a, summary, details, input, textarea, label")) el = row.querySelector('.chk[data-act="toggle"]');
+  }
   if (!el) return;
   var act = el.dataset.act, r = currentRoute(), b = r.name === "book" ? state.books.get(r.id) : null;
   switch (act) {
@@ -105,16 +110,15 @@ view.addEventListener("click", function (e) {
     case "logout": store.signOut(); break;
     case "catadd": addFromCatalog(el.dataset.id); break;
     case "upto":
-      if (b) { var ui2 = +el.dataset.i; mutate(b, "여기까지 읽음 처리", function () { completeThrough(b, ui2); }); }
+      if (b) { var ui2 = +el.dataset.i; mutate(b, function () { completeThrough(b, ui2); }); }
       break;
     case "nextdone":
-      if (b) { var ni = nextLeafIndex(b); if (ni >= 0) mutate(b, "읽음: " + b.chapters[ni].t, function () { toggle(b, ni); }); }
+      if (b) { var ni = nextLeafIndex(b); if (ni >= 0) mutate(b, function () { toggle(b, ni); }); }
       break;
     case "toggle":
       if (b) {
         var ti = +el.dataset.i, tc = b.chapters[ti];
-        var lbl = isGroup(b.chapters, ti) ? "묶음 전체 변경: " + tc.t : (tc.done ? "읽음 취소: " : "읽음: ") + tc.t;
-        mutate(b, lbl, function () { toggle(b, ti); });
+        mutate(b, function () { toggle(b, ti); });
       }
       break;
     case "fold":

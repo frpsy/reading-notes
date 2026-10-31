@@ -86,15 +86,17 @@ try {
     await view.locator("a.book").first().waitFor();
   });
 
-  await step("챕터 체크 → 되돌리기", async () => {
+  await step("챕터 체크 → 알림창 없이 반영, 다시 누르면 취소", async () => {
     await view.locator("a.book").first().click();
     await page.waitForURL(/#book-/);
     const prog = view.locator(".prog .of");
     const before = await prog.textContent();
     await page.click('[data-act="nextdone"]');
     assert.notEqual(await prog.textContent(), before);
-    await page.click("[data-undo]");
+    assert.equal(await page.locator('#toast').isVisible(), false, '체크할 때 알림창이 뜨지 않음');
+    await page.locator('.ch.leaf .chk[aria-checked="true"]').last().click(); // 다시 누르면 취소
     assert.equal(await prog.textContent(), before);
+    assert.equal(await page.locator('#toast').isVisible(), false, '취소할 때도 알림창이 뜨지 않음');
   });
 
   await step("새로고침해도 기록 유지", async () => {
@@ -504,7 +506,7 @@ try {
     await row.locator('.ch-hit').click();
     const li = page.locator('.ch.leaf', { has: page.locator('.ch-hit', { hasText: title.replace(/\s*다음$/, '') }) }).first();
     assert.equal(await li.locator('.chk').getAttribute('aria-checked'), 'true');
-    await page.click('[data-undo]');
+    await li.locator('.ch-hit').click();
     assert.equal(await li.locator('.chk').getAttribute('aria-checked'), 'false');
     const box = await page.locator('.ch.leaf .chk').first().boundingBox();
     assert.ok(box.width >= 32, '체크 버튼 32px 이상');
@@ -543,13 +545,12 @@ try {
     const idx = await page.evaluate(() => { const lis = [...document.querySelectorAll('.chapters > li')]; return lis.findIndex(li => li.classList.contains('next')); });
     assert.ok(idx >= 0, '다음 챕터 줄이 있어야 함');
     await page.click('[data-act="nextdone"]');
-    await page.locator('#toast [data-undo]').waitFor();
+    await page.locator('.ch.leaf .chk[aria-checked="true"]').first().waitFor();
     const kept = await page.evaluate(() => [...document.querySelectorAll('.chapters > li')].map(li => li.__mark || null));
     assert.equal(kept[idx], null, '체크한 줄은 새로 그려짐');
     const same = kept.filter((m, i) => m && i !== idx).length;
     assert.ok(same >= 1, '바뀌지 않은 줄은 그대로 유지: ' + JSON.stringify(kept));
     assert.equal(await page.evaluate(() => document.querySelector('a.back').dataset.keep), '1', '바뀌지 않은 위쪽 영역도 그대로');
-    await page.click('[data-undo]');
   });
 
   await step('묶음 책에서 여러 줄이 한꺼번에 바뀌어도 줄이 중복·뒤섞이지 않음(화면 = 새로 그린 결과)', async () => {
@@ -568,27 +569,41 @@ try {
       const t = document.createElement('template'); t.innerHTML = bookView(id);
       return [...t.content.querySelectorAll('.chapters > li')].map(li => (li.querySelector('.ch-title') || {}).textContent.replace(/\s*다음$/, '').trim() + ':' + li.querySelector('.chk').getAttribute('aria-checked'));
     }, id);
-    for (const act of ['leaf', 'leaf', 'group', 'next', 'leaf', 'fold', 'undo']) {
+    for (const act of ['leaf', 'leaf', 'group', 'next', 'leaf', 'fold', 'again']) {
       if (act === 'leaf') await page.locator('.chapters > li.leaf .chk').nth(1).click();
       if (act === 'group') await page.locator('.chapters > li.group .chk').nth(1).click();
       if (act === 'next') await page.click('[data-act="nextdone"]');
       if (act === 'fold') await page.locator('.fold-btn').first().click();
-      if (act === 'undo' && await page.locator('#toast [data-undo]').count()) await page.click('#toast [data-undo]');
+      if (act === 'again') await page.locator('.chapters > li.leaf .chk[aria-checked="true"]').first().click();
       await page.waitForTimeout(150);
       assert.deepEqual(await rowsOf(), await expectedRows(), act + ' 뒤 줄이 새로 그린 결과와 다름');
     }
   });
 
-  await step('되돌리기 알림창은 좁은 화면에서도 한 줄 막대(다음 챕터를 가리지 않음)', async () => {
+  await step('체크·읽음 표시·취소 때 알림창이 뜨지 않고, 줄의 빈 곳을 눌러도 체크됨', async () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(page.url().replace(/#.*/, '#library'));
     await view.locator('a.book', { hasText: '묶음 점검용 책' }).click();
     await page.waitForURL(/#book-/);
     await page.click('[data-act="nextdone"]');
+    assert.equal(await page.locator('#toast').isVisible(), false);
+    const before = await page.locator('.chapters > li.leaf .chk[aria-checked="true"]').count();
+    const li = page.locator('.chapters > li.leaf:not(.done)').first();
+    const bb = await li.boundingBox();
+    await page.mouse.click(bb.x + bb.width - 80, bb.y + bb.height - 8); // 쪽수 줄 오른쪽 빈 곳
+    assert.equal(await page.locator('.chapters > li.leaf .chk[aria-checked="true"]').count(), before + 1, '빈 곳을 눌러도 체크');
+    assert.equal(await page.locator('#toast').isVisible(), false);
+    await page.locator('.chapters > li.leaf.done').first().locator('.ch-hit').click();
+    assert.equal(await page.locator('.chapters > li.leaf .chk[aria-checked="true"]').count(), before, '다시 누르면 취소');
+    assert.equal(await page.locator('#toast').isVisible(), false);
+    // 메모 삭제 되돌리기 알림창은 좁은 화면에서도 한 줄 막대
+    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await page.locator('textarea[data-act="memotext"]').first().fill('알림창 확인');
+    await page.locator('button.memo-done').click();
+    await page.locator('.memo-tap', { hasText: '알림창 확인' }).click();
+    await page.click('button.memo-del');
     const box = await page.locator('#toast').boundingBox();
-    assert.ok(box.height < 72, '알림창 높이 ' + box.height);
-    assert.ok(box.width > 330, '알림창 너비 ' + box.width);
-    assert.ok(box.x >= 0 && box.x + box.width <= 390);
+    assert.ok(box.height < 72 && box.width > 330 && box.x >= 0 && box.x + box.width <= 390, '알림창 ' + JSON.stringify(box));
     await page.click('[data-undo]');
   });
 

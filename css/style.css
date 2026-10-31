@@ -547,3 +547,9 @@ button,a,input,select,textarea,summary{touch-action:manipulation}
 .toast-msg{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .toast-msg.wrap{white-space:normal;overflow-wrap:anywhere}
 @media(min-width:640px){.toast{left:50%;right:auto;width:max-content;max-width:520px;transform:translateX(-50%)}}
+/* 줄 전체가 눌립니다(iOS 사파리는 cursor:pointer 가 없는 곳의 탭을 클릭으로 전달하지 않는 경우가 있음) */
+.ch.leaf{cursor:pointer;-webkit-tap-highlight-color:color-mix(in srgb,var(--accent) 12%,transparent)}
+.ch.leaf .memo-text,.ch.leaf .memo-tap{cursor:pointer}
+/* 알림창 글자 부분은 아래 버튼·줄 누르기를 막지 않고, '되돌리기'만 눌립니다 */
+.toast{pointer-events:none}
+.toast button{pointer-events:auto}
