@@ -1,6 +1,6 @@
 // 여러 화면이 함께 쓰는 조각(표지, 칩, 로그인 화면 등)입니다.
-import { state } from "./state.js?v=32";
-import { esc, hue } from "./util.js?v=32";
+import { state } from "./state.js?v=33";
+import { esc, hue } from "./util.js?v=33";
 
 export var CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 export var DASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>';
@@ -23,12 +23,8 @@ export function paceText(rate) {
 }
 
 export function loginView() {
-  if (state.phase === "denied" || state.phase === "error") {
-    return '<div class="login"><h1>책갈피</h1><p class="err">' + esc(state.authMsg) + '</p>' +
-      '<button type="button" class="btn primary" data-act="login">다른 구글 계정으로 로그인</button>' + '</div>';
-  }
   return '<section class="login" aria-labelledby="welcome-title"><div class="login-intro"><p class="eyebrow">나만의 독서 노트 · 책갈피</p><h1 id="welcome-title">읽고, 남기고,<br>나의 것으로.</h1><p class="muted">한 챕터씩 쌓이는 읽기의 기록.<br>목차로 진도를 확인하고, 오래 간직할 생각을 남겨 보세요.</p></div>' +
     (state.authMsg ? '<p class="err" role="alert">' + esc(state.authMsg) + '</p>' : '') +
-    '<button type="button" class="btn primary" data-act="login">구글로 로그인</button><p class="login-caption">허용된 구글 계정으로 로그인하면 기기마다 같은 기록을 봅니다.</p>' +
+    '<button type="button" class="btn primary" data-act="login">' + (state.phase === "denied" ? '다른 구글 계정으로 로그인' : state.phase === "error" ? '다시 로그인' : '구글로 로그인') + '</button><p class="login-caption">허용된 구글 계정으로 로그인하면 기기마다 같은 기록을 봅니다.</p>' +
     '<div class="login-preview" aria-label="독서 기록 예시"><div class="preview-label"><span>이렇게 기록해 보세요</span><span>예시</span></div><div class="preview-book"><span class="preview-cover" aria-hidden="true">책</span><div class="preview-body"><strong>나의 첫 독서 기록</strong><p>10개 챕터 중 4개를 읽었어요 · 40%</p><div class="preview-track" aria-hidden="true"><span></span></div></div></div><div class="preview-chapter"><span class="preview-check" aria-hidden="true">✓</span><span>오늘 읽은 챕터를 체크하고</span></div><p class="preview-note">마음에 남은 문장과 나의 생각을 함께 남겨요.</p></div></section>';
 }

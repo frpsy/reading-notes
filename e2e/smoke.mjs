@@ -140,6 +140,10 @@ try {
     assert.ok(await page.locator('a.book').first().evaluate(el => el.getBoundingClientRect().top < 400));
     assert.equal(await page.locator('.heat').isVisible(), false);
     if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-mobile.png')});
+    await page.setViewportSize({width:320,height:844});
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+    if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-320.png')});
+    await page.setViewportSize({width:390,height:844});
     await page.locator('.library-insights > summary').click();
     assert.equal(await page.locator('.heat').isVisible(), true);
     await page.setViewportSize({width:1280,height:900});

@@ -1,8 +1,8 @@
 // 되돌리기: 마지막 체크·날짜 변경을 6초 동안 되돌릴 수 있게 합니다.
-import { state } from "./state.js?v=32";
-import { render } from "./bus.js?v=32";
-import { persist } from "./sync.js?v=32";
-import { esc } from "./util.js?v=32";
+import { state } from "./state.js?v=33";
+import { render } from "./bus.js?v=33";
+import { persist } from "./sync.js?v=33";
+import { esc } from "./util.js?v=33";
 
 function snapshot(b) {
   return { id: b.id, done: b.chapters.map(function (x) { return x.done; }), startDate: b.startDate, endDate: b.endDate, endAuto: b.endAuto };
