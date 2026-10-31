@@ -1,9 +1,9 @@
 // 서재 화면: 책 목록, 상태 필터, 검색, 최근 12주 기록.
-import { state } from "./state.js?v=21";
-import { esc, fmt, ago } from "./util.js?v=21";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook } from "./core.js?v=21";
-import { coverHtml, chipHtml } from "./view-common.js?v=21";
-import { catalogHtml } from "./catalog.js?v=21";
+import { state } from "./state.js?v=22";
+import { esc, fmt, ago } from "./util.js?v=22";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook } from "./core.js?v=22";
+import { coverHtml, chipHtml } from "./view-common.js?v=22";
+import { catalogHtml } from "./catalog.js?v=22";
 
 function nextLine(b, m) {
   if (m.status === 'done') return '';
@@ -86,7 +86,14 @@ export function libraryView() {
     if (a.m.status === 'done') return (c.m.endStr || '').localeCompare(a.m.endStr || '');
     return (c.b.createdAt || 0) - (a.b.createdAt || 0);
   });
-  var rows = list.length ? '<div class="books">' + list.map(function (x) { return bookRow(x.b, x.m) }).join('') + '</div>' : '<p class="muted">' + (state.ui.q ? '검색 결과가 없습니다.' : '해당하는 책이 없습니다.') + '</p>';
+  var rows = list.length ? (state.ui.filter === 'all' && !state.ui.q ? ['reading', 'todo', 'done'].map(function (status) {
+    var books = list.filter(function (x) { return x.m.status === status; });
+    if (!books.length) return '';
+    var labels = { reading: '읽는 중', todo: '읽을 예정', done: '완독한 책' };
+    return '<section class="library-shelf" aria-label="' + labels[status] + '"><h2 class="shelf-title">' + labels[status] + '<span>' + books.length + '</span></h2><div class="books">' + books.map(function (x) { return bookRow(x.b, x.m); }).join('') + '</div></section>';
+  }).join('') : '<div class="books">' + list.map(function (x) { return bookRow(x.b, x.m); }).join('') + '</div>') : '<p class="muted">' + (state.ui.q ? '검색 결과가 없습니다.' : '해당하는 책이 없습니다.') + '</p>';
   var search = all.length > 1 ? '<input type="search" class="search" data-act="search" value="' + esc(state.ui.q) + '" placeholder="제목·저자 검색" aria-label="제목·저자 검색" autocomplete="off">' : '';
-  return head + strip + reminderHtml(all, activityByDate(all.map(function (x) { return x.b }))) + activityHtml(all.map(function (x) { return x.b })) + search + tabs + rows + note;
+  var books = all.map(function (x) { return x.b; }), activity = activityByDate(books);
+  var insights = '<details class="library-insights" data-disclosure="library-insights"><summary><span>독서 활동</span><span class="disclosure-hint">' + currentStreak(activity) + '일 연속 · 최근 7일 ' + week + '챕터</span></summary><div class="insights-body">' + strip + activityHtml(books) + '</div></details>';
+  return head + search + tabs + rows + reminderHtml(all, activity) + insights + note;
 }

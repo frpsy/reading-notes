@@ -2,7 +2,7 @@
 // 실행: npm run e2e (Playwright 필요. CI 는 workflow 에서 설치합니다)
 import { createRequire } from "node:module";
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, mkdir } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
@@ -75,6 +75,49 @@ try {
     assert.equal(await view.locator(".prog .of").textContent(), after);
   });
 
+  await step('책과 기록 우선 배치·접힌 통계·책 설정 메뉴', async () => {
+    await page.setViewportSize({width:390,height:844});
+    assert.equal(await page.locator('.book-insights').getAttribute('open'), null);
+    assert.equal(await page.locator('#d-start').isVisible(), false);
+    assert.ok(await page.locator('.chapters').evaluate(el => el.getBoundingClientRect().top < window.innerHeight));
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+    await page.locator('.book-menu > summary').click();
+    assert.equal(await page.locator('a[href^="#edit-"]').isVisible(), true);
+    await page.locator('.book-menu > summary').press('Escape');
+    assert.equal(await page.locator('a[href^="#edit-"]').isVisible(), false);
+    const options = page.locator('.chapter-options').first();
+    assert.equal(await options.locator('input[type=date]').isVisible(), false);
+    await options.locator('summary').click();
+    assert.equal(await options.locator('input[type=date]').isVisible(), true);
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+    await options.locator('input[type=date]').fill('2026-10-30');
+    await options.locator('input[type=date]').press('Tab');
+    assert.equal(await page.locator('.chapter-options').first().getAttribute('open'), '');
+    await page.locator('.chapter-options').first().locator('summary').click();
+    await page.locator('.book-insights > summary').click();
+    assert.equal(await page.locator('#d-start').isVisible(), true);
+    await page.locator('.book-insights > summary').click();
+    if (process.env.DESIGN_SCREENSHOT_DIR) {
+      await page.evaluate(() => window.scrollTo(0,0));
+      await mkdir(process.env.DESIGN_SCREENSHOT_DIR,{recursive:true});
+      await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'detail-mobile.png')});
+    }
+    await page.goto(base + '#library');
+    await view.locator('a.book').first().waitFor();
+    assert.equal(await page.locator('.library-insights').getAttribute('open'), null);
+    assert.ok(await page.locator('a.book').first().evaluate(el => el.getBoundingClientRect().top < 400));
+    assert.equal(await page.locator('.heat').isVisible(), false);
+    if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-mobile.png')});
+    await page.locator('.library-insights > summary').click();
+    assert.equal(await page.locator('.heat').isVisible(), true);
+    await page.setViewportSize({width:1280,height:900});
+    if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-desktop.png')});
+    await page.emulateMedia({colorScheme:'dark'});
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+    if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-dark.png')});
+    await page.emulateMedia({colorScheme:'light'});
+  });
+
   await step("제목·목차·메모의 HTML 은 글자로만 표시", async () => {
     await page.goto(base + "#add");
     await page.fill("#f-title", "제목 " + XSS);
@@ -120,6 +163,7 @@ try {
 
   await step("연간 기록", async () => {
     await page.goto(base + "#library");
+    if (!(await page.locator('.library-insights[open]').count())) await page.locator('.library-insights > summary').click();
     await page.click('a.s[href="#year"]');
     await view.getByText("년 독서 기록").waitFor();
     assert.equal(await view.locator(".months .mo").count(), 12);
@@ -167,6 +211,7 @@ try {
 
   await step('삭제 실패 기록을 보관하고 버튼으로 다시 삭제', async () => {
     await page.evaluate(() => { window.__failWrites = true; });
+    await page.locator('.book-menu > summary').click();
     await page.click('[data-act="del"]');
     await page.click('[data-act="delyes"]');
     await page.locator('#sync[data-state="error"]').waitFor();
@@ -200,6 +245,7 @@ try {
 
   await step('동시 목차 충돌은 원본을 보존하고 새 책으로 복구', async () => {
     const id = page.url().split('#book-')[1];
+    await page.locator('.book-menu > summary').click();
     await page.click('a[href="#edit-' + id + '"]');
     const toc = await page.locator('#f-toc').inputValue();
     await page.evaluate(id => {

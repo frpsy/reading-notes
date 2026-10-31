@@ -1,8 +1,8 @@
 // 로그인 계정의 변경을 즉시 기기에 보관한 뒤 서버로 전송합니다.
-import * as store from "./store.js?v=21";
-import { state } from "./state.js?v=21";
-import { validateBook, newId } from "./core.js?v=21";
-import { render } from "./bus.js?v=21";
+import * as store from "./store.js?v=22";
+import { state } from "./state.js?v=22";
+import { validateBook, newId } from "./core.js?v=22";
+import { render } from "./bus.js?v=22";
 const TEXT = { pending: '연결 중…', saved: '저장됨', saving: '저장 중…', error: '저장 실패 · 다시 시도', offline: '오프라인 · 기기에 보관 중' };
 let sequence = 0;
 export function setSync(s, msg = '') {

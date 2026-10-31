@@ -1,19 +1,19 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=21";
-import { state } from "./state.js?v=21";
-import { setRenderer, render } from "./bus.js?v=21";
-import { initPrefs, saveFolded } from "./prefs.js?v=21";
-import { initUndo, mutate, hideToast } from "./undo.js?v=21";
-import { initSync, persist, removeBook } from "./sync.js?v=21";
-import { onAuth } from "./session.js?v=21";
-import { currentRoute } from "./router.js?v=21";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=21";
-import { loginView, loadingView } from "./view-common.js?v=21";
-import { libraryView } from "./view-library.js?v=21";
-import { bookView, refreshMemos } from "./view-book.js?v=21";
-import { yearView } from "./view-year.js?v=21";
-import { formView, bindForm } from "./view-form.js?v=21";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates } from "./core.js?v=21";
+import * as store from "./store.js?v=22";
+import { state } from "./state.js?v=22";
+import { setRenderer, render } from "./bus.js?v=22";
+import { initPrefs, saveFolded } from "./prefs.js?v=22";
+import { initUndo, mutate, hideToast } from "./undo.js?v=22";
+import { initSync, persist, removeBook } from "./sync.js?v=22";
+import { onAuth } from "./session.js?v=22";
+import { currentRoute } from "./router.js?v=22";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=22";
+import { loginView, loadingView } from "./view-common.js?v=22";
+import { libraryView } from "./view-library.js?v=22";
+import { bookView, refreshMemos } from "./view-book.js?v=22";
+import { yearView } from "./view-year.js?v=22";
+import { formView, bindForm } from "./view-form.js?v=22";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates } from "./core.js?v=22";
 
 var view = document.getElementById("view");
 
@@ -22,6 +22,7 @@ function draw() {
   if (ae && ae !== document.body && ae.dataset && ae.dataset.act) {
     fk = '[data-act="' + ae.dataset.act + '"]' + (ae.dataset.i != null ? '[data-i="' + ae.dataset.i + '"]' : "");
   }
+  var disclosures = new Map(Array.from(view.querySelectorAll('details[data-disclosure]')).map(function (el) { return [el.dataset.disclosure, el.open]; }));
   var r = currentRoute(), html;
   if (state.phase === "boot") html = loadingView();
   else if (state.phase !== "app") html = loginView();
@@ -31,6 +32,7 @@ function draw() {
   else if (r.name === "year") html = yearView(r.year);
   else html = formView(r.id);
   view.innerHTML = html;
+  view.querySelectorAll('details[data-disclosure]').forEach(function (el) { if (disclosures.has(el.dataset.disclosure)) el.open = disclosures.get(el.dataset.disclosure); });
   if (state.phase === "app" && state.ready && r.name === "form" && (!r.id || state.books.has(r.id))) bindForm(r.id);
   if (fk) {
     var n = view.querySelector(fk);
@@ -45,6 +47,14 @@ setRenderer(draw);
 window.addEventListener("hashchange", function () { state.ui.confirmDel = null; hideToast(); render(); window.scrollTo(0, 0); });
 
 /* ---------- 이벤트 ---------- */
+document.addEventListener('click', function (e) {
+  if (!e.target.isConnected) return; // 다시 그리기 전의 클릭 대상으로 새 메뉴를 닫지 않습니다.
+  view.querySelectorAll('.book-menu[open]').forEach(function (menu) { if (!menu.contains(e.target)) menu.open = false; });
+});
+view.addEventListener('keydown', function (e) {
+  var menu = e.target.closest('.book-menu[open]');
+  if (e.key === 'Escape' && menu) { menu.open = false; menu.querySelector('summary').focus(); }
+});
 view.addEventListener("click", function (e) {
   var el = e.target.closest("[data-act]");
   if (!el) return;
