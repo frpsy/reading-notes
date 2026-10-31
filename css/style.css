@@ -274,3 +274,16 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
   .lib-head .btn{flex:none}
 }
 #sync-copy[hidden] { display: none; }
+
+/* 메모 원문은 보존하고 긴 내용만 접어 표시합니다. */
+.memo-text{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.memo-preview,.note-editor{min-width:0;margin-top:8px}
+.memo-preview>summary,.note-editor>summary{cursor:pointer;font-weight:400;overflow-wrap:anywhere;line-height:1.6}
+.memo-excerpt{white-space:normal}
+.memo-expand,.memo-collapse{color:var(--accent);font-size:13px;font-weight:600;margin-left:8px;white-space:nowrap}
+.memo-collapse{display:none}
+.memo-preview[open]>summary>.memo-excerpt,.note-editor[open]>summary>.memo-excerpt,
+.memo-preview[open]>summary>.memo-expand,.note-editor[open]>summary>.memo-expand{display:none}
+.memo-preview[open]>summary>.memo-collapse,.note-editor[open]>summary>.memo-collapse{display:inline}
+.memo-preview>summary:focus-visible,.note-editor>summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.ch-memo .memo-text{margin:0}

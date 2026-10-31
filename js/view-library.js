@@ -1,9 +1,9 @@
 // 서재 화면: 책 목록, 상태 필터, 검색, 최근 12주 기록.
-import { state } from "./state.js?v=19";
-import { esc, fmt, ago } from "./util.js?v=19";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, heatmapWeeks, nextLeafIndex, matchBook } from "./core.js?v=19";
-import { coverHtml, chipHtml } from "./view-common.js?v=19";
-import { catalogHtml } from "./catalog.js?v=19";
+import { state } from "./state.js?v=20";
+import { esc, fmt, ago } from "./util.js?v=20";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, heatmapWeeks, nextLeafIndex, matchBook } from "./core.js?v=20";
+import { coverHtml, chipHtml } from "./view-common.js?v=20";
+import { catalogHtml } from "./catalog.js?v=20";
 
 function nextLine(b, m) {
   if (m.status === 'done') return '';
