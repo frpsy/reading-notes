@@ -315,18 +315,19 @@ try {
     assert.ok(kept, '취소하면 원래 기록 유지');
   });
 
-  await step('메모 저장 문구는 실제 기기 보관 결과를 따름', async () => {
+  await step('메모 입력창에 저장 상태 문구가 없고, 보관 실패는 상단에 알림', async () => {
     await page.locator('.memo-btn[data-act="memo"]').first().click();
     const ta = page.locator('textarea[data-act="memotext"]').first();
     await ta.fill('보관 확인');
-    assert.match(await page.locator('[data-memo-saved]').innerText(), /기기에 보관됨|저장됨/);
+    assert.equal(await page.locator('[data-memo-saved]').count(), 0);
+    assert.ok(!/저장|보관/.test(await page.locator('.memo-foot').innerText()), '입력창 아래에 저장·보관 문구가 없음: ' + await page.locator('.memo-foot').innerText());
+    assert.equal(await page.locator('[data-memo-count]').innerText(), '5/2000');
     await page.evaluate(() => { window.__realSet = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k.startsWith('chaekgalpi-pending')) throw new Error('quota'); return window.__realSet.call(this, k, v); }; });
     await ta.fill('보관 실패');
-    assert.match(await page.locator('[data-memo-saved]').innerText(), /보관하지 못했습니다/);
+    await page.locator('#sync[data-state="error"]').waitFor();
+    assert.match(await page.locator('#sync-detail').innerText(), /기기에 보관하지 못했습니다/);
     await page.evaluate(() => { Storage.prototype.setItem = window.__realSet; });
     await ta.fill('보관 확인');
-    assert.match(await page.locator('[data-memo-saved]').innerText(), /기기에 보관됨|저장됨/);
-    await page.locator('[data-memo-saved]', { hasText: /^저장됨$/ }).waitFor(); // 서버 저장이 끝나면 '저장됨'
     await page.locator('button.memo-done').click();
     await page.locator('#sync[data-state="saved"]').waitFor();
   });
