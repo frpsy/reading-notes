@@ -19,7 +19,7 @@
 
 ### 한 번만 하는 설정
 
-1. Firebase 콘솔(프로젝트 `parent-survey-d21e7`) > Firestore > 규칙에 `firestore.rules.reading` 의 블록을 추가해 게시합니다.
+1. Firebase 콘솔(프로젝트 `chaekgalpi-reading`, 책갈피 전용) > Firestore > 규칙에 `firestore.rules.reading` 의 내용을 게시합니다.
 2. Authentication > 로그인 방법에서 Google 사용, 승인된 도메인에 `frpsy.github.io` 가 있는지 확인합니다.
 3. 저장소 Settings > Pages > Source 를 **GitHub Actions** 로 바꿉니다. main 에 반영되면 테스트 후 자동 배포됩니다.
 
