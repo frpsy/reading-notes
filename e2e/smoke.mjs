@@ -409,6 +409,23 @@ try {
     assert.equal(await view.locator('img').count(), 0);
   });
 
+  await step('같은 제목의 책을 추가하면 기존 책을 알려 주고 한 번 더 확인', async () => {
+    await page.goto(page.url().replace(/#.*/, '#library'));
+    const title = (await view.locator('a.book .book-title').first().innerText()).replace(/\s*예시$/, '').trim();
+    const before = await view.locator('a.book').count();
+    await page.goto(page.url().replace(/#.*/, '#add'));
+    await page.fill('#f-title', ' ' + title + ' ');
+    await page.fill('#f-toc', '1장');
+    await page.click('#f-submit');
+    await page.locator('#f-lost', { hasText: '같은 제목의 책' }).waitFor();
+    assert.equal(await page.locator('#f-submit').innerText(), '그래도 추가');
+    assert.match(page.url(), /#add/);
+    await page.fill('#f-title', title + ' 2');
+    assert.equal(await page.locator('#f-lost').isVisible(), false, '제목을 고치면 경고 초기화');
+    await page.goto(page.url().replace(/#.*/, '#library'));
+    assert.equal(await view.locator('a.book').count(), before);
+  });
+
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
   await ctx.close();
 } finally {

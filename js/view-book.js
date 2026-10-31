@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=26";
-import { esc, fmt, ago } from "./util.js?v=26";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=26";
-import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=26";
+import { state } from "./state.js?v=27";
+import { esc, fmt, ago } from "./util.js?v=27";
+import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=27";
+import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=27";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -148,7 +148,7 @@ export function bookView(id) {
   }
   stats.push(['읽는 속도', pace, paceSub]);
   if (m.status === 'done') stats.push(['종료일', fmt(m.endStr), '완독']);
-  else stats.push(['예상 완독일', m.etaStr ? fmt(m.etaStr) : '—', m.etaIn != null ? '약 ' + m.etaIn + '일 후' : '기록이 쌓이면 계산돼요']);
+  else stats.push(['예상 완독일', m.etaStr ? fmt(m.etaStr) : '—', m.etaIn != null ? '약 ' + m.etaIn + '일 후 · ' + paceText(m.rate) + ' 속도 기준' : '3챕터·3일 이상 기록하면 계산돼요']);
   stats.push(['마지막 기록', m.last ? ago(m.last) : '—', m.last ? fmt(m.last) : '아직 없음']);
   var statsHtml = '<dl class="stats">' + stats.map(function (s) { return '<div class="stat"><dt>' + s[0] + '</dt><dd>' + esc(s[1]) + '</dd><small>' + esc(s[2]) + '</small></div>' }).join('') + '</dl>';
   var alt = m.pagePct != null ? '<span class="alt">분량 기준 ' + Math.round(m.pagePct * 100) + '% (' + m.pagesRead + '/' + m.pagesTotal + '쪽)</span>' : '';
@@ -165,7 +165,7 @@ export function bookView(id) {
       '<label class="fld"><span>목표 완독일</span><input type="date" id="d-goal" data-act="goal" value="' + esc(b.goalDate || '') + '"></label></div>' +
     '<p class="hint">모든 챕터를 완료하면 종료일이 자동으로 채워집니다. 날짜는 직접 고칠 수 있습니다.</p></section></div></details>';
   return '<a class="back" href="#library">← 서재</a>' +
-    '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip warn">7일 넘게 기록 없음</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' +
+    '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip">잠시 쉬는 중</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' +
     '<details class="book-menu" data-disclosure="menu-' + esc(b.id) + '"><summary aria-label="책 설정">⋯</summary><div class="book-menu-items"><a href="#edit-' + esc(b.id) + '">정보·목차 수정</a>' + del + '</div></details></div>' +
     nextPanel(b, m) + doneBanner(b, m) + progress +
     '<div class="sec-h"><h2 class="sec">챕터</h2><button type="button" class="tgl" data-act="remaining" aria-pressed="' + state.ui.onlyRemaining + '">남은 챕터만 보기</button></div>' +

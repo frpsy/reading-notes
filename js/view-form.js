@@ -1,9 +1,9 @@
 // 책 추가·정보 수정 화면: 목차 붙여넣기, 미리보기, 준비된 책 불러오기.
-import { state } from "./state.js?v=26";
-import { esc } from "./util.js?v=26";
-import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver } from "./core.js?v=26";
-import { persist } from "./sync.js?v=26";
-import { notFound } from "./view-common.js?v=26";
+import { state } from "./state.js?v=27";
+import { esc } from "./util.js?v=27";
+import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver, findDuplicate } from "./core.js?v=27";
+import { persist } from "./sync.js?v=27";
+import { notFound } from "./view-common.js?v=27";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
@@ -65,11 +65,12 @@ export function bindForm(id) {
     });
   }
   var form = document.getElementById('bookForm'), err = document.getElementById('f-err');
-  var lostBox = document.getElementById('f-lost'), submitBtn = document.getElementById('f-submit'), lostAck = null;
+  var lostBox = document.getElementById('f-lost'), submitBtn = document.getElementById('f-submit'), lostAck = null, dupAck = null;
   function showErr(msg) { err.textContent = msg; err.hidden = false }
   // 목차를 다시 고치면 경고 확인을 처음부터 다시 받습니다.
   function resetLost() { lostAck = null; lostBox.hidden = true; lostBox.textContent = ''; submitBtn.textContent = id ? '저장' : '책 추가'; submitBtn.classList.remove('danger'); }
   ta.addEventListener('input', function () { upd(); resetLost(); }); upd();
+  document.getElementById('f-title').addEventListener('input', function () { dupAck = null; resetLost(); });
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
     var title = document.getElementById('f-title').value.trim();
@@ -78,7 +79,17 @@ export function bindForm(id) {
     if (!items.length) { showErr('목차를 한 줄 이상 입력해 주세요.'); return }
     var pages = parseInt(document.getElementById('f-pages').value, 10);
     var b = id ? structuredClone(state.books.get(id)) : null, isNew = !b;
-    if (isNew) b = { id: newId(), createdAt: Date.now(), rating: 0, note: '', endDate: null, endAuto: false };
+    if (isNew) {
+      var dup = findDuplicate(Array.from(state.books.values()), title, document.getElementById('f-author').value);
+      if (dup && dupAck !== dup.id) {
+        // 같은 책을 두 번 담는 실수를 막습니다. 다시 누르면 그대로 추가합니다(같은 책을 다시 읽는 경우).
+        dupAck = dup.id;
+        lostBox.innerHTML = '<p><b>서재에 같은 제목의 책이 있습니다.</b> <a href="#book-' + esc(dup.id) + '">' + esc(dup.title) + (dup.author ? ' · ' + esc(dup.author) : '') + '</a></p><p class="muted">다시 읽는 기록을 따로 남기려면 아래 버튼을 한 번 더 누르세요.</p>';
+        lostBox.hidden = false; err.hidden = true; submitBtn.textContent = '그래도 추가';
+        return;
+      }
+      b = { id: newId(), createdAt: Date.now(), rating: 0, note: '', endDate: null, endAuto: false };
+    }
     else {
       var moved = carryOver(b.chapters, items);
       items = moved.items;

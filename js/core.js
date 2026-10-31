@@ -141,7 +141,8 @@ export function metrics(book, today = todayStr()) {
   const rate = (D > 0 && days) ? D / days : null;
   let etaStr = null;
   let etaIn = null;
-  if (status === "reading" && rate && D < L) {
+  // 예상 완독일은 기록이 충분할 때만(완료 3챕터 이상, 기간 3일 이상) 계산합니다. 근거는 rate(시작일부터 평균 속도)입니다.
+  if (status === "reading" && rate && D < L && D >= 3 && days >= 3) {
     etaIn = Math.ceil((L - D) / rate);
     etaStr = dstr(t + etaIn);
   }
@@ -221,7 +222,7 @@ export function goalInfo(book, m, today = todayStr()) {
     const diff = (t + m.etaIn) - g;
     cmp = diff <= 0
       ? { tone: "done", text: "현재 속도로 목표 이내" }
-      : { tone: "warn", text: `현재 속도면 ${diff}일 늦음` };
+      : { tone: "reading", text: `현재 속도로는 목표보다 ${diff}일 뒤` };
   }
   return { text, cmp };
 }
@@ -504,4 +505,17 @@ export function searchMemos(books, q, limit = 30) {
     if (b.note && norm(b.note).includes(k)) out.push({ id: b.id, title: b.title, i: -1, t: "독서 메모", text: snippet(b.note) });
   }
   return out.slice(0, limit);
+}
+
+// 같은 책이 이미 서재에 있는지(제목은 대소문자·공백·문장부호 무시, 저자가 둘 다 있으면 저자도 비교)
+export function findDuplicate(books, title, author, exceptId) {
+  const norm = (x) => String(x || "").toLowerCase().replace(/[\s.,:;!?·'"()\[\]{}<>\-–—_]/g, "");
+  const t = norm(title), a = norm(author);
+  if (!t) return null;
+  for (const b of books) {
+    if (b.id === exceptId || norm(b.title) !== t) continue;
+    if (a && norm(b.author) && norm(b.author) !== a) continue;
+    return b;
+  }
+  return null;
 }
