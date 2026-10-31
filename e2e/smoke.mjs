@@ -117,6 +117,20 @@ try {
     assert.equal(await view.locator(".months .mo").count(), 12);
   });
 
+  await step("탭 이동: 운동 기록·스터디 화면", async () => {
+    await page.click('a.appbtn[href="#/workout/today"]');
+    await page.waitForURL(/#\/workout\/today/);
+    await page.click('[data-act="wk"][data-k="push"][data-d="5"]');
+    assert.equal((await view.locator(".wk-n").first().textContent()).trim(), "5");
+    await page.reload();
+    assert.equal((await view.locator(".wk-n").first().textContent()).trim(), "5");
+    await page.click('a.appbtn[href="#/study/home"]');
+    await view.locator("iframe.embed").waitFor();
+    await page.click('a.appbtn[href="#/reading/library"]');
+    await page.click('[data-act="trial"]'); // 새로고침했으므로 체험 모드를 다시 시작
+    await view.locator("a.book").first().waitFor();
+  });
+
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
   await ctx.close();
 } finally {
