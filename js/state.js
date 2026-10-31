@@ -17,7 +17,7 @@ export const state = {
   unsub: null,
   authMsg: "",
   userEmail: "",
-  ui: { filter: "all", q: "", onlyRemaining: false, openMemo: new Set(), confirmDel: null, folded: new Set() },
+  ui: { filter: "all", q: "", onlyRemaining: false, openMemo: new Set(), memoOrig: new Map(), confirmDel: null, folded: new Set(), jump: null },
   undo: null,
   toastTimer: null,
   catalog: [],

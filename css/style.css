@@ -362,3 +362,20 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .lost-warn ul{margin:8px 0 0;padding-left:20px}
 .lost-warn li{overflow-wrap:anywhere}
 .toast-msg.wrap{white-space:normal;overflow:visible}
+/* 메모 검색 결과 · 위치 이동 강조 */
+.memo-hits{list-style:none;margin:0 0 20px;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.memo-hits li+li{border-top:1px solid var(--line)}
+.memo-hits a{display:flex;flex-direction:column;gap:4px;padding:12px 14px;color:var(--ink);text-decoration:none;min-height:44px}
+.memo-hit-h{font-size:14px;overflow-wrap:anywhere}
+.memo-hit-t{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.next-act{display:flex;gap:8px;flex:none}
+.ch{scroll-margin-top:96px}
+.ch.flash{background:var(--accent-soft);transition:background .6s}
+@media (prefers-reduced-motion:reduce){.ch.flash{transition:none}}
+/* 체크 버튼은 보이는 크기 28px, 누르는 영역 44px */
+.chk::after{inset:-8px}
+/* 입력란 테두리는 바탕과 3:1 이상 */
+:root{--field:#788789}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--field:#617477}}
+:root[data-theme="dark"]{--field:#617477}
+input,select,textarea{border-color:var(--field)}

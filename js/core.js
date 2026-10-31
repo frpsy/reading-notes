@@ -485,3 +485,23 @@ export function carryOver(oldChapters, items) {
   pool.forEach((q) => q.forEach((c) => { if (c.done || c.memo) lost.push({ t: c.t, done: c.done || null, memo: c.memo || "" }); }));
   return { items: next, lost };
 }
+
+// 챕터 메모·독서 메모에서 검색어 찾기(대소문자·공백 무시). 결과는 책 순서·목차 순서, 최대 limit 개
+export function searchMemos(books, q, limit = 30) {
+  const norm = (s) => String(s || "").toLowerCase().replace(/\s+/g, "");
+  const k = norm(q);
+  if (!k) return [];
+  const out = [];
+  const snippet = (text) => {
+    const flat = String(text).replace(/\s+/g, " ").trim(), low = flat.toLowerCase();
+    const first = String(q).trim().toLowerCase().split(/\s+/)[0];
+    const at = Math.max(0, low.indexOf(first));
+    const start = Math.max(0, at - 20);
+    return (start > 0 ? "…" : "") + Array.from(flat).slice(start, start + 80).join("") + (Array.from(flat).length > start + 80 ? "…" : "");
+  };
+  for (const b of books) {
+    (b.chapters || []).forEach((c, i) => { if (c.memo && norm(c.memo).includes(k)) out.push({ id: b.id, title: b.title, i, t: c.t, text: snippet(c.memo) }); });
+    if (b.note && norm(b.note).includes(k)) out.push({ id: b.id, title: b.title, i: -1, t: "독서 메모", text: snippet(b.note) });
+  }
+  return out.slice(0, limit);
+}
