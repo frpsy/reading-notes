@@ -2,7 +2,7 @@
 let authCallback = null;
 const listeners = new Set();
 const read = () => JSON.parse(localStorage.getItem('e2e-books') || '{}');
-const user = () => localStorage.getItem('e2e-signed-in') ? { uid:'test-user', email:'owner@example.com', emailVerified:true } : null;
+const user = () => localStorage.getItem('e2e-signed-in') ? { uid:'test-user', email:localStorage.getItem('e2e-email') || 'owner@example.com', emailVerified:true } : null;
 const snapshot = () => {
   const docs = Object.entries(read()).map(([id,value]) => ({id,data:()=>value}));
   return {docs,empty:!docs.length,metadata:{fromCache:false}};
@@ -17,7 +17,10 @@ export const persistentLocalCache = () => ({});
 export const persistentMultipleTabManager = () => ({});
 export function onAuthStateChanged(_, fn) { authCallback = fn; queueMicrotask(()=>fn(user())); }
 export class GoogleAuthProvider {}
-export async function signInWithPopup() { localStorage.setItem('e2e-signed-in','yes'); await authCallback(user()); }
+export async function signInWithPopup() {
+  if (window.__loginFail) throw Object.assign(Error('Firebase: Error (' + window.__loginFail + ').'), { code: window.__loginFail });
+  localStorage.setItem('e2e-signed-in','yes'); await authCallback(user());
+}
 export async function signOut() { localStorage.removeItem('e2e-signed-in'); await authCallback(null); }
 export const collection = () => ({});
 export const doc = (_, ...path) => path.at(-1);

@@ -12,7 +12,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".txt": "text/plain; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".webmanifest": "application/manifest+json" };
 
 const server = createServer(async (req, res) => {
-  let p = decodeURIComponent(new URL(req.url, "http://x").pathname);
+  let p = decodeURIComponent(new URL(req.url, "http://x").pathname).replace(/^\/reading-notes(?=\/)/, ""); // 배포 경로(/reading-notes/) 흉내
   if (p.endsWith("/")) p += "index.html";
   const file = normalize(join(root, p));
   if (!file.startsWith(root)) { res.writeHead(403).end(); return; }
@@ -40,6 +40,24 @@ try {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(base);
   const view = page.locator("#view");
+
+  await step("로그인 실패는 한국어로 안내", async () => {
+    await page.locator('[data-act="login"]').waitFor();
+    await page.evaluate(() => { window.__loginFail = 'auth/popup-blocked'; });
+    await page.click('[data-act="login"]');
+    await view.getByText(/팝업 차단을 해제/).waitFor();
+    assert.ok(!/Firebase: Error/.test(await view.innerText()));
+    await page.evaluate(() => { window.__loginFail = null; });
+  });
+
+  await step("허용되지 않은 계정은 거부하고 데이터에 접근하지 않음", async () => {
+    await page.evaluate(() => localStorage.setItem('e2e-email', 'stranger@example.com'));
+    await page.click('[data-act="login"]');
+    await view.getByText('stranger@example.com 계정은 이 앱을 쓸 수 없습니다.').waitFor();
+    assert.equal(await view.locator('a.book').count(), 0);
+    assert.equal(await page.evaluate(() => localStorage.getItem('e2e-signed-in')), null, '즉시 로그아웃');
+    await page.evaluate(() => localStorage.removeItem('e2e-email'));
+  });
 
   await step("체험 버튼 없이 구글 로그인 후 시작", async () => {
     await page.locator('[data-act="login"]').waitFor();
@@ -424,6 +442,39 @@ try {
     assert.equal(await page.locator('#f-lost').isVisible(), false, '제목을 고치면 경고 초기화');
     await page.goto(page.url().replace(/#.*/, '#library'));
     assert.equal(await view.locator('a.book').count(), before);
+  });
+
+  await step('다크 모드: 본문·보조 글자·입력란 대비', async () => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto(page.url().replace(/#.*/, '#library'));
+    await view.locator('a.book').first().click();
+    await page.waitForURL(/#book-/);
+    await page.locator('.chapters .ch-title').first().waitFor();
+    await page.locator('#d-rating').waitFor({ state: 'attached' });
+    const r = await page.evaluate(() => {
+      const rgb = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number);
+      const lum = ([r, g, b]) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+      const ratio = (a, b) => { const x = lum(rgb(a)), y = lum(rgb(b)); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+      const bg = getComputedStyle(document.body).backgroundColor;
+      const pick = (sel, prop = 'color') => { const el = document.querySelector(sel); return el ? getComputedStyle(el)[prop] : null; };
+      return { scheme: matchMedia('(prefers-color-scheme: dark)').matches, body: ratio(getComputedStyle(document.body).color, bg), muted: ratio(pick('.count') || pick('.pg') || pick('.by'), bg),
+        title: ratio(pick('.ch-title'), bg), field: ratio(pick('#d-rating', 'borderTopColor'), pick('.note-panel', 'backgroundColor')) };
+    });
+    assert.ok(r.scheme);
+    assert.ok(r.body >= 4.5 && r.title >= 4.5 && r.muted >= 4.5, JSON.stringify(r));
+    assert.ok(r.field >= 3, '입력란 테두리 ' + r.field);
+    await page.emulateMedia({ colorScheme: 'light' });
+  });
+
+  await step('배포 하위 경로(/reading-notes/)에서도 같은 기록으로 동작', async () => {
+    const sub = await ctx.newPage();
+    await sub.goto(base + 'reading-notes/');
+    await sub.locator('#view a.book').first().waitFor();
+    await sub.locator('#view a.book').first().click();
+    await sub.waitForURL(/\/reading-notes\/#book-/);
+    await sub.locator('.chapters .ch').first().waitFor();
+    assert.equal(new URL(sub.url()).pathname, '/reading-notes/');
+    await sub.close();
   });
 
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
