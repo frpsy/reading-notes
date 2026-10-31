@@ -25,7 +25,7 @@ async function setup(storage = memory()) {
   };
   const store = createStore({ firebaseConfig: { apiKey: 'test', projectId: 'test' }, sdkBase: 'fake', allowedEmails: ['owner@example.com'], userCollection: 'u', itemCollection: 'books', merge: mergeBookChanges, validate: validateBook, importSdk: async () => sdk, storage });
   await store.start(() => {});
-  return { store, storage, get current() { return current; }, get writes() { return writes; }, fail: () => { failures++; }, auth: uid => onAuth({ uid, email: 'owner@example.com', emailVerified: true }) };
+  return { store, storage, get current() { return current; }, get writes() { return writes; }, fail: () => { failures++; }, auth: uid => onAuth(uid ? { uid, email: 'owner@example.com', emailVerified: true } : null) };
 }
 
 test('설정이 없으면 오류이며 로그인 없는 저장 API는 제공하지 않음', async () => {
@@ -42,6 +42,7 @@ test('계정별 대기 기록은 즉시 저장되고 새 인스턴스에서도 �
   const r = { key: '01', id: 'x', kind: 'save', base: book(), item: book() };
   r.item.chapters[0].memo = '즉시 보관'; a.store.writePending(r);
   assert.equal(a.storage.length, 1);
+  await a.auth(null); // 이전 화면의 소유권을 해제한 뒤 재실행을 흉내 냅니다.
   const reload = await setup(a.storage);
   assert.equal((await reload.store.readPending())[0].item.chapters[0].memo, '즉시 보관');
   await reload.auth('b'); assert.deepEqual(await reload.store.readPending(), []);

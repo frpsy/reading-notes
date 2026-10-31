@@ -41,6 +41,19 @@ try {
   await page.goto(base);
   const view = page.locator("#view");
 
+  await step('로그인 화면: 작은 모바일과 확대 화면에서 가로 넘침 없음', async () => {
+    await page.locator('[data-act="login"]').waitFor();
+    for (const width of [320, 390, 768, 1280]) {
+      await page.setViewportSize({width, height:844});
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+      assert.ok((await page.locator('[data-act="login"]').boundingBox()).height >= 44);
+      if (process.env.DESIGN_SCREENSHOT_DIR) {
+        await mkdir(process.env.DESIGN_SCREENSHOT_DIR,{recursive:true});
+        await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'welcome-' + width + '.png'),fullPage:true});
+      }
+    }
+  });
+
   await step("로그인 실패는 한국어로 안내", async () => {
     await page.locator('[data-act="login"]').waitFor();
     await page.evaluate(() => { window.__loginFail = 'auth/popup-blocked'; });
@@ -111,7 +124,8 @@ try {
     await options.locator('input[type=date]').fill('2026-10-30');
     await options.locator('input[type=date]').press('Tab');
     assert.equal(await page.locator('.chapter-options').first().getAttribute('open'), '');
-    await page.locator('.chapter-options').first().locator('summary').click();
+    await page.locator('.chapter-options').first().locator('summary').press('Escape');
+    assert.equal(await page.locator('.chapter-options').first().getAttribute('open'), null);
     await page.locator('.book-insights > summary').click();
     assert.equal(await page.locator('#d-start').isVisible(), true);
     await page.locator('.book-insights > summary').click();
@@ -126,6 +140,10 @@ try {
     assert.ok(await page.locator('a.book').first().evaluate(el => el.getBoundingClientRect().top < 400));
     assert.equal(await page.locator('.heat').isVisible(), false);
     if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-mobile.png')});
+    await page.setViewportSize({width:320,height:844});
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+    if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-320.png')});
+    await page.setViewportSize({width:390,height:844});
     await page.locator('.library-insights > summary').click();
     assert.equal(await page.locator('.heat').isVisible(), true);
     await page.setViewportSize({width:1280,height:900});

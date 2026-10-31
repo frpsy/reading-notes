@@ -1,9 +1,9 @@
 // 서재 화면: 책 목록, 상태 필터, 검색, 최근 12주 기록.
-import { state } from "./state.js?v=31";
-import { esc, fmt, ago } from "./util.js?v=31";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos } from "./core.js?v=31";
-import { coverHtml, chipHtml } from "./view-common.js?v=31";
-import { catalogHtml } from "./catalog.js?v=31";
+import { state } from "./state.js?v=34";
+import { esc, fmt, ago } from "./util.js?v=34";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos } from "./core.js?v=34";
+import { coverHtml, chipHtml } from "./view-common.js?v=34";
+import { catalogHtml } from "./catalog.js?v=34";
 
 function nextLine(b, m) {
   if (m.status === 'done') return '';
@@ -24,7 +24,7 @@ function bookRow(b, m) {
     '<span class="book-main"><span class="book-title">' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</span>' +
     '<span class="book-sub">' + by + sub + '</span>' +
     '<span class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + Math.round(m.pct * 100) + '%"></i></span>' +
-    '<span class="book-meta">' + esc(meta) + '</span>' + nextLine(b, m) + '</span>' +
+    '<span class="book-meta">' + meta.split(' · ').map(function (part) { return '<span>' + esc(part) + '</span>'; }).join(' · ') + '</span>' + nextLine(b, m) + '</span>' +
     '<span class="book-side"><b class="pct">' + Math.round(m.pct * 100) + '%</b>' + chipHtml(m) + (stale ? '<span class="chip">잠시 쉬는 중</span>' : '') + '</span></a>';
 }
 
