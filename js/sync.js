@@ -1,8 +1,8 @@
 // 로그인 계정의 변경을 즉시 기기에 보관한 뒤 서버로 전송합니다.
-import * as store from "./store.js?v=35";
-import { state } from "./state.js?v=35";
-import { validateBook, newId, friendlyError } from "./core.js?v=35";
-import { render } from "./bus.js?v=35";
+import * as store from "./store.js?v=36";
+import { state } from "./state.js?v=36";
+import { validateBook, newId, friendlyError } from "./core.js?v=36";
+import { render } from "./bus.js?v=36";
 const TEXT = { pending: '연결 중…', saved: '저장됨', saving: '저장 중…', error: '저장 실패 · 다시 시도', offline: '오프라인 · 기기에 보관 중' };
 let sequence = 0;
 // 연결·서버 사정으로 잠시 실패한 경우만 자동으로 다시 보냅니다(권한·형식·충돌 오류는 사용자 조치가 필요하므로 제외).

@@ -1,12 +1,10 @@
-// 되돌리기: 마지막 체크·날짜 변경을 6초 동안 되돌릴 수 있게 합니다.
-import { state } from "./state.js?v=35";
-import { render } from "./bus.js?v=35";
-import { persist } from "./sync.js?v=35";
-import { esc } from "./util.js?v=35";
+// 알림창: 챕터 체크·취소에는 띄우지 않습니다(진도 체크는 알림창 없이 바로 반영, 취소는 다시 누르기).
+// 메모 삭제처럼 되돌릴 수 없는 동작에만 '되돌리기'를 잠시 보여 줍니다.
+import { state } from "./state.js?v=36";
+import { render } from "./bus.js?v=36";
+import { persist } from "./sync.js?v=36";
+import { esc } from "./util.js?v=36";
 
-function snapshot(b) {
-  return { id: b.id, done: b.chapters.map(function (x) { return x.done; }), startDate: b.startDate, endDate: b.endDate, endAuto: b.endAuto };
-}
 export function hideToast() {
   clearTimeout(state.toastTimer); state.undo = null;
   var t = document.getElementById("toast"); if (t) t.hidden = true;
@@ -25,20 +23,14 @@ export function showNotice(text) {
   t.hidden = false;
   clearTimeout(state.toastTimer); state.toastTimer = setTimeout(hideToast, 10000);
 }
-export function mutate(b, label, fn) {
-  var s = snapshot(b);
-  fn(); persist(b); state.undo = s; showToast(label); render();
+export function mutate(b, fn) {
+  fn(); persist(b); render();
 }
 // 임의 동작을 되돌리는 안내(예: 지운 메모 복구)
 export function offerUndo(label, restore) { showToast(label); state.undo = { restore: restore }; }
 export function restoreUndo() {
   var s = state.undo; if (!s) return;
-  if (s.restore) { hideToast(); s.restore(); return; }
-  var b = state.books.get(s.id); hideToast(); if (!b) return;
-  // 읽음 날짜만 되돌립니다. 그 사이 적은 메모·평점 등은 그대로 둡니다.
-  if (s.done.length === b.chapters.length) b.chapters.forEach(function (x, i) { x.done = s.done[i]; });
-  b.startDate = s.startDate; b.endDate = s.endDate; b.endAuto = s.endAuto;
-  persist(b); render();
+  hideToast(); s.restore();
 }
 export function initUndo() {
   document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-undo]")) restoreUndo(); });
