@@ -1,5 +1,5 @@
 // 다른 기기의 변경은 보존하고 이 기기에서 바꾼 항목만 병합합니다.
-import { normalizeBook, autoDates } from "./core.js?v=28";
+import { normalizeBook, autoDates } from "./core.js?v=29";
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const shape = ch => ch.map(({ t, lv, p }) => ({ t, lv, p }));
 // 같은 챕터 메모를 두 기기에서 동시에 고치면 어느 쪽도 버리지 않고 이 표시로 이어 붙입니다.
