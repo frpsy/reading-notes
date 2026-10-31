@@ -7,6 +7,8 @@ export const state = {
   flushing: false,
   activeKey: null,
   flushTimer: null,
+  retryTimer: null,
+  retryCount: 0,
   epoch: 0,
   mode: "pending",      // pending | firebase
   phase: "boot",        // boot | login | denied | error | app

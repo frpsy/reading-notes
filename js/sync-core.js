@@ -1,7 +1,15 @@
 // 다른 기기의 변경은 보존하고 이 기기에서 바꾼 항목만 병합합니다.
-import { normalizeBook, autoDates } from "./core.js?v=24";
+import { normalizeBook, autoDates } from "./core.js?v=25";
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const shape = ch => ch.map(({ t, lv, p }) => ({ t, lv, p }));
+// 같은 챕터 메모를 두 기기에서 동시에 고치면 어느 쪽도 버리지 않고 이 표시로 이어 붙입니다.
+export const MEMO_JOIN = '\n\n― 두 기기에서 동시에 고친 메모를 모두 남겼습니다 ―\n';
+function joinMemo(server, local) {
+  if (server.endsWith(MEMO_JOIN + local)) return server; // 이미 합친 변경을 다시 보낸 경우(멱등)
+  const joined = server + MEMO_JOIN + local;
+  if (joined.length > 2000) conflict('같은 챕터 메모를 다른 기기에서도 고쳤고, 합치면 2,000자를 넘습니다. 보관된 변경을 새 책으로 저장할 수 있습니다.');
+  return joined;
+}
 function conflict(message) { const error = new Error(message); error.code = 'sync-conflict'; throw error; }
 function identities(ch) {
   const counts = new Map();
@@ -44,6 +52,12 @@ export function mergeBookChanges(remote, base, desired) {
     for (const f of ['done', 'memo']) if (!equal(c[f], before[f])) {
       const dest = targetMap.get(nextKeys[i]);
       if (!dest) conflict('다른 기기에서 수정한 챕터가 삭제되었습니다. 보관된 변경을 새 책으로 저장할 수 있습니다.');
+      const server = remoteMap.get(nextKeys[i]);
+      if (f === 'memo' && server && server.memo && server.memo !== before.memo && server.memo !== c.memo) {
+        // 양쪽 모두 바꾼 메모: 이 기기에서 지웠다면 다른 기기 글을 남기고, 둘 다 썼다면 이어 붙입니다.
+        dest.memo = c.memo ? joinMemo(server.memo, c.memo) : server.memo;
+        continue;
+      }
       dest[f] = c[f];
     }
   });

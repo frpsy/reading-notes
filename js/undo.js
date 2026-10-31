@@ -1,8 +1,8 @@
 // 되돌리기: 마지막 체크·날짜 변경을 6초 동안 되돌릴 수 있게 합니다.
-import { state } from "./state.js?v=24";
-import { render } from "./bus.js?v=24";
-import { persist } from "./sync.js?v=24";
-import { esc } from "./util.js?v=24";
+import { state } from "./state.js?v=25";
+import { render } from "./bus.js?v=25";
+import { persist } from "./sync.js?v=25";
+import { esc } from "./util.js?v=25";
 
 function snapshot(b) {
   return { id: b.id, done: b.chapters.map(function (x) { return x.done; }), startDate: b.startDate, endDate: b.endDate, endAuto: b.endAuto };
@@ -16,6 +16,14 @@ function showToast(label) {
   t.innerHTML = '<span class="toast-msg">' + esc(label) + '</span><button type="button" data-undo="1">되돌리기</button>';
   t.hidden = false;
   clearTimeout(state.toastTimer); state.toastTimer = setTimeout(hideToast, 6000);
+}
+// 되돌리기 없이 알리기만 하는 안내(10초)
+export function showNotice(text) {
+  var t = document.getElementById("toast"); if (!t) return;
+  state.undo = null;
+  t.innerHTML = '<span class="toast-msg wrap">' + esc(text) + '</span>';
+  t.hidden = false;
+  clearTimeout(state.toastTimer); state.toastTimer = setTimeout(hideToast, 10000);
 }
 export function mutate(b, label, fn) {
   var s = snapshot(b);

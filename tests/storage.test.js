@@ -111,3 +111,45 @@ test('입력 제한은 오류로 안내하고 기존 긴 메모는 읽을 때 �
   b.title = '책'; b.author = '가'.repeat(101); assert.match(validateBook(b), /100/);
   b.author = ''; b.chapters = Array.from({length:3001}, () => ({t:'장'})); assert.match(validateBook(b), /3,000/);
 });
+
+test('같은 챕터 메모를 두 기기에서 고치면 둘 다 남기고, 다시 보내도 중복되지 않음', async () => {
+  const { MEMO_JOIN } = await import('../js/sync-core.js');
+  const base = book(), remote = book(), desired = book();
+  base.chapters[0].memo = '원래'; remote.chapters[0].memo = '원격에서 고침'; desired.chapters[0].memo = '이 기기에서 고침';
+  const merged = mergeBookChanges(remote, base, desired);
+  assert.equal(merged.chapters[0].memo, '원격에서 고침' + MEMO_JOIN + '이 기기에서 고침');
+  assert.equal(mergeBookChanges(merged, base, desired).chapters[0].memo, merged.chapters[0].memo, '재전송 멱등');
+  const cleared = book(); cleared.chapters[0].memo = '';
+  assert.equal(mergeBookChanges(remote, base, cleared).chapters[0].memo, '원격에서 고침', '이 기기에서 지워도 다른 기기 글은 보존');
+  const remoteCleared = book(); remoteCleared.chapters[0].memo = '';
+  assert.equal(mergeBookChanges(remoteCleared, base, desired).chapters[0].memo, '이 기기에서 고침');
+  const same = book(); same.chapters[0].memo = '이 기기에서 고침';
+  assert.equal(mergeBookChanges(same, base, desired).chapters[0].memo, '이 기기에서 고침', '같은 글이면 그대로');
+  const long = book(); long.chapters[0].memo = '가'.repeat(1500); const mine = book(); mine.chapters[0].memo = '나'.repeat(600);
+  assert.throws(() => mergeBookChanges(long, base, mine), /2,000자/);
+});
+
+test('손상된 대기 기록은 격리하고 나머지는 복구함', async () => {
+  const a = await setup();
+  const good = { key: '02', id: 'x', kind: 'save', base: book(), item: book() };
+  a.store.writePending(good);
+  const p = [...Array(a.storage.length).keys()].map(i => a.storage.key(i))[0].replace(/02$/, '');
+  a.storage.setItem(p + '01', '{깨진 JSON');
+  a.storage.setItem(p + '03', JSON.stringify({ key: '03', id: 'x', kind: 'save' })); // item 없음
+  const records = await a.store.readPending();
+  assert.deepEqual(records.map(r => r.key), ['02']);
+  assert.equal(records.quarantined, 2);
+  const keys = [...Array(a.storage.length).keys()].map(i => a.storage.key(i));
+  assert.equal(keys.filter(k => k.startsWith('chaekgalpi-quarantine-v1:')).length, 2, '원문은 별도 키로 보존');
+  assert.equal(a.storage.getItem('chaekgalpi-quarantine-v1:' + p + '01'), '{깨진 JSON');
+  assert.equal((await a.store.readPending()).quarantined, 0, '다시 읽으면 정상');
+});
+
+test('일시 오류만 자동 재시도하고 간격은 최대 1분', async () => {
+  const { isTransient, retryDelay } = await import('../js/sync.js');
+  assert.ok(isTransient({ code: 'unavailable' })); assert.ok(isTransient({ code: 'firestore/deadline-exceeded' }));
+  assert.ok(isTransient(new Error('Failed to fetch')));
+  assert.ok(!isTransient({ code: 'permission-denied' })); assert.ok(!isTransient({ code: 'sync-conflict', message: 'x' }));
+  assert.ok(!isTransient(new Error('챕터 메모는 2,000자까지 입력할 수 있습니다.')));
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 10].map(retryDelay), [2000, 4000, 8000, 16000, 32000, 60000, 60000]);
+});
