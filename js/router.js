@@ -1,5 +1,5 @@
 // 주소(해시)를 화면 종류로 바꿉니다.
-import { todayStr } from "./core.js?v=17";
+import { todayStr } from "./core.js?v=18";
 
 export function currentRoute() {
   var h = location.hash.replace(/^#/, ""), m;

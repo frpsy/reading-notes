@@ -171,6 +171,7 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .memo-btn{border:1px solid var(--line);background:none;color:var(--muted);border-radius:6px;font:500 12px var(--sans);min-height:32px;padding:0 10px;cursor:pointer}
 .memo-btn:hover{background:var(--surface-2)}
 .memo-btn.has{color:var(--accent);border-color:var(--accent)}
+.memo-btn.save{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
 .memo-row{list-style:none;padding:0 12px 12px calc(54px + var(--lv,0) * 18px);border:0}
 .chk{position:relative;width:28px;height:28px;margin-top:2px;padding:2px;border:1.5px solid var(--muted);border-radius:7px;background:var(--surface);cursor:pointer;display:block}
 .chk::after{content:"";position:absolute;inset:-6px}

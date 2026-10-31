@@ -105,8 +105,11 @@ try {
     await page.locator("details.memos summary").click();
     await page.locator("details.memos li", { hasText: "<img src=x" }).waitFor();
     await page.locator('textarea[data-act="memotext"]').fill("다시 쓴 메모");
-    await page.locator("h1").click();
+    await page.locator('button.memo-btn.save', { hasText: "메모 저장" }).click(); // 저장하면 자동으로 닫힘
+    assert.equal(await page.locator('textarea[data-act="memotext"]').count(), 0);
+    if (!(await page.locator("details.memos[open]").count())) await page.locator("details.memos summary").click(); // 다시 그리면 접힘
     await page.locator("details.memos[open] li", { hasText: "다시 쓴 메모" }).waitFor();
+    assert.equal(await page.locator("button.memo-btn", { hasText: "메모 닫기" }).count(), 0);
   });
 
   await step("연간 기록", async () => {
