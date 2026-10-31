@@ -1,9 +1,11 @@
 // 여러 화면이 함께 쓰는 조각(표지, 칩, 로그인 화면 등)입니다.
-import { state } from "./state.js?v=28";
-import { esc, hue } from "./util.js?v=28";
+import { state } from "./state.js?v=29";
+import { esc, hue } from "./util.js?v=29";
 
 export var CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 export var DASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>';
+export var CHEVRON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+export var DOTS = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>';
 export var ST = { reading: '읽는 중', done: '완독', todo: '읽을 예정' };
 
 export function coverHtml(b, lg) {

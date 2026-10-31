@@ -1,19 +1,19 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=28";
-import { state } from "./state.js?v=28";
-import { setRenderer, render } from "./bus.js?v=28";
-import { initPrefs, saveFolded } from "./prefs.js?v=28";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=28";
-import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=28";
-import { onAuth } from "./session.js?v=28";
-import { currentRoute } from "./router.js?v=28";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=28";
-import { loginView, loadingView } from "./view-common.js?v=28";
-import { libraryView } from "./view-library.js?v=28";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=28";
-import { yearView } from "./view-year.js?v=28";
-import { formView, bindForm } from "./view-form.js?v=28";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=28";
+import * as store from "./store.js?v=29";
+import { state } from "./state.js?v=29";
+import { setRenderer, render } from "./bus.js?v=29";
+import { initPrefs, saveFolded } from "./prefs.js?v=29";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=29";
+import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=29";
+import { onAuth } from "./session.js?v=29";
+import { currentRoute } from "./router.js?v=29";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=29";
+import { loginView, loadingView } from "./view-common.js?v=29";
+import { libraryView } from "./view-library.js?v=29";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=29";
+import { yearView } from "./view-year.js?v=29";
+import { formView, bindForm } from "./view-form.js?v=29";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=29";
 
 var view = document.getElementById("view");
 
@@ -81,7 +81,7 @@ window.addEventListener("hashchange", function () {
 /* ---------- 이벤트 ---------- */
 document.addEventListener('click', function (e) {
   if (!e.target.isConnected) return; // 다시 그리기 전의 클릭 대상으로 새 메뉴를 닫지 않습니다.
-  view.querySelectorAll('.book-menu[open]').forEach(function (menu) { if (!menu.contains(e.target)) menu.open = false; });
+  view.querySelectorAll('.book-menu[open], .chapter-options[open]').forEach(function (menu) { if (!menu.contains(e.target)) menu.open = false; });
 });
 view.addEventListener('keydown', function (e) {
   var menu = e.target.closest('.book-menu[open]');
