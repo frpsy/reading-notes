@@ -1,7 +1,6 @@
 // 주소(해시)를 화면 종류로 바꿉니다. 주소 형식은 #/<앱>/<화면> 입니다(예: #/reading/book-abc).
 // 예전 주소(#library, #book-… 등)는 #/reading/… 으로 자동으로 바꿔 줍니다.
-import { todayStr } from "./core.js?v=16";
-import { APPS } from "./apps.js?v=16";
+import { todayStr } from "./core.js?v=15";
 
 var APP_DEFAULT = "reading";
 
@@ -16,9 +15,8 @@ export function redirectLegacy() {
 export function currentRoute() {
   var p = location.hash.replace(/^#\/?/, "").split("/");
   var app = p.length > 1 ? p[0] : APP_DEFAULT;
-  if (!APPS.some(function (a) { return a.id === app; })) app = APP_DEFAULT;
   var h = p.length > 1 ? p.slice(1).join("/") : p[0];
-  var r = app === APP_DEFAULT ? screenOf(h) : { name: "home" };
+  var r = screenOf(h);
   r.app = app;
   return r;
 }
