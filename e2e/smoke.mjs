@@ -492,6 +492,48 @@ try {
     assert.ok(box.width >= 32, '체크 버튼 32px 이상');
   });
 
+  await step('메모 삭제 버튼: 내용 삭제 후 닫힘, 되돌리기로 복구', async () => {
+    await page.goto(page.url().replace(/#.*/, '#library'));
+    await view.locator('a.book').first().click();
+    await page.waitForURL(/#book-/);
+    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await page.locator('textarea[data-act="memotext"]').first().fill('삭제할 메모');
+    await page.locator('button.memo-done').click();
+    await page.locator('.memo-tap', { hasText: '삭제할 메모' }).waitFor();
+    await page.locator('.memo-tap', { hasText: '삭제할 메모' }).click();
+    await page.click('button.memo-del');
+    assert.equal(await page.locator('textarea[data-act="memotext"]').count(), 0);
+    assert.equal(await page.locator('.memo-tap', { hasText: '삭제할 메모' }).count(), 0);
+    await page.locator('#toast', { hasText: '메모를 삭제했습니다' }).waitFor();
+    await page.click('[data-undo]');
+    await page.locator('.memo-tap', { hasText: '삭제할 메모' }).waitFor();
+    await page.locator('.memo-tap', { hasText: '삭제할 메모' }).click();
+    await page.click('button.memo-del');
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    const left = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('e2e-books'))).some(b => b.chapters.some(c => c.memo === '삭제할 메모')));
+    assert.equal(left, false, '서버에도 삭제됨');
+  });
+
+  await step('체크할 때 바뀐 줄만 갱신(나머지 줄·펼침 상태는 그대로)', async () => {
+    await page.goto(page.url().replace(/#.*/, '#library'));
+    await view.locator('a.book').first().click();
+    await page.waitForURL(/#book-/);
+    await page.locator('.ch.leaf .chk').first().waitFor();
+    const n = await page.locator('.ch.leaf').count();
+    assert.ok(n >= 3);
+    await page.evaluate(() => { document.querySelectorAll('.chapters > li').forEach((li, i) => { li.__mark = 'm' + i; }); document.querySelector('a.back').dataset.keep = '1'; });
+    const idx = await page.evaluate(() => { const lis = [...document.querySelectorAll('.chapters > li')]; return lis.findIndex(li => li.classList.contains('next')); });
+    assert.ok(idx >= 0, '다음 챕터 줄이 있어야 함');
+    await page.click('[data-act="nextdone"]');
+    await page.locator('#toast [data-undo]').waitFor();
+    const kept = await page.evaluate(() => [...document.querySelectorAll('.chapters > li')].map(li => li.__mark || null));
+    assert.equal(kept[idx], null, '체크한 줄은 새로 그려짐');
+    const same = kept.filter((m, i) => m && i !== idx).length;
+    assert.ok(same >= 1, '바뀌지 않은 줄은 그대로 유지: ' + JSON.stringify(kept));
+    assert.equal(await page.evaluate(() => document.querySelector('a.back').dataset.keep), '1', '바뀌지 않은 위쪽 영역도 그대로');
+    await page.click('[data-undo]');
+  });
+
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
   await ctx.close();
 } finally {

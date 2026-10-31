@@ -9,7 +9,7 @@ const SHELL = [
   "css/style.css", "js/app.js", "js/core.js", "js/store.js", "js/config.js",
   "js/store-core.js", "js/sync-core.js", "js/state.js", "js/bus.js", "js/util.js", "js/prefs.js", "js/sync.js", "js/undo.js",
   "js/session.js", "js/router.js", "js/catalog.js", "js/view-common.js", "js/view-library.js",
-  "js/view-book.js", "js/view-year.js", "js/view-form.js",
+  "js/view-book.js", "js/view-year.js", "js/view-form.js", "js/patch.js",
   "icons/icon.svg", "icons/icon-192.png", "catalog/index.json",
 ];
 const SDK = ["firebase-app.js", "firebase-auth.js", "firebase-firestore.js"].map((f) => `${FB}/${f}`);
