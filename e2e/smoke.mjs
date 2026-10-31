@@ -552,6 +552,23 @@ try {
     await page.click('[data-undo]');
   });
 
+  await step('여러 챕터를 연속 갱신해도 행 순서·버튼 대상 유지', async () => {
+    await page.evaluate(async () => {
+      const { patchView, resetPatch } = await import('/js/patch.js');
+      const box = document.createElement('div');
+      const html = (done) => '<ul class="chapters">' + [0,1,2,3,4].map(i => '<li id="row-' + i + '"><button data-i="' + i + '">' + i + ':' + done + '</button></li>').join('') + '</ul>';
+      resetPatch();
+      patchView(box, html(false), 'regression');
+      for (const done of [true, false, true, false]) {
+        patchView(box, html(done), 'regression');
+        const actual = [...box.querySelectorAll('button')].map(b => b.dataset.i + ':' + b.textContent);
+        const expected = [0,1,2,3,4].map(i => i + ':' + i + ':' + done);
+        if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error('행 순서 또는 버튼 대상 손상: ' + actual);
+      }
+      resetPatch();
+    });
+  });
+
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
   await ctx.close();
 } finally {

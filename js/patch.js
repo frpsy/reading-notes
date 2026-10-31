@@ -32,7 +32,9 @@ export function patchView(view, html, key) {
     var pa = prev[n], pb = sigs[n], live = view.children[n];
     if (pb.kids) {
       if (pa.kids.length !== pb.kids.length || live.children.length !== pb.kids.length) { live.replaceWith(nodes[n]); continue; }
-      for (var j = 0; j < pb.kids.length; j++) if (pa.kids[j] !== pb.kids[j]) live.children[j].replaceWith(nodes[n].children[j]);
+      // DOM 에 옮기면 원본 children 인덱스가 바뀌므로 교체 전에 고정합니다.
+      var replacements = Array.from(nodes[n].children);
+      for (var j = 0; j < pb.kids.length; j++) if (pa.kids[j] !== pb.kids[j]) live.children[j].replaceWith(replacements[j]);
     } else if (pa.html !== pb.html) live.replaceWith(nodes[n]);
   }
   prev = sigs;
