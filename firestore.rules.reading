@@ -1,4 +1,4 @@
-// parent-survey 의 firestore.rules 맨 아래(match /databases/{database}/documents { ... } 안)에 이 블록을 추가해 게시합니다.
+// 책갈피 전용 프로젝트(chaekgalpi-reading)의 Firestore 규칙입니다. 콘솔 규칙 탭에서 아래 match 블록을 `match /databases/{database}/documents { ... }` 안에 넣어 게시합니다.
 // 책갈피 데이터는 readingUsers/{uid}/books/{bookId} 에만 저장되며, 본인 구글 계정(허용 이메일)만 읽고 쓸 수 있습니다.
 // 쓰기는 normalizeBook(js/core.js) 이 만드는 모양만 받습니다. 필드를 바꾸면 이 목록도 같이 고칩니다(tests 가 확인).
 match /readingUsers/{uid}/books/{bookId} {

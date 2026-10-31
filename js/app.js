@@ -3,8 +3,8 @@ import {
   escapeHtml, todayStr, dnum, fmtDate, fmtShort, agoText, newId, parseToc, tocText, parseCatalogText,
   isGroup, leavesOf, descLeaves, nextLeafIndex, activityByDate, currentStreak, longestStreak, heatmapWeeks, metrics as calcMetrics, autoDates, toggleChapter as toggle, completeThrough,
   goalInfo, chartGeometry, normalizeBook, memosOf, matchBook, yearSummary,
-} from "./core.js?v=11";
-import * as store from "./store.js?v=11";
+} from "./core.js?v=12";
+import * as store from "./store.js?v=12";
 
 var view = document.getElementById("view");
 var syncEl = document.getElementById("sync");
