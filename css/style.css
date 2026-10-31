@@ -232,7 +232,7 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .done-banner{display:flex;flex-direction:column;gap:2px;background:var(--ok-soft);border-color:var(--ok);color:var(--ok);margin-top:12px}
 .done-banner b{font:700 17px/1.35 var(--serif)}
 .done-banner span{font-size:14px}
-.toast{position:fixed;left:50%;bottom:calc(72px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:14px;max-width:min(92vw,520px);padding:10px 14px;border-radius:10px;background:var(--ink);color:var(--bg);box-shadow:0 6px 24px rgba(0,0,0,.3);font-size:14px}
+.toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:14px;max-width:min(92vw,520px);padding:10px 14px;border-radius:10px;background:var(--ink);color:var(--bg);box-shadow:0 6px 24px rgba(0,0,0,.3);font-size:14px}
 .toast[hidden]{display:none}
 .toast-msg{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .toast button{flex:none;border:0;background:none;color:inherit;text-decoration:underline;font:600 14px var(--sans);cursor:pointer;padding:6px 4px;min-height:32px}
@@ -272,25 +272,3 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
   .form-actions .btn{flex:1}
   .lib-head .btn{flex:none}
 }
-
-/* ---------- 아래 앱 탭 바 ---------- */
-.appbar{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-.appbar-in{display:flex;max-width:860px;margin:0 auto}
-.appbtn{flex:1;display:flex;align-items:center;justify-content:center;min-height:56px;text-decoration:none;color:var(--muted);font:600 15px var(--sans)}
-.appbtn[aria-current="page"]{color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
-
-/* ---------- 스터디(내장 사이트)·운동 탭 ---------- */
-body:not([data-app="reading"]) #sync{display:none}
-.embed{display:block;width:100%;height:calc(100dvh - 210px);min-height:420px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
-.wk-meta{margin:0 0 12px;color:var(--muted)}
-.wk{display:flex;flex-direction:column;gap:14px}
-.wk-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center}
-.wk-name{font-weight:600}
-.wk-n{justify-self:end;font:600 28px/1 var(--mono)}
-.wk-btns{grid-column:1 / -1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.wk-b{min-height:44px;justify-content:center}
-.wk-h{font:600 15px var(--sans);margin:20px 0 8px}
-.wk-tbl{width:100%;border-collapse:collapse;font:14px var(--mono)}
-.wk-tbl th,.wk-tbl td{padding:8px 4px;text-align:right;border-bottom:1px solid var(--line)}
-.wk-tbl th:first-child,.wk-tbl td:first-child{text-align:left}
-.wk-note{color:var(--muted);font-size:13px;margin-top:12px}

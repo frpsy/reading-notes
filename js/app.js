@@ -1,26 +1,21 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=16";
-import { state } from "./state.js?v=16";
-import { setRenderer, render } from "./bus.js?v=16";
-import { initPrefs, saveFolded } from "./prefs.js?v=16";
-import { initUndo, mutate, hideToast } from "./undo.js?v=16";
-import { initSync, persist, removeBook } from "./sync.js?v=16";
-import { onAuth, enterApp } from "./session.js?v=16";
-import { currentRoute, redirectLegacy } from "./router.js?v=16";
-import { tabBarHtml, APPS } from "./apps.js?v=16";
-import { studyView } from "./view-study.js?v=16";
-import { workoutView, workoutAct } from "./view-workout.js?v=16";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=16";
-import { loginView, loadingView } from "./view-common.js?v=16";
-import { libraryView } from "./view-library.js?v=16";
-import { bookView, refreshMemos } from "./view-book.js?v=16";
-import { yearView } from "./view-year.js?v=16";
-import { formView, bindForm } from "./view-form.js?v=16";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates } from "./core.js?v=16";
+import * as store from "./store.js?v=17";
+import { state } from "./state.js?v=17";
+import { setRenderer, render } from "./bus.js?v=17";
+import { initPrefs, saveFolded } from "./prefs.js?v=17";
+import { initUndo, mutate, hideToast } from "./undo.js?v=17";
+import { initSync, persist, removeBook } from "./sync.js?v=17";
+import { onAuth, enterApp } from "./session.js?v=17";
+import { currentRoute } from "./router.js?v=17";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=17";
+import { loginView, loadingView } from "./view-common.js?v=17";
+import { libraryView } from "./view-library.js?v=17";
+import { bookView, refreshMemos } from "./view-book.js?v=17";
+import { yearView } from "./view-year.js?v=17";
+import { formView, bindForm } from "./view-form.js?v=17";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates } from "./core.js?v=17";
 
 var view = document.getElementById("view");
-var tabs = document.getElementById("tabs");
-var brand = document.querySelector(".brand");
 
 function draw() {
   var ae = document.activeElement, fk = null;
@@ -28,16 +23,6 @@ function draw() {
     fk = '[data-act="' + ae.dataset.act + '"]' + (ae.dataset.i != null ? '[data-i="' + ae.dataset.i + '"]' : "");
   }
   var r = currentRoute(), html;
-  tabs.innerHTML = tabBarHtml(r.app);
-  document.body.dataset.app = r.app;
-  var cur = APPS.filter(function (a) { return a.id === r.app; })[0];
-  if (cur) { brand.textContent = cur.title; brand.setAttribute("href", cur.home); }
-  if (r.app === "study") {
-    if (view.dataset.screen === "study") return; // 다시 그리면 안의 사이트가 새로고침되므로 그대로 둡니다
-    view.dataset.screen = "study"; view.innerHTML = studyView(); return;
-  }
-  view.dataset.screen = r.app;
-  if (r.app === "workout") { view.innerHTML = workoutView(); restoreFocus(fk); return; }
   if (state.phase === "boot") html = loadingView();
   else if (state.phase !== "app") html = loginView();
   else if (!state.ready) html = loadingView();
@@ -47,25 +32,22 @@ function draw() {
   else html = formView(r.id);
   view.innerHTML = html;
   if (state.phase === "app" && state.ready && r.name === "form" && (!r.id || state.books.has(r.id))) bindForm(r.id);
-  restoreFocus(fk, ae);
-}
-function restoreFocus(fk, ae) {
-  if (!fk) return;
-  var n = view.querySelector(fk);
-  if (n) {
-    n.focus({ preventScroll: true });
-    if (n.dataset.act === "search" && ae && typeof ae.selectionStart === "number") { try { n.setSelectionRange(ae.selectionStart, ae.selectionEnd); } catch (e) { /* 무시 */ } }
+  if (fk) {
+    var n = view.querySelector(fk);
+    if (n) {
+      n.focus({ preventScroll: true });
+      if (n.dataset.act === "search" && typeof ae.selectionStart === "number") { try { n.setSelectionRange(ae.selectionStart, ae.selectionEnd); } catch (e) { /* 무시 */ } }
+    }
   }
 }
 setRenderer(draw);
 
-window.addEventListener("hashchange", function () { if (redirectLegacy()) return; state.ui.confirmDel = null; hideToast(); render(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", function () { state.ui.confirmDel = null; hideToast(); render(); window.scrollTo(0, 0); });
 
 /* ---------- 이벤트 ---------- */
 view.addEventListener("click", function (e) {
   var el = e.target.closest("[data-act]");
   if (!el) return;
-  if (el.dataset.act === "wk") { if (workoutAct(el)) render(); return; }
   var act = el.dataset.act, r = currentRoute(), b = r.name === "book" ? state.books.get(r.id) : null;
   switch (act) {
     case "login":
@@ -111,7 +93,7 @@ view.addEventListener("click", function (e) {
     case "del": if (b) { state.ui.confirmDel = b.id; render(); } break;
     case "delno": state.ui.confirmDel = null; render(); break;
     case "delyes":
-      if (b) { state.ui.confirmDel = null; removeBook(b.id); location.hash = "/reading/library"; }
+      if (b) { state.ui.confirmDel = null; removeBook(b.id); location.hash = "library"; }
       break;
   }
 });
@@ -136,7 +118,6 @@ view.addEventListener("change", function (e) {
   }
 });
 
-redirectLegacy();
 initPrefs();
 initUndo();
 initSync();
