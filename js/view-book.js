@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=27";
-import { esc, fmt, ago } from "./util.js?v=27";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=27";
-import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=27";
+import { state } from "./state.js?v=28";
+import { esc, fmt, ago } from "./util.js?v=28";
+import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=28";
+import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=28";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -109,7 +109,8 @@ function memoItems(list) {
 function memosHtml(b, open) {
   var list = memosOf(b);
   if (!list.length) return '';
-  return '<details class="panel memos"' + (open ? ' open' : ' data-lazy') + '><summary>챕터 메모 모아보기 <em>' + list.length + '</em></summary><ul>' + (open ? memoItems(list) : '') + '</ul></details>';
+  // data-disclosure: 다시 그려도 펼침 상태를 유지합니다(펼친 채로 복원되면 toggle 에서 목록을 채움).
+  return '<details class="panel memos" data-disclosure="memos-' + esc(b.id) + '"' + (open ? ' open' : ' data-lazy') + '><summary>챕터 메모 모아보기 <em>' + list.length + '</em></summary><ul>' + (open ? memoItems(list) : '') + '</ul></details>';
 }
 export function fillMemos(d, b) {
   if (!d.hasAttribute('data-lazy')) return;
