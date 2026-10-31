@@ -93,8 +93,11 @@ test("진척·속도·예상일", () => {
   assert.equal(m.pct, 0.25);
   assert.equal(m.status, "reading");
   assert.equal(m.days, 4);
-  assert.equal(m.etaIn, 12);
-  assert.equal(m.etaStr, "2026-10-16");
+  assert.equal(m.etaIn, null, "기록이 1챕터뿐이면 예상일을 계산하지 않음");
+  toggleChapter(b, 2, "2026-10-03"); toggleChapter(b, 4, "2026-10-04");
+  const m3 = metrics(b, "2026-10-04"); // 3챕터 / 4일
+  assert.equal(m3.etaIn, 2);
+  assert.equal(m3.etaStr, "2026-10-06");
   assert.equal(metrics(book(), "2026-10-04").status, "todo");
 });
 
@@ -119,10 +122,14 @@ test("연속 stale 표시", () => {
 test("목표일 안내", () => {
   const b = book({ startDate: "2026-10-01", goalDate: "2026-10-20" });
   toggleChapter(b, 1, "2026-10-02");
+  assert.equal(goalInfo(b, metrics(b, "2026-10-04"), "2026-10-04").cmp, null, "기록이 부족하면 속도 비교 생략");
+  toggleChapter(b, 2, "2026-10-03"); toggleChapter(b, 4, "2026-10-04");
   const m = metrics(b, "2026-10-04");
   const g = goalInfo(b, m, "2026-10-04");
   assert.match(g.text, /16일/);
   assert.equal(g.cmp.tone, "done");
+  const late = goalInfo({ ...b, goalDate: "2026-10-05" }, m, "2026-10-04");
+  assert.match(late.cmp.text, /목표보다 1일 뒤/); assert.notEqual(late.cmp.tone, "warn");
   assert.equal(goalInfo(book(), m, "2026-10-04"), null);
 });
 
@@ -295,4 +302,16 @@ test("목차 수정: 같은 제목으로 기록을 옮기고 사라지는 기록
   assert.deepEqual(r.lost, [{ t: "2장", done: "2026-10-02", memo: "" }]); // 기록 없는 챕터는 경고 대상 아님
   assert.deepEqual(carryOver(old, C.parseToc(old.map((c) => c.t).join("\n"))).lost, []);
   assert.equal(old[0].memo, "첫 메모", "원본은 바꾸지 않음");
+});
+
+test("중복 책 확인: 제목(공백·문장부호 무시)과 저자", async () => {
+  const { findDuplicate } = await import("../js/core.js");
+  const books = [{ id: "a", title: "실용주의 프로그래머", author: "데이비드 토머스" }, { id: "b", title: "인생 역사", author: "" }];
+  assert.equal(findDuplicate(books, "실용주의  프로그래머", "").id, "a");
+  assert.equal(findDuplicate(books, "실용주의 프로그래머!", "데이비드 토머스").id, "a");
+  assert.equal(findDuplicate(books, "실용주의 프로그래머", "다른 저자"), null);
+  assert.equal(findDuplicate(books, "인생역사", "누군가").id, "b", "기존 책 저자가 비어 있으면 제목만 비교");
+  assert.equal(findDuplicate(books, "다른 책", ""), null);
+  assert.equal(findDuplicate(books, "인생 역사", "", "b"), null, "자기 자신 제외");
+  assert.equal(findDuplicate(books, "", ""), null);
 });
