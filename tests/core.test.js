@@ -4,7 +4,7 @@ import fs from "node:fs";
 import * as C from "../js/core.js";
 import {
   escapeHtml, dnum, dstr, parseToc, tocText, isGroup, leavesOf, descLeaves, metrics,
-  autoDates, toggleChapter, nextLeafIndex, completeThrough, activityByDate, currentStreak, longestStreak, heatmapWeeks, goalInfo, chartGeometry, normalizeBook, parseCatalogText,
+  autoDates, toggleChapter, nextLeafIndex, completeThrough, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, goalInfo, chartGeometry, normalizeBook, parseCatalogText,
   agoText,
 } from "../js/core.js";
 
@@ -257,4 +257,12 @@ test("연간 기록 요약", () => {
   const s25 = C.yearSummary([a, b], "2025", "2026-10-30");
   assert.equal(s25.done.length, 0);
   assert.equal(s25.chapters, 1);
+});
+
+test("읽기 알림: 오늘 읽음·끊길 위험·쉬는 중·기록 없음", () => {
+  const m = { "2026-10-28": 1, "2026-10-29": 1, "2026-10-30": 2 };
+  assert.deepEqual(streakStatus(m, "2026-10-30"), { state: "today", streak: 3, gap: 0 });
+  assert.deepEqual(streakStatus(m, "2026-10-31"), { state: "risk", streak: 3, gap: 1 });
+  assert.deepEqual(streakStatus(m, "2026-11-03"), { state: "lapsed", streak: 0, gap: 4 });
+  assert.deepEqual(streakStatus({}, "2026-10-31"), { state: "none", streak: 0, gap: 0 });
 });

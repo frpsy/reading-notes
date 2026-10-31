@@ -1,5 +1,5 @@
 // 다른 기기의 변경은 보존하고 이 기기에서 바꾼 항목만 병합합니다.
-import { normalizeBook, autoDates } from "./core.js?v=20";
+import { normalizeBook, autoDates } from "./core.js?v=21";
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const shape = ch => ch.map(({ t, lv, p }) => ({ t, lv, p }));
 function conflict(message) { const error = new Error(message); error.code = 'sync-conflict'; throw error; }

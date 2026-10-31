@@ -214,6 +214,8 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .next-lbl{font-size:12px;color:var(--muted)}
 .next-title{font:600 16px/1.4 var(--serif);overflow-wrap:anywhere}
 
+.remind{display:flex;flex-direction:column;gap:2px;margin:0 0 16px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:10px;background:color-mix(in srgb,var(--accent) 10%,var(--surface));color:var(--text);text-decoration:none;font-size:14px}
+.remind-go{font-size:13px;color:var(--accent);overflow-wrap:anywhere}
 .activity{margin:0 0 22px}
 .act-h{display:flex;align-items:baseline;gap:6px;margin-bottom:8px;font-size:14px}
 .act-h b{font-size:22px}

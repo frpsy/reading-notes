@@ -246,6 +246,16 @@ export function currentStreak(map, today = todayStr()) {
   return n;
 }
 
+// 오늘 읽기 알림용 상태. today: 오늘 읽음 / risk: 어제까지 이어진 기록이 오늘 끊길 수 있음 / lapsed: 이틀 넘게 쉼 / none: 기록 없음
+export function streakStatus(map, today = todayStr()) {
+  const n = dnum(today);
+  if (map[dstr(n)]) return { state: "today", streak: currentStreak(map, today), gap: 0 };
+  if (map[dstr(n - 1)]) return { state: "risk", streak: currentStreak(map, today), gap: 1 };
+  const days = Object.keys(map).map(dnum).filter((d) => d != null && d < n);
+  if (!days.length) return { state: "none", streak: 0, gap: 0 };
+  return { state: "lapsed", streak: 0, gap: n - Math.max(...days) };
+}
+
 export function longestStreak(map) {
   const days = Object.keys(map).map(dnum).filter((n) => n != null).sort((a, b) => a - b);
   let best = 0, run = 0, prev = null;
