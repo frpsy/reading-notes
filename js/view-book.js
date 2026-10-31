@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=21";
-import { esc, fmt, ago } from "./util.js?v=21";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=21";
-import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=21";
+import { state } from "./state.js?v=22";
+import { esc, fmt, ago } from "./util.js?v=22";
+import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=22";
+import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=22";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -11,7 +11,7 @@ function nextPanel(b, m) {
   var c = b.chapters[i];
   return '<section class="panel next" aria-label="이어 읽기"><div class="next-main"><span class="next-lbl">이어 읽기</span>' +
     '<span class="next-title">' + esc(c.t) + '</span>' + (c.p != null ? '<span class="pg">p.' + c.p + '</span>' : '') + '</div>' +
-    '<div class="next-act"><b class="next-pct">' + Math.round(m.pct * 100) + '%</b><button type="button" class="btn primary" data-act="nextdone">읽음 표시</button></div></section>';
+    '<div class="next-act"><button type="button" class="btn primary" data-act="nextdone">읽음 표시</button></div></section>';
 }
 function doneBanner(b, m) {
   if (m.status !== 'done') return '';
@@ -88,9 +88,9 @@ function chaptersHtml(b, m) {
       out += '<li class="ch leaf' + (c.done ? ' done' : '') + '" style="--lv:' + c.lv + '"><button type="button" class="chk" role="checkbox" aria-checked="' + (c.done ? 'true' : 'false') + '" data-act="toggle" data-i="' + i + '" aria-label="' + esc(c.t) + ' 완료 표시">' + (c.done ? CHECK : '') + '</button>' +
         '<div class="ch-main"><span class="ch-title">' + esc(c.t) + (i === nextLeaf ? ' <span class="chip reading">다음</span>' : '') + '</span>' + page +
         (c.memo && !open ? '<div class="ch-memo">' + memoPreview(c.memo, i) + '</div>' : '') + '</div>' +
-        '<div class="ch-tools">' + (c.done ? '<input type="date" data-act="chdate" data-i="' + i + '" value="' + esc(c.done) + '" aria-label="' + esc(c.t) + ' 완료일">' : '') +
+        '<div class="ch-tools">' + ((c.done || (nextLeaf >= 0 && i > nextLeaf)) ? '<details class="chapter-options" data-disclosure="chapter-' + esc(b.id) + '-' + i + '"><summary aria-label="' + esc(c.t) + ' 추가 작업">⋯</summary><div class="chapter-options-body">' : '') + (c.done ? '<input type="date" data-act="chdate" data-i="' + i + '" value="' + esc(c.done) + '" aria-label="' + esc(c.t) + ' 완료일">' : '') +
         (!c.done && nextLeaf >= 0 && i > nextLeaf ? '<button type="button" class="memo-btn" data-act="upto" data-i="' + i + '">여기까지 읽음</button>' : '') +
-        '<button type="button" class="memo-btn' + (open ? ' save' : (c.memo ? ' has' : '')) + '" data-act="memo" data-i="' + i + '" aria-expanded="' + open + '">' + (open ? '메모 저장' : '메모') + '</button></div></li>';
+        ((c.done || (nextLeaf >= 0 && i > nextLeaf)) ? '</div></details>' : '') + '<button type="button" class="memo-btn' + (open ? ' save' : (c.memo ? ' has' : '')) + '" data-act="memo" data-i="' + i + '" aria-expanded="' + open + '">' + (open ? '메모 저장' : (c.memo ? '메모 있음' : '메모')) + '</button></div></li>';
       if (open) out += '<li class="memo-row" style="--lv:' + c.lv + '"><textarea maxlength="2000" data-act="memotext" data-i="' + i + '" aria-label="' + esc(c.t) + ' 메모" placeholder="이 챕터에서 남기고 싶은 말">' + esc(c.memo) + '</textarea></li>';
     }
   }
@@ -138,22 +138,19 @@ export function bookView(id) {
     '<div class="confirm"><span>이 책의 기록이 모두 삭제됩니다.</span><button type="button" class="btn danger sm" data-act="delyes">삭제</button><button type="button" class="btn sm" data-act="delno">취소</button></div>' :
     '<button type="button" class="btn danger sm" data-act="del">책 삭제</button>';
   var rating = '<option value="0">평점 없음</option>' + [1, 2, 3, 4, 5].map(function (n) { return '<option value="' + n + '"' + ((b.rating || 0) === n ? ' selected' : '') + '>' + n + ' / 5</option>' }).join('');
-  return '<a class="back" href="#library">← 서재</a>' +
-    '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1>' +
-    '<div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip warn">7일 넘게 기록 없음</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' + '<div class="head-actions"><a class="btn sm" href="#edit-' + esc(b.id) + '">정보·목차 수정</a></div></div>' +
-    nextPanel(b, m) + doneBanner(b, m) +
-    '<section class="panel" aria-label="진척 현황"><div class="prog"><span class="big">' + pct + '%</span><span class="of">' + m.D + ' / ' + m.L + ' 챕터</span>' + alt + '</div>' +
-    '<div class="bar lg' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + pct + '%"></i></div>' + goalHtml(b, m) + statsHtml + '</section>' +
-    '<section class="panel" aria-label="날짜"><div class="dates">' +
+  var progress = '<section class="reading-progress" aria-label="진척 현황"><div class="prog"><span class="big">' + pct + '%</span><span class="of">' + m.D + ' / ' + m.L + ' 챕터</span>' + alt + '</div><div class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + pct + '%"></i></div></section>';
+  var insights = '<details class="panel book-insights" data-disclosure="insights-' + esc(b.id) + '"><summary><span>통계와 날짜</span><span class="disclosure-hint">읽는 속도 · 예상 완독일 · 그래프</span></summary><div class="insights-body">' + goalHtml(b, m) + statsHtml +
+    '<section class="insight-chart" aria-label="누적 그래프"><h3>누적 완료 챕터</h3>' + chartSvg(b, m) + '</section>' +
+    '<section class="insight-dates" aria-label="날짜"><h3>날짜 설정</h3><div class="dates">' +
       '<label class="fld"><span>읽기 시작일</span><input type="date" id="d-start" data-act="start" value="' + esc(b.startDate || '') + '"></label>' +
       '<label class="fld"><span>종료일</span><input type="date" id="d-end" data-act="end" value="' + esc(b.endDate || '') + '"></label>' +
       '<label class="fld"><span>목표 완독일</span><input type="date" id="d-goal" data-act="goal" value="' + esc(b.goalDate || '') + '"></label></div>' +
-    '<p class="hint">모든 챕터를 완료하면 종료일이 자동으로 채워집니다. 날짜는 직접 고칠 수 있습니다.</p></section>' +
-    '<section class="panel" aria-label="누적 그래프"><h2 class="sec">누적 완료 챕터</h2><div style="margin-top:12px">' + chartSvg(b, m) + '</div></section>' +
+    '<p class="hint">모든 챕터를 완료하면 종료일이 자동으로 채워집니다. 날짜는 직접 고칠 수 있습니다.</p></section></div></details>';
+  return '<a class="back" href="#library">← 서재</a>' +
+    '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip warn">7일 넘게 기록 없음</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' +
+    '<details class="book-menu" data-disclosure="menu-' + esc(b.id) + '"><summary aria-label="책 설정">⋯</summary><div class="book-menu-items"><a href="#edit-' + esc(b.id) + '">정보·목차 수정</a>' + del + '</div></details></div>' +
+    nextPanel(b, m) + doneBanner(b, m) + progress +
     '<div class="sec-h"><h2 class="sec">챕터</h2><button type="button" class="tgl" data-act="remaining" aria-pressed="' + state.ui.onlyRemaining + '">남은 챕터만 보기</button></div>' +
     chaptersHtml(b, m) + '<div id="memos-box">' + memosHtml(b) + '</div>' +
-    '<div class="sec-h"><h2 class="sec">독서 메모</h2></div>' +
-    '<div class="panel" style="margin-top:0"><div class="dates"><label class="fld"><span>평점</span><select id="d-rating" data-act="rating">' + rating + '</select></label></div>' +
-    noteEditor(b.note) + '</div>' +
-    '<div style="margin-top:28px">' + del + '</div>';
+    '<div class="sec-h"><h2 class="sec">독서 메모</h2></div><div class="panel note-panel" style="margin-top:0"><div class="dates"><label class="fld"><span>평점</span><select id="d-rating" data-act="rating">' + rating + '</select></label></div>' + noteEditor(b.note) + '</div>' + insights;
 }
