@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=15";
-import { esc, fmt, ago } from "./util.js?v=15";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=15";
-import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=15";
+import { state } from "./state.js?v=14";
+import { esc, fmt, ago } from "./util.js?v=14";
+import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=14";
+import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=14";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -121,9 +121,9 @@ export function bookView(id) {
     '<div class="confirm"><span>이 책의 기록이 모두 삭제됩니다.</span><button type="button" class="btn danger sm" data-act="delyes">삭제</button><button type="button" class="btn sm" data-act="delno">취소</button></div>' :
     '<button type="button" class="btn danger sm" data-act="del">책 삭제</button>';
   var rating = '<option value="0">평점 없음</option>' + [1, 2, 3, 4, 5].map(function (n) { return '<option value="' + n + '"' + ((b.rating || 0) === n ? ' selected' : '') + '>' + n + ' / 5</option>' }).join('');
-  return '<a class="back" href="#/reading/library">← 서재</a>' +
+  return '<a class="back" href="#library">← 서재</a>' +
     '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1>' +
-    '<div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip warn">7일 넘게 기록 없음</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' + '<div class="head-actions"><a class="btn sm" href="#/reading/edit-' + esc(b.id) + '">정보·목차 수정</a></div></div>' +
+    '<div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip warn">7일 넘게 기록 없음</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' + '<div class="head-actions"><a class="btn sm" href="#edit-' + esc(b.id) + '">정보·목차 수정</a></div></div>' +
     nextPanel(b, m) + doneBanner(b, m) +
     '<section class="panel" aria-label="진척 현황"><div class="prog"><span class="big">' + pct + '%</span><span class="of">' + m.D + ' / ' + m.L + ' 챕터</span>' + alt + '</div>' +
     '<div class="bar lg' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + pct + '%"></i></div>' + goalHtml(b, m) + statsHtml + '</section>' +

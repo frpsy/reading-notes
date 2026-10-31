@@ -50,7 +50,7 @@ try {
 
   await step("챕터 체크 → 되돌리기", async () => {
     await view.locator("a.book").first().click();
-    await page.waitForURL(/#\/reading\/book-/);
+    await page.waitForURL(/#book-/);
     const prog = view.locator(".prog .of");
     const before = await prog.textContent();
     await page.click('[data-act="nextdone"]');
@@ -70,26 +70,25 @@ try {
   });
 
   await step("제목·목차·메모의 HTML 은 글자로만 표시", async () => {
-    await page.goto(base + "#/reading/add");
+    await page.goto(base + "#add");
     await page.fill("#f-title", "제목 " + XSS);
     await page.fill("#f-author", XSS);
     await page.fill("#f-toc", "1장 " + XSS + "\n2장 <script>window.__xss=2</script>");
     await page.click('#bookForm button[type="submit"]');
-    await page.waitForURL(/#\/reading\/book-/);
+    await page.waitForURL(/#book-/);
     // 이스케이프가 빠지면 이 글자가 그대로 나오지 않아 시간 초과로 실패합니다.
     await view.locator("h1", { hasText: "제목 <img src=x" }).waitFor({ timeout: 5000 });
     await page.locator('[data-act="memo"]').first().click();
     await page.fill('textarea[data-act="memotext"]', XSS);
     await page.locator("h1").click();
     await page.goto(base + "#library");
-    await page.waitForURL(/#\/reading\/library$/);
     await view.locator("a.book").first().waitFor();
     assert.equal(await page.evaluate(() => window.__xss), undefined);
     assert.equal(await view.locator("img").count(), 0);
   });
 
   await step("서재 검색(입력 중 커서 유지)", async () => {
-    await page.goto(base + "#/reading/library");
+    await page.goto(base + "#library");
     const q = page.locator('input[data-act="search"]');
     await q.fill("인생");
     await page.keyboard.type("의");
@@ -111,8 +110,8 @@ try {
   });
 
   await step("연간 기록", async () => {
-    await page.goto(base + "#/reading/library");
-    await page.click('a.s[href="#/reading/year"]');
+    await page.goto(base + "#library");
+    await page.click('a.s[href="#year"]');
     await view.getByText("년 독서 기록").waitFor();
     assert.equal(await view.locator(".months .mo").count(), 12);
   });

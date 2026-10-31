@@ -1,6 +1,6 @@
 // 여러 화면이 함께 쓰는 조각(표지, 칩, 로그인 화면 등)입니다.
-import { state } from "./state.js?v=15";
-import { esc, hue } from "./util.js?v=15";
+import { state } from "./state.js?v=14";
+import { esc, hue } from "./util.js?v=14";
 
 export var CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 export var DASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>';
@@ -12,7 +12,7 @@ export function coverHtml(b, lg) {
 }
 export function chipHtml(m) { return '<span class="chip ' + m.status + '">' + ST[m.status] + '</span>'; }
 export function loadingView() { return '<p class="muted">불러오는 중…</p>'; }
-export function notFound() { return '<p>이 책을 찾을 수 없습니다.</p><p><a href="#/reading/library">서재로 돌아가기</a></p>'; }
+export function notFound() { return '<p>이 책을 찾을 수 없습니다.</p><p><a href="#library">서재로 돌아가기</a></p>'; }
 
 // 읽는 속도 문구: 소수 첫째 자리까지, 끝의 .0 은 뺍니다
 export function paceText(rate) {
