@@ -25,10 +25,19 @@ jobs:
           node-version: 22
       - run: npm test
       - name: e2e 스모크 테스트
+        env:
+          DESIGN_SCREENSHOT_DIR: design-screenshots
         run: |
           npm i --no-save playwright@1.63.0
           npx playwright install --with-deps chromium
           npm run e2e
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: design-screenshots
+          path: design-screenshots/
+          retention-days: 7
 
   rules:
     runs-on: ubuntu-latest

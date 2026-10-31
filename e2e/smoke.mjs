@@ -47,6 +47,10 @@ try {
       await page.setViewportSize({width, height:844});
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
       assert.ok((await page.locator('[data-act="login"]').boundingBox()).height >= 44);
+      if (process.env.DESIGN_SCREENSHOT_DIR) {
+        await mkdir(process.env.DESIGN_SCREENSHOT_DIR,{recursive:true});
+        await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'welcome-' + width + '.png'),fullPage:true});
+      }
     }
   });
 
