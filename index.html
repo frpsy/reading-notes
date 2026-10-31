@@ -18,11 +18,13 @@
 <div class="wrap">
   <header class="top">
     <a class="brand" href="#library">책갈피</a>
-    <span class="top-r"><button class="tbtn" id="theme" type="button">테마 자동</button><button class="sync" id="sync" type="button" data-state="pending">연결 중…</button></span>
+    <span class="top-r"><button class="tbtn" id="theme" type="button">테마 자동</button><button class="sync" id="sync" type="button" aria-live="polite" data-state="pending">연결 중…</button></span>
   </header>
+  <p id="sync-detail" class="err" role="status" hidden></p>
+  <button id="sync-copy" class="btn" type="button" hidden>보관된 변경을 새 책으로 저장</button>
   <main id="view"></main>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script type="module" src="js/app.js?v=18"></script>
+<script type="module" src="js/app.js?v=19"></script>
 </body>
 </html>

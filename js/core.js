@@ -369,11 +369,11 @@ export function normalizeBook(raw) {
     const p = Number.isFinite(x.p) ? Math.trunc(x.p) : null;
     const lv = Number.isFinite(x.lv) ? Math.min(3, Math.max(0, Math.trunc(x.lv))) : 0;
     return {
-      t: String(x.t == null ? "" : x.t).slice(0, 300),
+      t: String(x.t == null ? "" : x.t),
       lv,
       p,
       done: isDateStr(x.done) ? x.done : null,
-      memo: String(x.memo == null ? "" : x.memo).slice(0, 2000),
+      memo: String(x.memo == null ? "" : x.memo),
     };
   }).filter((c) => c.t);
   let prev = -1;
@@ -384,15 +384,15 @@ export function normalizeBook(raw) {
   const allDone = lf.length > 0 && lf.every((i) => chapters[i].done);
   return {
     id: String(r.id || ""),
-    title: String(r.title == null ? "" : r.title).slice(0, 200),
-    author: String(r.author == null ? "" : r.author).slice(0, 100),
+    title: String(r.title == null ? "" : r.title),
+    author: String(r.author == null ? "" : r.author),
     totalPages: pages,
     startDate: isDateStr(r.startDate) ? r.startDate : null,
     endDate: allDone && isDateStr(r.endDate) ? r.endDate : null, // 다 읽지 않은 책의 종료일은 버림
     endAuto: allDone && r.endAuto === true,
     goalDate: isDateStr(r.goalDate) ? r.goalDate : null,
     rating,
-    note: String(r.note == null ? "" : r.note).slice(0, 20000),
+    note: String(r.note == null ? "" : r.note),
     createdAt: Number.isFinite(r.createdAt) ? r.createdAt : 0,
     updatedAt: Number.isFinite(r.updatedAt) ? r.updatedAt : 0,
     chapters,
@@ -417,4 +417,16 @@ export function parseCatalogText(text) {
     source: head["출처"] || "",
     toc: lines.slice(i).join("\n").trim(),
   };
+}
+
+// 입력을 조용히 자르지 않고, 저장 전에 제한을 안내합니다.
+export function validateBook(b) {
+  if (!b.title || b.title.length > 200) return '제목은 1~200자로 입력해 주세요.';
+  if ((b.author || '').length > 100) return '저자는 100자까지 입력할 수 있습니다.';
+  if ((b.note || '').length > 20000) return '독서 메모는 20,000자까지 입력할 수 있습니다.';
+  if (!Array.isArray(b.chapters) || !b.chapters.length || b.chapters.length > 3000) return '목차는 1~3,000개 항목으로 입력해 주세요.';
+  if (b.chapters.some(c => !c.t || c.t.length > 300)) return '목차 제목은 항목마다 1~300자로 입력해 주세요.';
+  if (b.chapters.some(c => (c.memo || '').length > 2000)) return '챕터 메모는 2,000자까지 입력할 수 있습니다.';
+  if (new TextEncoder().encode(JSON.stringify(b)).length > 900000) return '책의 기록이 너무 큽니다. 목차나 메모를 줄여 주세요.';
+  return '';
 }

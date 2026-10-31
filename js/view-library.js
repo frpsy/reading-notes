@@ -1,9 +1,9 @@
 // 서재 화면: 책 목록, 상태 필터, 검색, 최근 12주 기록.
-import { state } from "./state.js?v=18";
-import { esc, fmt, ago } from "./util.js?v=18";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, heatmapWeeks, nextLeafIndex, matchBook } from "./core.js?v=18";
-import { coverHtml, chipHtml } from "./view-common.js?v=18";
-import { catalogHtml } from "./catalog.js?v=18";
+import { state } from "./state.js?v=19";
+import { esc, fmt, ago } from "./util.js?v=19";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, heatmapWeeks, nextLeafIndex, matchBook } from "./core.js?v=19";
+import { coverHtml, chipHtml } from "./view-common.js?v=19";
+import { catalogHtml } from "./catalog.js?v=19";
 
 function nextLine(b, m) {
   if (m.status === 'done') return '';
@@ -52,8 +52,7 @@ export function libraryView() {
     x.m.doneDates.forEach(function (d) { var n = dnum(d); if (n != null && n >= t - 6 && n <= t) week++ });
   });
   var head = '<div class="lib-head"><h1 class="page">내 서재</h1><a class="btn primary" href="#add">책 추가</a></div>';
-  var note = (state.mode === 'local' ? '<p class="notice">체험 모드입니다. 기록이 이 브라우저에만 저장됩니다.</p>' : '') +
-    catalogHtml() +
+  var note = catalogHtml() +
     (state.mode === 'firebase' ? '<div class="tools"><button type="button" class="btn sm" data-act="logout">로그아웃' + (state.userEmail ? ' (' + esc(state.userEmail) + ')' : '') + '</button></div>' : '');
   if (!all.length) {
     return head + '<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>\'책 추가\'에서 목차를 붙여 넣거나, 아래 \'담을 수 있는 책\'에서 서재에 담기를 누르세요.</p></div>' + note;

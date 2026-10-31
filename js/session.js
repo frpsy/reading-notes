@@ -1,11 +1,11 @@
 // 로그인 상태와 저장소 실시간 목록을 연결합니다.
-import * as store from "./store.js?v=18";
-import { state } from "./state.js?v=18";
-import { render } from "./bus.js?v=18";
-import { setSync, okState } from "./sync.js?v=18";
-import { hideToast } from "./undo.js?v=18";
-import { currentRoute } from "./router.js?v=18";
-import { normalizeBook } from "./core.js?v=18";
+import * as store from "./store.js?v=19";
+import { state } from "./state.js?v=19";
+import { render } from "./bus.js?v=19";
+import { setSync, hasPending, restorePending, flush } from "./sync.js?v=19";
+import { hideToast } from "./undo.js?v=19";
+import { currentRoute } from "./router.js?v=19";
+import { normalizeBook } from "./core.js?v=19";
 
 function markReady() {
   if (state.ready) return;
@@ -15,21 +15,22 @@ function markReady() {
 }
 // 로그아웃·계정 전환 때 이전 계정의 저장 대기 상태가 남아 새 데이터를 막지 않도록 비웁니다.
 function resetSaving() {
-  state.timers.forEach(function (t) { clearTimeout(t); });
-  state.timers.clear(); state.dirty.clear(); state.inflight.clear();
+  state.epoch++; state.pending.clear(); state.conflicts.clear(); state.flushing = false;
+  clearTimeout(state.flushTimer); state.flushTimer = null; state.activeKey = null;
+  clearTimeout(state.readyTimer); state.readyTimer = null;
   state.books.clear(); state.lastJson.clear();
 }
 function onSnap(list, meta) {
   var changed = false, seen = new Set();
   list.forEach(function (raw) {
     var id = raw.id; seen.add(id);
-    if (state.dirty.has(id)) return;
+    if (hasPending(id)) return;
     var b = normalizeBook(raw); b.id = id;
     var j = JSON.stringify(b);
     if (state.lastJson.get(id) !== j) { state.books.set(id, b); state.lastJson.set(id, j); changed = true; }
   });
   Array.from(state.books.keys()).forEach(function (id) {
-    if (!seen.has(id) && !state.dirty.has(id)) { state.books.delete(id); state.lastJson.delete(id); changed = true; }
+    if (!seen.has(id) && !hasPending(id)) { state.books.delete(id); state.lastJson.delete(id); changed = true; }
   });
   if (!state.ready) {
     if (meta && meta.fromCache && meta.empty) { if (!state.readyTimer) state.readyTimer = setTimeout(markReady, 1200); return; }
@@ -41,27 +42,21 @@ function onSnap(list, meta) {
   if (changed && !typing && currentRoute().name !== "form") render(); // 입력 중에는 다시 그리지 않아 글이 사라지지 않게 함
 }
 
-export function enterApp(m) {
-  state.mode = m; state.phase = "app"; state.ready = false;
+export async function enterApp() {
+  state.mode = 'firebase'; state.phase = 'app'; state.ready = false;
   resetSaving();
-  if (m === "firebase") {
-    setSync("saved");
-    if (state.unsub) state.unsub();
-    state.unsub = store.watch(onSnap, function (e) { setSync("error", (e && e.message) || ""); markReady(); });
-  } else {
-    store.localList().forEach(function (raw) {
-      var b = normalizeBook(raw);
-      if (b.id && b.chapters.length) { state.books.set(b.id, b); state.lastJson.set(b.id, JSON.stringify(b)); }
-    });
-    setSync("local");
-    state.ready = true;
-  }
-  render();
+  setSync('saved');
+  const epoch = state.epoch;
+  try { await restorePending(epoch); } catch (e) { if (epoch !== state.epoch) return; state.phase = 'error'; state.authMsg = e.message; render(); return; }
+  if (epoch !== state.epoch) return;
+  if (state.unsub) state.unsub();
+  state.unsub = store.watch(onSnap, e => { setSync('error', e.message || '기록을 불러오지 못했습니다.'); markReady(); });
+  flush(); render();
 }
 
 export function onAuth(st) {
   if (st.state === "login" && (state.phase === "denied" || state.phase === "error")) return;
-  if (st.state === "ready") { state.userEmail = st.email || ""; enterApp(st.mode); return; }
+  if (st.state === "ready") { state.userEmail = st.email || ""; enterApp(); return; }
   if (state.unsub) { state.unsub(); state.unsub = null; }
   state.phase = st.state; state.ready = false; resetSaving(); hideToast();
   state.authMsg = st.state === "denied" ? (st.email + " 계정은 이 앱을 쓸 수 없습니다.") : (st.message || "");

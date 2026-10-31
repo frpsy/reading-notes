@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=18";
-import { esc, fmt, ago } from "./util.js?v=18";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=18";
-import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=18";
+import { state } from "./state.js?v=19";
+import { esc, fmt, ago } from "./util.js?v=19";
+import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=19";
+import { CHECK, DASH, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=19";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -76,7 +76,7 @@ function chaptersHtml(b, m) {
         '<div class="ch-tools">' + (c.done ? '<input type="date" data-act="chdate" data-i="' + i + '" value="' + esc(c.done) + '" aria-label="' + esc(c.t) + ' 완료일">' : '') +
         (!c.done && nextLeaf >= 0 && i > nextLeaf ? '<button type="button" class="memo-btn" data-act="upto" data-i="' + i + '">여기까지 읽음</button>' : '') +
         '<button type="button" class="memo-btn' + (open ? ' save' : (c.memo ? ' has' : '')) + '" data-act="memo" data-i="' + i + '" aria-expanded="' + open + '">' + (open ? '메모 저장' : '메모') + '</button></div></li>';
-      if (open) out += '<li class="memo-row" style="--lv:' + c.lv + '"><textarea data-act="memotext" data-i="' + i + '" aria-label="' + esc(c.t) + ' 메모" placeholder="이 챕터에서 남기고 싶은 말">' + esc(c.memo) + '</textarea></li>';
+      if (open) out += '<li class="memo-row" style="--lv:' + c.lv + '"><textarea maxlength="2000" data-act="memotext" data-i="' + i + '" aria-label="' + esc(c.t) + ' 메모" placeholder="이 챕터에서 남기고 싶은 말">' + esc(c.memo) + '</textarea></li>';
     }
   }
   if (!out) out = '<li class="ch"><span></span><div class="ch-main muted">남은 챕터가 없습니다.</div></li>';
@@ -137,6 +137,6 @@ export function bookView(id) {
     chaptersHtml(b, m) + '<div id="memos-box">' + memosHtml(b) + '</div>' +
     '<div class="sec-h"><h2 class="sec">독서 메모</h2></div>' +
     '<div class="panel" style="margin-top:0"><div class="dates"><label class="fld"><span>평점</span><select id="d-rating" data-act="rating">' + rating + '</select></label></div>' +
-    '<label class="fld" style="margin-top:12px"><span>전체 느낌, 남기고 싶은 문장</span><textarea id="d-note" data-act="note">' + esc(b.note || '') + '</textarea></label></div>' +
+    '<label class="fld" style="margin-top:12px"><span>전체 느낌, 남기고 싶은 문장</span><textarea maxlength="20000" id="d-note" data-act="note">' + esc(b.note || '') + '</textarea></label></div>' +
     '<div style="margin-top:28px">' + del + '</div>';
 }

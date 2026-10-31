@@ -1,13 +1,14 @@
-// 화면 스모크 테스트: 체험 모드로 실제 브라우저에서 주요 흐름과 XSS 방어를 확인합니다.
+// 테스트 전용 Firebase 대역으로 로그인·저장 복구·주요 화면을 검증합니다.
 // 실행: npm run e2e (Playwright 필요. CI 는 workflow 에서 설치합니다)
 import { createRequire } from "node:module";
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 
 const { chromium } = createRequire(import.meta.url)("playwright");
-const root = new URL("..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("..", import.meta.url));
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".txt": "text/plain; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".webmanifest": "application/manifest+json" };
 
 const server = createServer(async (req, res) => {
@@ -17,7 +18,7 @@ const server = createServer(async (req, res) => {
   if (!file.startsWith(root)) { res.writeHead(403).end(); return; }
   let body;
   try { body = await readFile(file); } catch { res.writeHead(404).end(); return; }
-  res.writeHead(200, { "content-type": TYPES[extname(file)] || "application/octet-stream" }).end(body);
+  res.writeHead(200, { "content-type": TYPES[extname(file)] || "application/octet-stream", "access-control-allow-origin":"*" }).end(body);
 });
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
 const base = `http://localhost:${server.address().port}/`;
@@ -32,14 +33,18 @@ async function step(name, fn) {
 
 try {
   const ctx = await browser.newContext({ serviceWorkers: "block" });
+  await ctx.route('**/js/config.js*', route => route.fulfill({contentType:'text/javascript',body:'export const firebaseConfig = {apiKey:"test",projectId:"test"}; export const allowedEmails = ["owner@example.com"];'}));
+  await ctx.route('https://www.gstatic.com/firebasejs/**', route => route.fulfill({contentType:'text/javascript',body:'export * from ' + JSON.stringify(base + 'e2e/firebase-fixture.js') + ';'}));
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(base);
   const view = page.locator("#view");
 
-  await step("체험 모드 시작", async () => {
-    await page.click('[data-act="trial"]');
+  await step("체험 버튼 없이 구글 로그인 후 시작", async () => {
+    await page.locator('[data-act="login"]').waitFor();
+    assert.equal(await page.locator('[data-act="trial"]').count(), 0);
+    await page.click('[data-act="login"]');
     await view.getByText("내 서재").waitFor();
   });
 
@@ -64,7 +69,6 @@ try {
     await page.waitForTimeout(600); // 저장 지연(350ms) 대기
     const after = await view.locator(".prog .of").textContent();
     await page.reload();
-    await page.click('[data-act="trial"]').catch(() => {});
     await view.locator(".prog .of").waitFor();
     assert.equal(await view.locator(".prog .of").textContent(), after);
   });
@@ -117,6 +121,101 @@ try {
     await page.click('a.s[href="#year"]');
     await view.getByText("년 독서 기록").waitFor();
     assert.equal(await view.locator(".months .mo").count(), 12);
+  });
+
+  await step('메모 입력 직후 포커스 이동 없이 새로고침해도 복구', async () => {
+    await page.goto(base + '#library');
+    await view.locator('a.book', {hasText:'제목 <img'}).click();
+    await page.fill('#d-note', '입력 직후에도 남는 메모');
+    const pending = await page.evaluate(() => Object.keys(localStorage).filter(k=>k.startsWith('chaekgalpi-pending-v1:')).length);
+    assert.ok(pending > 0);
+    await page.reload();
+    await page.locator('#d-note').waitFor();
+    assert.equal(await page.locator('#d-note').inputValue(), '입력 직후에도 남는 메모');
+    await page.locator('#sync[data-state="saved"]').waitFor();
+  });
+
+  await step('두 탭의 서로 다른 챕터 변경을 모두 보존', async () => {
+    const other = await ctx.newPage();
+    await other.goto(page.url());
+    await other.locator('#d-note').waitFor();
+    await page.evaluate(() => { window.__writeDelay = 300; });
+    await page.locator('[data-act="memo"]').first().click();
+    await page.locator('textarea[data-act="memotext"]').first().fill('첫 탭의 메모');
+    await other.locator('[data-act="memo"]').nth(1).click();
+    await other.locator('textarea[data-act="memotext"]').fill('둘째 탭의 메모');
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    await other.locator('#sync[data-state="saved"]').waitFor();
+    await page.reload();
+    await view.getByText('첫 탭의 메모', {exact:true}).first().waitFor();
+    await view.getByText('둘째 탭의 메모', {exact:true}).first().waitFor();
+    await other.close();
+  });
+
+  await step('오프라인 입력은 기기에 보관하고 재연결 시 자동 전송', async () => {
+    await ctx.setOffline(true);
+    await page.fill('#d-note', '오프라인에서 쓴 메모');
+    await page.locator('#sync[data-state="offline"]').waitFor();
+    await ctx.setOffline(false);
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.reload();
+    await page.locator('#d-note').waitFor();
+    assert.equal(await page.locator('#d-note').inputValue(), '오프라인에서 쓴 메모');
+  });
+
+  await step('삭제 실패 기록을 보관하고 버튼으로 다시 삭제', async () => {
+    await page.evaluate(() => { window.__failWrites = true; });
+    await page.click('[data-act="del"]');
+    await page.click('[data-act="delyes"]');
+    await page.locator('#sync[data-state="error"]').waitFor();
+    const count = await page.evaluate(() => Object.keys(localStorage).filter(k=>k.startsWith('chaekgalpi-pending-v1:')).length);
+    assert.ok(count > 0);
+    await page.evaluate(() => { window.__failWrites = false; });
+    await page.click('#sync');
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    assert.equal(await view.locator('a.book', {hasText:'제목 <img'}).count(), 0);
+    assert.equal(await page.evaluate(() => Object.keys(localStorage).filter(k=>k.startsWith('chaekgalpi-pending-v1:')).length), 0);
+  });
+
+  await step('저장 공간 부족을 표시하고 공간 확보 후 재시도', async () => {
+    await view.locator('a.book').first().click();
+    await page.evaluate(() => {
+      window.__originalSetItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function(k,v) {
+        if (k.startsWith('chaekgalpi-pending-v1:')) throw new DOMException('quota','QuotaExceededError');
+        return window.__originalSetItem.call(this,k,v);
+      };
+    });
+    await page.fill('#d-note', '저장 공간 복구 후 남는 메모');
+    await page.locator('#sync[data-state="error"]').waitFor();
+    assert.match(await page.locator('#sync-detail').innerText(), /창을 닫지 말고/);
+    await page.evaluate(() => { Storage.prototype.setItem = window.__originalSetItem; });
+    await page.click('#sync');
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.reload(); await page.locator('#d-note').waitFor();
+    assert.equal(await page.locator('#d-note').inputValue(), '저장 공간 복구 후 남는 메모');
+  });
+
+  await step('동시 목차 충돌은 원본을 보존하고 새 책으로 복구', async () => {
+    const id = page.url().split('#book-')[1];
+    await page.click('a[href="#edit-' + id + '"]');
+    const toc = await page.locator('#f-toc').inputValue();
+    await page.evaluate(id => {
+      const docs = JSON.parse(localStorage.getItem('e2e-books'));
+      docs[id].chapters[0].t = '다른 기기의 목차';
+      localStorage.setItem('e2e-books',JSON.stringify(docs));
+    }, id);
+    await page.fill('#f-toc', '이 기기의 목차\n' + toc.split('\n').slice(1).join('\n'));
+    await page.click('#bookForm button[type="submit"]');
+    await page.locator('#sync[data-state="error"]').waitFor();
+    await page.click('#sync-copy');
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    const result = await page.evaluate(id => {
+      const docs = JSON.parse(localStorage.getItem('e2e-books'));
+      return { original:docs[id].chapters[0].t, copies:Object.entries(docs).filter(([k])=>k!==id).map(([,b])=>b.chapters[0].t) };
+    }, id);
+    assert.equal(result.original, '다른 기기의 목차');
+    assert.ok(result.copies.includes('이 기기의 목차'));
   });
 
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
