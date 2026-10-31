@@ -6,7 +6,7 @@
   - `bus.js`(다시 그리기 연결), `sync.js`(저장), `undo.js`(되돌리기), `session.js`(로그인·실시간 목록), `prefs.js`(테마·접기), `router.js`(해시 주소), `catalog.js`(준비된 책), `util.js`(작은 도우미)
   - 화면 조각: `view-common.js`, `view-library.js`, `view-book.js`, `view-year.js`, `view-form.js`
   - 새 모듈을 추가하면 `sw.js` 의 `SHELL` 목록에 넣고, 이 파일 모듈 목록도 함께 고칩니다. 모듈 import 의 `?v=` 는 `index.html` 의 app.js 버전과 같아야 합니다.
-- 저장소 접근은 `js/store.js` 한 곳에서만. Firebase 설정(apiKey)이 비어 있으면 localStorage 체험 모드.
+- 저장소 접근은 `js/store.js` 와 `js/store-core.js` 에서만. `store-core.js` 의 `createStore` 가 컬렉션 경로·허용 계정·로컬 저장 키를 받아 씁니다. `store.js` 는 독서 앱 경로(`readingUsers`/`books`)만 정합니다. Firebase 설정(apiKey)이 비어 있으면 localStorage 체험 모드.
 - 화면에 넣는 사용자 입력은 반드시 `escapeHtml` 을 거칩니다.
 - 데이터는 Firestore `readingUsers/{uid}/books/{bookId}`. 구조를 바꾸면 `normalizeBook`, 백업 형식, `firestore.rules.reading` 을 함께 고칩니다.
 - 준비된 책은 `catalog/*.txt` (제목/저자/쪽수/출처 머리말 + `목차:` 아래 본문) 와 `catalog/index.json`. 새 책은 공식 서점 목차를 확인해 출처를 적습니다. 목차에 쪽수가 없으면 쪽수 줄 없이 장·항목만 적습니다. 쪽수가 일부만 있으면 `npm test` 가 실패합니다.
