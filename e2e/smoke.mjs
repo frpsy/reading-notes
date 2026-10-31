@@ -127,7 +127,7 @@ try {
     await page.waitForURL(/#book-/);
     // 이스케이프가 빠지면 이 글자가 그대로 나오지 않아 시간 초과로 실패합니다.
     await view.locator("h1", { hasText: "제목 <img src=x" }).waitFor({ timeout: 5000 });
-    await page.locator('[data-act="memo"]').first().click();
+    await page.locator('.memo-btn[data-act="memo"]').first().click();
     await page.fill('textarea[data-act="memotext"]', XSS);
     await page.locator("h1").click();
     await page.goto(base + "#library");
@@ -186,9 +186,9 @@ try {
     await other.goto(page.url());
     await other.locator('#d-note').waitFor();
     await page.evaluate(() => { window.__writeDelay = 300; });
-    await page.locator('[data-act="memo"]').first().click();
+    await page.locator('.memo-btn[data-act="memo"]').first().click();
     await page.locator('textarea[data-act="memotext"]').first().fill('첫 탭의 메모');
-    await other.locator('[data-act="memo"]').nth(1).click();
+    await other.locator('.memo-btn[data-act="memo"]').nth(1).click();
     await other.locator('textarea[data-act="memotext"]').fill('둘째 탭의 메모');
     await page.locator('#sync[data-state="saved"]').waitFor();
     await other.locator('#sync[data-state="saved"]').waitFor();
@@ -268,9 +268,27 @@ try {
     assert.ok(result.copies.includes('이 기기의 목차'));
   });
 
+  await step('모바일 메모: 눌러서 수정·글자 수·자동 늘어남·완료 버튼', async () => {
+    await page.setViewportSize({width:390,height:844});
+    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    const ta = page.locator('textarea[data-act="memotext"]').first();
+    const h0 = (await ta.boundingBox()).height;
+    await ta.fill('짧은 메모');
+    assert.equal(await page.locator('[data-memo-count]').innerText(), '5/2000');
+    await ta.fill(Array.from({length:30}, (_, i) => '줄 ' + i).join('\n'));
+    assert.ok((await ta.boundingBox()).height > h0);
+    await ta.fill('짧은 메모');
+    await page.locator('button.memo-done').click();
+    assert.equal(await page.locator('textarea[data-act="memotext"]').count(), 0);
+    await page.locator('.memo-tap').first().click();
+    assert.equal(await page.locator('textarea[data-act="memotext"]').first().inputValue(), '짧은 메모');
+    await page.locator('button.memo-done').click();
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+  });
+
   await step('긴 메모 미리보기·펼치기·접기와 원문 보존', async () => {
     const long = '🙂 긴 메모의 앞부분입니다. '.repeat(15) + '\n마지막 문장 <img src=x onerror="window.__xss=1">';
-    await page.locator('[data-act="memo"]').first().click();
+    await page.locator('.memo-btn[data-act="memo"]').first().click();
     await page.locator('textarea[data-act="memotext"]').first().fill(long);
     await page.locator('button.memo-btn.save').first().click();
     await page.locator('#sync[data-state="saved"]').waitFor();
