@@ -1,9 +1,9 @@
 // 책 추가·정보 수정 화면: 목차 붙여넣기, 미리보기, 준비된 책 불러오기.
-import { state } from "./state.js?v=14";
-import { esc } from "./util.js?v=14";
-import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates } from "./core.js?v=14";
-import { persist } from "./sync.js?v=14";
-import { notFound } from "./view-common.js?v=14";
+import { state } from "./state.js?v=15";
+import { esc } from "./util.js?v=15";
+import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates } from "./core.js?v=15";
+import { persist } from "./sync.js?v=15";
+import { notFound } from "./view-common.js?v=15";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
@@ -19,7 +19,7 @@ export function formView(id) {
   var b = id ? state.books.get(id) : null;
   if (id && !b) return notFound();
   var v = { title: b ? b.title : '', author: b ? (b.author || '') : '', pages: b && b.totalPages ? b.totalPages : '', start: b ? (b.startDate || '') : todayStr(), goal: b ? (b.goalDate || '') : '', toc: b ? tocText(b) : '' };
-  return '<a class="back" href="' + (b ? '#book-' + esc(b.id) : '#library') + '">← ' + (b ? '책으로 돌아가기' : '서재') + '</a>' +
+  return '<a class="back" href="' + (b ? '#/reading/book-' + esc(b.id) : '#/reading/library') + '">← ' + (b ? '책으로 돌아가기' : '서재') + '</a>' +
     '<h1 class="page">' + (b ? '정보·목차 수정' : '책 추가') + '</h1>' +
     '<form class="form" id="bookForm" novalidate>' +
       (b ? '' : '<label class="fld"><span>준비된 책에서 불러오기 (선택)</span><select id="f-cat"><option value="">직접 입력</option></select></label>') +
@@ -36,7 +36,7 @@ export function formView(id) {
       '<p class="hint" style="margin:-8px 0 0">한 줄에 항목 하나. 공백 두 칸 또는 탭으로 들여쓰면 하위 항목이 되고, 1.1 같은 번호도 단계로 인식합니다. 줄 끝에 "........ 123"처럼 쓰면 시작 쪽수로 인식합니다.</p>' +
       '<div class="pv" id="toc-preview" aria-live="polite"></div>' +
       '<p class="err" id="f-err" role="alert" hidden></p>' +
-      '<div class="form-actions"><button class="btn primary" type="submit">' + (b ? '저장' : '책 추가') + '</button><a class="btn" href="' + (b ? '#book-' + esc(b.id) : '#library') + '">취소</a></div>' +
+      '<div class="form-actions"><button class="btn primary" type="submit">' + (b ? '저장' : '책 추가') + '</button><a class="btn" href="' + (b ? '#/reading/book-' + esc(b.id) : '#/reading/library') + '">취소</a></div>' +
     '</form>';
 }
 
@@ -92,6 +92,6 @@ export function bindForm(id) {
     autoDates(b);
     state.books.set(b.id, b);
     persist(b);
-    location.hash = 'book-' + b.id;
+    location.hash = '/reading/book-' + b.id;
   });
 }

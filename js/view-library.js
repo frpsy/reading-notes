@@ -1,9 +1,9 @@
 // 서재 화면: 책 목록, 상태 필터, 검색, 최근 12주 기록.
-import { state } from "./state.js?v=14";
-import { esc, fmt, ago } from "./util.js?v=14";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, heatmapWeeks, nextLeafIndex, matchBook } from "./core.js?v=14";
-import { coverHtml, chipHtml } from "./view-common.js?v=14";
-import { catalogHtml } from "./catalog.js?v=14";
+import { state } from "./state.js?v=15";
+import { esc, fmt, ago } from "./util.js?v=15";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, heatmapWeeks, nextLeafIndex, matchBook } from "./core.js?v=15";
+import { coverHtml, chipHtml } from "./view-common.js?v=15";
+import { catalogHtml } from "./catalog.js?v=15";
 
 function nextLine(b, m) {
   if (m.status === 'done') return '';
@@ -20,7 +20,7 @@ function bookRow(b, m) {
   if (m.last) meta += ' · 마지막 기록 ' + ago(m.last);
   if (m.pagePct != null) meta += ' · 분량 기준 ' + Math.round(m.pagePct * 100) + '%';
   var stale = m.status === 'reading' && m.last && (dnum(todayStr()) - dnum(m.last)) >= 7;
-  return '<a class="book" href="#book-' + esc(b.id) + '">' + coverHtml(b) +
+  return '<a class="book" href="#/reading/book-' + esc(b.id) + '">' + coverHtml(b) +
     '<span class="book-main"><span class="book-title">' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</span>' +
     '<span class="book-sub">' + by + sub + '</span>' +
     '<span class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + Math.round(m.pct * 100) + '%"></i></span>' +
@@ -51,7 +51,7 @@ export function libraryView() {
     if (x.m.status === 'done' && x.m.endStr && x.m.endStr.slice(0, 4) === yr) doneYear++;
     x.m.doneDates.forEach(function (d) { var n = dnum(d); if (n != null && n >= t - 6 && n <= t) week++ });
   });
-  var head = '<div class="lib-head"><h1 class="page">내 서재</h1><a class="btn primary" href="#add">책 추가</a></div>';
+  var head = '<div class="lib-head"><h1 class="page">내 서재</h1><a class="btn primary" href="#/reading/add">책 추가</a></div>';
   var note = (state.mode === 'local' ? '<p class="notice">체험 모드입니다. 기록이 이 브라우저에만 저장됩니다.</p>' : '') +
     catalogHtml() +
     (state.mode === 'firebase' ? '<div class="tools"><button type="button" class="btn sm" data-act="logout">로그아웃' + (state.userEmail ? ' (' + esc(state.userEmail) + ')' : '') + '</button></div>' : '');
@@ -60,7 +60,7 @@ export function libraryView() {
   }
   var strip = '<div class="strip"><div class="s"><b>' + cnt.reading + '</b><span>읽는 중</span></div>' +
     '<div class="s"><b>' + cnt.done + '</b><span>완독</span></div>' +
-    '<a class="s" href="#year"><b>' + doneYear + '</b><span>올해 완독 · 연간 기록 ›</span></a>' +
+    '<a class="s" href="#/reading/year"><b>' + doneYear + '</b><span>올해 완독 · 연간 기록 ›</span></a>' +
     '<div class="s"><b>' + week + '</b><span>최근 7일 완료 챕터</span></div></div>';
   var tabs = '<div class="tabs" role="group" aria-label="상태 필터">' + [['all', '전체'], ['reading', '읽는 중'], ['todo', '읽을 예정'], ['done', '완독']].map(function (x) {
     return '<button type="button" class="tab" data-act="filter" data-v="' + x[0] + '" aria-pressed="' + (state.ui.filter === x[0]) + '">' + x[1] + '<em>' + cnt[x[0]] + '</em></button>';
