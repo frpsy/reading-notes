@@ -399,7 +399,7 @@ try {
     await page.locator('input[data-act="search"]').fill('');
     await page.evaluate(() => { document.body.style.minHeight = '3000px'; window.scrollTo(0, 400); });
     await page.waitForTimeout(100);
-    await page.locator('a.book').first().click();
+    await page.evaluate(() => document.querySelector('a.book').click()); // 스크롤을 건드리지 않고 누름(사용자가 보던 자리 그대로)
     await page.waitForURL(/#book-/);
     await page.goBack();
     await page.waitForURL(/#library/);
@@ -605,6 +605,23 @@ try {
     const box = await page.locator('#toast').boundingBox();
     assert.ok(box.height < 72 && box.width > 330 && box.x >= 0 && box.x + box.width <= 390, '알림창 ' + JSON.stringify(box));
     await page.click('[data-undo]');
+  });
+
+  await step('빠른 저장에서는 상단 저장 표시가 바뀌지 않고(깜박임 없음), 오래 걸리면 저장 중… 표시', async () => {
+    await page.goto(page.url().replace(/#.*/, '#library'));
+    await view.locator('a.book', { hasText: '묶음 점검용 책' }).click();
+    await page.waitForURL(/#book-/);
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.evaluate(() => { window.__syncTexts = []; new MutationObserver(() => window.__syncTexts.push(document.getElementById('sync').textContent)).observe(document.getElementById('sync'), { childList: true, characterData: true, subtree: true }); });
+    await page.locator('.chapters > li.leaf .chk').first().click();
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.waitForTimeout(1000);
+    assert.ok(!(await page.evaluate(() => window.__syncTexts)).includes('저장 중…'), '빠른 저장에서 저장 중… 이 깜박이지 않음');
+    await page.evaluate(() => { window.__writeDelay = 1500; window.__syncTexts = []; });
+    await page.locator('.chapters > li.leaf .chk').first().click();
+    await page.locator('#sync', { hasText: '저장 중…' }).waitFor({ timeout: 3000 });
+    await page.locator('#sync[data-state="saved"]').waitFor({ timeout: 8000 });
+    await page.evaluate(() => { window.__writeDelay = 0; });
   });
 
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });

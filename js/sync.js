@@ -1,8 +1,8 @@
 // 로그인 계정의 변경을 즉시 기기에 보관한 뒤 서버로 전송합니다.
-import * as store from "./store.js?v=36";
-import { state } from "./state.js?v=36";
-import { validateBook, newId, friendlyError } from "./core.js?v=36";
-import { render } from "./bus.js?v=36";
+import * as store from "./store.js?v=37";
+import { state } from "./state.js?v=37";
+import { validateBook, newId, friendlyError } from "./core.js?v=37";
+import { render } from "./bus.js?v=37";
 const TEXT = { pending: '연결 중…', saved: '저장됨', saving: '저장 중…', error: '저장 실패 · 다시 시도', offline: '오프라인 · 기기에 보관 중' };
 let sequence = 0;
 // 연결·서버 사정으로 잠시 실패한 경우만 자동으로 다시 보냅니다(권한·형식·충돌 오류는 사용자 조치가 필요하므로 제외).
@@ -21,10 +21,16 @@ function scheduleRetry() {
 // 메모 입력란 아래 문구: 기기 보관은 끝났고, 서버 저장이 어디까지 왔는지 알려 줍니다.
 const MEMO_TEXT = { saving: '기기에 보관됨 · 서버로 보내는 중', saved: '저장됨', offline: '기기에 보관됨 · 연결되면 보냅니다', error: '기기에 보관됨 · 서버 저장 실패(상단 안내 확인)', pending: '기기에 보관됨 · 연결 중' };
 export function memoStatusText(s) { return MEMO_TEXT[s] || MEMO_TEXT.saving; }
+let savingTextTimer = null;
 export function setSync(s, msg = '') {
   if (s === 'saving' && navigator.onLine === false) s = 'offline';
   const el = document.getElementById('sync');
-  el.dataset.state = s; el.textContent = TEXT[s]; el.title = msg;
+  clearTimeout(savingTextTimer);
+  const wasSaved = el.dataset.state === 'saved';
+  el.dataset.state = s; el.title = msg;
+  // 버튼을 누를 때마다 '저장됨 → 저장 중… → 저장됨'으로 글자와 너비가 바뀌어 깜박이므로, 저장이 0.8초 넘게 걸릴 때만 '저장 중…'을 보여 줍니다.
+  if (s === 'saving' && wasSaved) savingTextTimer = setTimeout(function () { if (el.dataset.state === 'saving') el.textContent = TEXT.saving; }, 800);
+  else el.textContent = TEXT[s];
   document.querySelectorAll('[data-memo-saved][data-touched]:not(.bad)').forEach(function (n) { n.textContent = memoStatusText(s); });
   const detail = document.getElementById('sync-detail');
   if (detail) { detail.textContent = msg; detail.hidden = !msg; }

@@ -1,20 +1,20 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=36";
-import { state } from "./state.js?v=36";
-import { setRenderer, render } from "./bus.js?v=36";
-import { initPrefs, saveFolded } from "./prefs.js?v=36";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=36";
-import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=36";
-import { onAuth } from "./session.js?v=36";
-import { currentRoute } from "./router.js?v=36";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=36";
-import { loginView, loadingView } from "./view-common.js?v=36";
-import { libraryView } from "./view-library.js?v=36";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=36";
-import { yearView } from "./view-year.js?v=36";
-import { patchView, resetPatch } from "./patch.js?v=36";
-import { formView, bindForm } from "./view-form.js?v=36";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=36";
+import * as store from "./store.js?v=37";
+import { state } from "./state.js?v=37";
+import { setRenderer, render } from "./bus.js?v=37";
+import { initPrefs, saveFolded } from "./prefs.js?v=37";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=37";
+import { initSync, persist, removeBook, memoStatusText } from "./sync.js?v=37";
+import { onAuth } from "./session.js?v=37";
+import { currentRoute } from "./router.js?v=37";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=37";
+import { loginView, loadingView } from "./view-common.js?v=37";
+import { libraryView } from "./view-library.js?v=37";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=37";
+import { yearView } from "./view-year.js?v=37";
+import { patchView, resetPatch } from "./patch.js?v=37";
+import { formView, bindForm } from "./view-form.js?v=37";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=37";
 
 var view = document.getElementById("view");
 
@@ -47,12 +47,13 @@ function draw() {
 }
 setRenderer(draw);
 
-// 화면별 스크롤 위치를 기억해 서재·연간 기록으로 돌아오면 보던 자리로 되돌립니다.
-var scrollPos = {}, scrollQueued = false;
-window.addEventListener("scroll", function () {
-  if (scrollQueued) return; scrollQueued = true;
-  requestAnimationFrame(function () { scrollQueued = false; scrollPos[location.hash || "#library"] = window.scrollY; });
-}, { passive: true });
+// 화면별 스크롤 위치: 링크를 누르는 순간(이동하기 전)에 떠나는 화면의 위치를 저장합니다.
+// 이동이 시작되면 브라우저가 스크롤을 0으로 되돌리므로 스크롤 이벤트나 hashchange 시점에는 이미 늦습니다.
+var scrollPos = {};
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+document.addEventListener("click", function (e) {
+  if (e.target.closest && e.target.closest("a[href^='#']")) scrollPos[location.hash || "#library"] = window.scrollY;
+}, true);
 function applyJump() {
   var j = state.ui.jump, r = currentRoute();
   if (!j || r.name !== "book" || r.id !== j.id) return false;
