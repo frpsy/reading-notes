@@ -488,3 +488,10 @@ button,a,input,select,textarea,summary{touch-action:manipulation}
   div.book>.book-side{grid-column:2;align-items:stretch;margin-top:6px}
   div.book>.book-side .btn{width:100%}
 }
+
+@media(max-width:600px){
+  .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+  .tab{min-width:0;padding:8px 4px;font-size:13px;white-space:nowrap}
+  .book-meta>span{white-space:nowrap}
+}
+@media(max-width:360px){.tab{font-size:12px}.tab em{font-size:11px;margin-left:3px}}
