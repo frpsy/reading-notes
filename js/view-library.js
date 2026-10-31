@@ -1,9 +1,9 @@
 // 서재 화면: 책 목록, 상태 필터, 검색, 최근 12주 기록.
-import { state } from "./state.js?v=20";
-import { esc, fmt, ago } from "./util.js?v=20";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, heatmapWeeks, nextLeafIndex, matchBook } from "./core.js?v=20";
-import { coverHtml, chipHtml } from "./view-common.js?v=20";
-import { catalogHtml } from "./catalog.js?v=20";
+import { state } from "./state.js?v=21";
+import { esc, fmt, ago } from "./util.js?v=21";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook } from "./core.js?v=21";
+import { coverHtml, chipHtml } from "./view-common.js?v=21";
+import { catalogHtml } from "./catalog.js?v=21";
 
 function nextLine(b, m) {
   if (m.status === 'done') return '';
@@ -26,6 +26,20 @@ function bookRow(b, m) {
     '<span class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + Math.round(m.pct * 100) + '%"></i></span>' +
     '<span class="book-meta">' + esc(meta) + '</span>' + nextLine(b, m) + '</span>' +
     '<span class="book-side"><b class="pct">' + Math.round(m.pct * 100) + '%</b>' + chipHtml(m) + (stale ? '<span class="chip warn">7일 넘게 기록 없음</span>' : '') + '</span></a>';
+}
+
+// 오늘 아직 읽지 않았을 때만 보이는 안내. 이어 읽을 책은 가장 최근에 기록한 읽는 중 책
+function reminderHtml(all, map) {
+  var st = streakStatus(map);
+  if (st.state === 'today' || st.state === 'none') return '';
+  var reading = all.filter(function (x) { return x.m.status === 'reading' });
+  if (!reading.length) return '';
+  reading.sort(function (a, c) { return (c.m.last || '').localeCompare(a.m.last || '') });
+  var x = reading[0], i = nextLeafIndex(x.b);
+  var msg = st.state === 'risk'
+    ? '<b>오늘 아직 읽지 않았습니다.</b> 지금 한 챕터를 읽으면 ' + (st.streak + 1) + '일 연속이 됩니다.'
+    : '<b>' + st.gap + '일째 쉬고 있습니다.</b> 한 챕터부터 다시 시작해 보세요.';
+  return '<a class="remind" href="#book-' + esc(x.b.id) + '"><span>' + msg + '</span><span class="remind-go">' + esc(x.b.title) + (i >= 0 ? ' · ' + esc(x.b.chapters[i].t) : '') + ' ›</span></a>';
 }
 
 function activityHtml(list) {
@@ -74,5 +88,5 @@ export function libraryView() {
   });
   var rows = list.length ? '<div class="books">' + list.map(function (x) { return bookRow(x.b, x.m) }).join('') + '</div>' : '<p class="muted">' + (state.ui.q ? '검색 결과가 없습니다.' : '해당하는 책이 없습니다.') + '</p>';
   var search = all.length > 1 ? '<input type="search" class="search" data-act="search" value="' + esc(state.ui.q) + '" placeholder="제목·저자 검색" aria-label="제목·저자 검색" autocomplete="off">' : '';
-  return head + strip + activityHtml(all.map(function (x) { return x.b })) + search + tabs + rows + note;
+  return head + strip + reminderHtml(all, activityByDate(all.map(function (x) { return x.b }))) + activityHtml(all.map(function (x) { return x.b })) + search + tabs + rows + note;
 }
