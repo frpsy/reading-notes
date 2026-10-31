@@ -1,8 +1,8 @@
 // 로그인 계정의 변경을 즉시 기기에 보관한 뒤 서버로 전송합니다.
-import * as store from "./store.js?v=37";
-import { state } from "./state.js?v=37";
-import { validateBook, newId, friendlyError } from "./core.js?v=37";
-import { render } from "./bus.js?v=37";
+import * as store from "./store.js?v=38";
+import { state } from "./state.js?v=38";
+import { validateBook, newId, friendlyError } from "./core.js?v=38";
+import { render } from "./bus.js?v=38";
 const TEXT = { pending: '연결 중…', saved: '저장됨', saving: '저장 중…', error: '저장 실패 · 다시 시도', offline: '오프라인 · 기기에 보관 중' };
 let sequence = 0;
 // 연결·서버 사정으로 잠시 실패한 경우만 자동으로 다시 보냅니다(권한·형식·충돌 오류는 사용자 조치가 필요하므로 제외).
@@ -38,7 +38,10 @@ export function setSync(s, msg = '') {
   if (copy) copy.hidden = s !== 'error' || !state.conflicts.size;
 }
 export function hasPending(id) { return [...state.pending.values()].some(x => x.id === id); }
+export const RECENT_MS = 10000;
+function touch(id, deleted) { state.recent.set(id, { t: Date.now(), deleted: !!deleted }); }
 function stage(id, kind, item) {
+  touch(id, kind === 'delete');
   const previous = state.lastJson.get(id);
   const queued = [...state.pending.values()].filter(x => x.id === id).at(-1);
   const replace = !!navigator.locks && kind === 'save' && queued?.kind === 'save' && queued.key !== state.activeKey;
@@ -77,6 +80,7 @@ export async function flush() {
         await store.sendPending(record);
         if (epoch !== state.epoch) return;
         state.pending.delete(record.key);
+        touch(record.id, record.kind === 'delete');
         state.retryCount = 0;
       } catch (e) {
         if (epoch !== state.epoch) return;

@@ -7,6 +7,7 @@ export const state = {
   flushing: false,
   activeKey: null,
   flushTimer: null,
+  recent: new Map(), // 방금 저장·삭제한 책 id → {t, deleted}. 이 시간 동안은 오래된 서버 응답으로 화면을 되돌리지 않음
   retryTimer: null,
   retryCount: 0,
   epoch: 0,

@@ -624,6 +624,80 @@ try {
     await page.evaluate(() => { window.__writeDelay = 0; });
   });
 
+  await step('서버 응답이 늦거나 오래된 내용이 먼저 와도 체크·해제가 한 번만 바뀜(깜박임 없음)', async () => {
+    await page.goto(page.url().replace(/#.*/, '#library'));
+    await view.locator('a.book', { hasText: '묶음 점검용 책' }).click();
+    await page.waitForURL(/#book-/);
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('.chapters > li.leaf .chk').first().waitFor();
+    await page.waitForTimeout(500);
+    await page.evaluate(() => {
+      window.__realisticSnapshots = true;
+      window.__seq = []; window.__rows = 0;
+      const chk = () => { const c = document.querySelector('.chapters > li.leaf .chk'); return c ? c.getAttribute('aria-checked') : '-'; };
+      window.__chk = chk;
+      new MutationObserver((ms) => { const v = chk(); const last = window.__seq[window.__seq.length - 1]; if (last !== v) window.__seq.push(v); ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1 && n.matches && n.matches('.chapters > li')) window.__rows++; })); })
+        .observe(document.getElementById('view'), { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-checked'] });
+    });
+    const first = page.locator('.chapters > li.leaf .chk').first();
+    for (const [i, want] of [[0, 'true'], [1, 'false'], [2, 'true'], [3, 'false']]) {
+      await page.evaluate(() => { window.__seq = [window.__chk()]; window.__rows = 0; });
+      await first.click();
+      await page.waitForTimeout(1200);
+      const seq = await page.evaluate(() => window.__seq);
+      assert.deepEqual(seq, [want === 'true' ? 'false' : 'true', want], '누른 ' + (i + 1) + '번째 변화 순서가 한 번에 끝나야 함: ' + JSON.stringify(seq));
+      const rows = await page.evaluate(() => window.__rows);
+      assert.ok(rows <= 3, '한 번 누를 때 새로 그려진 줄 ' + rows);
+    }
+    // 빠르게 연타: 눌린 횟수만큼만 뒤집혀야 하고 마지막 상태가 유지됨
+    await page.evaluate(() => { window.__seq = [window.__chk()]; });
+    for (let k = 0; k < 5; k++) { await first.click(); await page.waitForTimeout(90); }
+    await page.waitForTimeout(1500);
+    const seq = await page.evaluate(() => window.__seq);
+    assert.equal(seq.length, 6, '5번 누르면 5번만 바뀜: ' + JSON.stringify(seq));
+    assert.equal(await first.getAttribute('aria-checked'), 'true');
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    const ui = Number(/(\d+)\s*\//.exec(await page.locator('.reading-progress .of').innerText())[1]); // 접힌 묶음과 무관한 '읽은 수 / 전체'
+    const server = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('e2e-books'))).find(b => b.title === '묶음 점검용 책').chapters.filter(c => c.done).length);
+    assert.equal(server, ui, '화면과 서버의 체크 수가 같음(화면 ' + ui + ', 서버 ' + server + ')');
+    await first.click(); // 원래대로
+    await page.waitForTimeout(800);
+  });
+
+  await step('저장 직후에도 다른 기기의 새 변경은 반영되고, 삭제한 책은 되살아나지 않음', async () => {
+    await page.evaluate(() => { window.__realisticSnapshots = true; });
+    // 다른 기기의 변경(더 최신 updatedAt)을 흉내: 저장 직후 7번째 줄에 완료일을 넣음
+    await page.locator('.chapters > li.leaf .chk').first().click();
+    await page.waitForTimeout(100);
+    await page.evaluate(() => {
+      const docs = JSON.parse(localStorage.getItem('e2e-books'));
+      const b = Object.values(docs).find(x => x.title === '묶음 점검용 책');
+      b.chapters[8].done = '2026-10-29'; b.updatedAt = Date.now() + 5000;
+      localStorage.setItem('e2e-books', JSON.stringify(docs));
+      window.dispatchEvent(new StorageEvent('storage', { key: 'e2e-books' }));
+    });
+    await page.waitForTimeout(1200);
+    assert.equal(await page.locator('.chapters > li.leaf .chk[aria-checked="true"]').count() >= 2, true, '다른 기기의 변경도 반영됨');
+    // 되돌려 두기
+    await page.evaluate(() => { const docs = JSON.parse(localStorage.getItem('e2e-books')); const b = Object.values(docs).find(x => x.title === '묶음 점검용 책'); b.chapters.forEach(c => { c.done = null; }); b.updatedAt = Date.now() + 8000; localStorage.setItem('e2e-books', JSON.stringify(docs)); window.dispatchEvent(new StorageEvent('storage', { key: 'e2e-books' })); });
+    await page.waitForTimeout(800);
+    // 책을 삭제해도 오래된 응답이 다시 살리지 않음
+    await page.evaluate(() => { window.__realisticSnapshots = true; });
+    await page.locator('.book-menu > summary').click();
+    await page.click('[data-act="del"]');
+    await page.evaluate(() => {
+      window.__resurrected = false;
+      new MutationObserver(() => { if (/묶음 점검용 책/.test(document.getElementById('view').innerText) && location.hash === '#library') window.__resurrected = true; })
+        .observe(document.getElementById('view'), { childList: true, subtree: true });
+    });
+    await page.click('[data-act="delyes"]');
+    await page.waitForURL(/#library/);
+    await page.waitForTimeout(1500);
+    assert.equal(await view.locator('a.book', { hasText: '묶음 점검용 책' }).count(), 0, '삭제한 책이 되살아나지 않음');
+    assert.equal(await page.evaluate(() => window.__resurrected), false, '삭제한 책이 잠깐이라도 다시 나타나지 않음');
+    await page.evaluate(() => { window.__realisticSnapshots = false; });
+  });
+
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
   await ctx.close();
 } finally {

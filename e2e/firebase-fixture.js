@@ -28,7 +28,14 @@ export function onSnapshot(_, fn) { listeners.add(fn); queueMicrotask(()=>fn(sna
 export async function getDocs() { return snapshot(); }
 export async function deleteDoc(id) {
   if (window.__failWrites) throw Error('테스트 저장 실패');
-  const docs = read(); delete docs[id]; localStorage.setItem('e2e-books',JSON.stringify(docs)); notify();
+  const before = localStorage.getItem('e2e-books');
+  const docs = read(); delete docs[id]; localStorage.setItem('e2e-books',JSON.stringify(docs));
+  if (window.__realisticSnapshots) {
+    const old = JSON.parse(before || '{}');
+    const oldSnap = () => { const d = Object.entries(old).map(([k,value]) => ({id:k,data:()=>value})); return {docs:d,empty:!d.length,metadata:{fromCache:false}}; };
+    setTimeout(() => { for (const fn of listeners) fn(oldSnap()); }, window.__staleAfter ?? 20);
+    setTimeout(notify, window.__freshAfter ?? 250);
+  } else notify();
 }
 export async function runTransaction(_, fn) {
   if (window.__failWrites) throw Error('테스트 저장 실패');
@@ -37,6 +44,14 @@ export async function runTransaction(_, fn) {
   return navigator.locks.request('e2e-firestore', async () => {
     const docs = read();
     await fn({get:async id=>({exists:()=>!!docs[id],data:()=>structuredClone(docs[id])}),set:(id,value)=>{ docs[id]=value; }});
-    localStorage.setItem('e2e-books',JSON.stringify(docs)); notify();
+    const before = localStorage.getItem('e2e-books');
+    localStorage.setItem('e2e-books',JSON.stringify(docs));
+    if (window.__realisticSnapshots) {
+      // 실제 서버처럼: 커밋 직후 잠깐은 이전 내용이 먼저 오고, 그 뒤에 새 내용이 옵니다(리스너 지연 흉내).
+      const old = JSON.parse(before || '{}');
+      const oldSnap = () => { const d = Object.entries(old).map(([id,value]) => ({id,data:()=>value})); return {docs:d,empty:!d.length,metadata:{fromCache:false}}; };
+      setTimeout(() => { for (const fn of listeners) fn(oldSnap()); }, window.__staleAfter ?? 20);
+      setTimeout(notify, window.__freshAfter ?? 250);
+    } else notify();
   });
 }
