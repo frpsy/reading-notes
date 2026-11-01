@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { normalizeBook } from "../js/core.js";
 
 const read = (p) => readFileSync(new URL("../" + p, import.meta.url), "utf8");
@@ -37,4 +37,13 @@ test("index.html 미리 받기(modulepreload): 앱 모듈 버전 일치, 파일 
   for (const [, file, ver] of local) { assert.equal(ver, v, file); assert.ok(existsSync(new URL("../" + file, import.meta.url)), file); }
   const fb = /const FB = "([^"]+)"/.exec(read("js/store.js"))[1];
   for (const [, url] of html.matchAll(/rel="modulepreload" href="(https:[^"]+)"/g)) assert.ok(url.startsWith(fb + "/"), url);
+});
+
+test("모든 모듈 import 버전은 앱 진입점과 일치", () => {
+  const v = /js\/app\.js\?v=(\d+)/.exec(read("index.html"))[1];
+  for (const name of readdirSync(new URL("../js/", import.meta.url)).filter((x) => x.endsWith(".js"))) {
+    for (const [, , importedVersion] of read("js/" + name).matchAll(/from ["']\.\/[\w-]+\.js(\?v=(\d+))?["']/g)) {
+      assert.equal(importedVersion, v, name + " 의 모듈 버전이 다르거나 누락됐습니다");
+    }
+  }
 });

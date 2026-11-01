@@ -1,8 +1,8 @@
 // 로그인 계정의 변경을 즉시 기기에 보관한 뒤 서버로 전송합니다.
-import * as store from "./store.js?v=40";
-import { state } from "./state.js?v=40";
-import { validateBook, newId, friendlyError } from "./core.js?v=40";
-import { render } from "./bus.js?v=40";
+import * as store from "./store.js?v=41";
+import { state } from "./state.js?v=41";
+import { validateBook, newId, friendlyError } from "./core.js?v=41";
+import { render } from "./bus.js?v=41";
 const TEXT = { pending: '연결 중…', saved: '저장됨', saving: '저장 중…', error: '저장 실패 · 다시 시도', offline: '오프라인 · 기기에 보관 중' };
 let sequence = 0;
 // 연결·서버 사정으로 잠시 실패한 경우만 자동으로 다시 보냅니다(권한·형식·충돌 오류는 사용자 조치가 필요하므로 제외).
@@ -33,21 +33,30 @@ export function setSync(s, msg = '') {
   const copy = document.getElementById('sync-copy');
   if (copy) copy.hidden = s !== 'error' || !state.conflicts.size;
 }
-export function hasPending(id) { return [...state.pending.values()].some(x => x.id === id); }
+export function hasPending(id) { return state.localFailed.has(id) || [...state.pending.values()].some(x => x.id === id); }
 export const RECENT_MS = 10000;
 function touch(id, deleted) { state.recent.set(id, { t: Date.now(), deleted: !!deleted }); }
 function stage(id, kind, item) {
-  touch(id, kind === 'delete');
   const previous = state.lastJson.get(id);
   const queued = [...state.pending.values()].filter(x => x.id === id).at(-1);
   const replace = !!navigator.locks && kind === 'save' && queued?.kind === 'save' && queued.key !== state.activeKey;
   const key = replace ? queued.key : Date.now().toString().padStart(16, '0') + '-' + (++sequence).toString().padStart(8, '0') + '-' + crypto.randomUUID();
   const record = { key, id, kind, base: replace ? queued.base : (previous ? JSON.parse(previous) : null) };
   if (item) record.item = structuredClone(item);
+  // 로컬 보관 성공 전에는 화면의 저장 기준이나 서버 대기열을 바꾸지 않습니다.
+  // 특히 저장 공간이 가득 찼을 때 삭제/수정이 성공한 것처럼 보이지 않게 합니다.
+  try { store.writePending(record); }
+  catch (e) {
+    // 메모·날짜처럼 이미 화면의 책 객체가 바뀐 경우, 복구 가능한 메모리 사본을 유지합니다.
+    // 삭제나 폼 입력은 각각 기존 화면/폼을 유지하므로 로컬 실패 목록에 넣지 않습니다.
+    if (kind === 'save' && state.books.get(id) === item) state.localFailed.add(id);
+    setSync('error', '기기에 보관하지 못했습니다. 창을 닫지 말고 저장 공간을 확보한 뒤 다시 시도해 주세요.');
+    return false;
+  }
+  state.localFailed.delete(id);
+  touch(id, kind === 'delete');
   state.pending.set(key, record);
   if (item) state.lastJson.set(id, JSON.stringify(item)); else state.lastJson.delete(id);
-  try { store.writePending(record); }
-  catch (e) { setSync('error', '기기에 보관하지 못했습니다. 창을 닫지 말고 저장 공간을 확보한 뒤 다시 시도해 주세요.'); return false; }
   setSync('saving');
   // 서버 전송만 묶습니다. 기기 보관은 위에서 이미 완료했습니다.
   clearTimeout(state.flushTimer); state.flushTimer = setTimeout(flush, 150); return true;
@@ -55,9 +64,16 @@ function stage(id, kind, item) {
 export function persist(b) {
   const error = validateBook(b);
   if (error) { setSync('error', error); return false; }
-  b.updatedAt = Date.now(); return stage(b.id, 'save', b);
+  const previousUpdatedAt = b.updatedAt;
+  b.updatedAt = Date.now();
+  if (!stage(b.id, 'save', b)) { b.updatedAt = previousUpdatedAt; return false; }
+  return true;
 }
-export function removeBook(id) { stage(id, 'delete'); state.books.delete(id); }
+export function removeBook(id) {
+  if (!stage(id, 'delete')) return false;
+  state.books.delete(id);
+  return true;
+}
 export async function flush() {
   if (state.flushing || state.phase !== 'app') return;
   const epoch = state.epoch;
@@ -93,8 +109,12 @@ export async function flush() {
       state.flushing = false;
       if (retryMsg && state.pending.size) setSync('error', retryMsg + ' ' + Math.round(scheduleRetry() / 1000) + '초 뒤 자동으로 다시 보냅니다.');
       if (!state.pending.size) {
-        setSync('saved');
-        store.refresh().catch(e => { if (epoch === state.epoch) setSync('error', friendlyError(e, '기록을 불러오지 못했습니다. 연결을 확인한 뒤 상단의 상태 버튼을 눌러 다시 시도해 주세요.')); });
+        if (state.localFailed.size) {
+          setSync('error', '아직 기기에 보관하지 못한 변경이 있습니다. 창을 닫지 말고 저장 공간 확보 후 다시 시도해 주세요.');
+        } else {
+          setSync('saved');
+          store.refresh().catch(e => { if (epoch === state.epoch) setSync('error', friendlyError(e, '기록을 불러오지 못했습니다. 연결을 확인한 뒤 상단의 상태 버튼을 눌러 다시 시도해 주세요.')); });
+        }
       }
     }
   }
@@ -110,8 +130,19 @@ export async function restorePending(epoch = state.epoch) {
   if (state.pending.size) setSync('saving');
   return records.quarantined || 0;
 }
+function retryLocalFailures() {
+  for (const id of [...state.localFailed]) {
+    const b = state.books.get(id);
+    if (!b) { state.localFailed.delete(id); continue; }
+    // 실패했던 최신 화면 값을 보관하고, 성공한 경우만 실패 목록에서 제거합니다.
+    if (!persist(b)) break;
+  }
+}
 export function initSync() {
-  window.addEventListener('online', () => { if (state.pending.size) { setSync('saving'); flush(); } });
+  window.addEventListener('online', () => {
+    if (state.localFailed.size) retryLocalFailures();
+    if (state.pending.size) { setSync('saving'); flush(); }
+  });
   window.addEventListener('offline', () => { if (state.pending.size) setSync('offline'); });
   document.getElementById('sync-copy').addEventListener('click', () => {
     for (const id of [...state.conflicts]) {
@@ -131,6 +162,8 @@ export function initSync() {
   });
   document.getElementById('sync').addEventListener('click', () => {
     if (state.phase === 'app' && !state.flushing) {
+      if (state.localFailed.size) retryLocalFailures();
+      if (state.localFailed.size) return; // 보관 실패 메시지를 숨기지 않습니다.
       setSync('saving');
       if (state.pending.size) flush();
       else {

@@ -1,9 +1,9 @@
 // 책 추가·정보 수정 화면: 목차 붙여넣기, 미리보기, 준비된 책 불러오기.
-import { state } from "./state.js?v=40";
-import { esc } from "./util.js?v=40";
-import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver, findDuplicate } from "./core.js?v=40";
-import { persist } from "./sync.js?v=40";
-import { notFound } from "./view-common.js?v=40";
+import { state } from "./state.js?v=41";
+import { esc } from "./util.js?v=41";
+import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver, findDuplicate } from "./core.js?v=41";
+import { persist } from "./sync.js?v=41";
+import { notFound } from "./view-common.js?v=41";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
@@ -116,8 +116,11 @@ export function bindForm(id) {
     autoDates(b);
     var error = validateBook(b);
     if (error) { showErr(error); return; }
+    if (!persist(b)) {
+      showErr('변경을 기기에 보관하지 못했습니다. 저장 공간을 확보한 뒤 다시 저장해 주세요.');
+      return;
+    }
     state.books.set(b.id, b);
-    persist(b);
     location.hash = 'book-' + b.id;
   });
 }

@@ -294,6 +294,33 @@ try {
     assert.equal(await page.locator('#d-note').inputValue(), '저장 공간 복구 후 남는 메모');
   });
 
+  await step('로컬 보관 실패 시 책 삭제를 확정하지 않고 기록을 유지', async () => {
+    const originalUrl = page.url();
+    const id = originalUrl.split('#book-')[1];
+    assert.ok(id, '책 상세 화면이어야 함');
+    await page.evaluate(() => {
+      window.__quotaSet = Storage.prototype.setItem;
+      Storage.prototype.setItem = function(k,v) {
+        if (k.startsWith('chaekgalpi-pending-v1:')) throw new DOMException('quota','QuotaExceededError');
+        return window.__quotaSet.call(this,k,v);
+      };
+    });
+    try {
+      await page.locator('.book-menu > summary').click();
+      await page.click('[data-act="del"]');
+      await page.click('[data-act="delyes"]');
+      await page.locator('#sync[data-state="error"]').waitFor();
+      assert.equal(page.url(), originalUrl, '보관 실패 시 책 상세에서 나가면 안 됨');
+      assert.ok(await page.locator('.chapters > li.leaf').count() > 0, '챕터 기록이 남아야 함');
+      assert.equal(await page.evaluate(id => !!JSON.parse(localStorage.getItem('e2e-books'))[id], id), true);
+    } finally {
+      await page.evaluate(() => { Storage.prototype.setItem = window.__quotaSet; });
+    }
+    await page.reload();
+    await page.locator('.chapters > li.leaf').first().waitFor();
+    assert.equal(page.url(), originalUrl);
+  });
+
   await step('목차에서 기록 있는 챕터 제목을 바꾸면 저장 전 경고, 확인해야 저장', async () => {
     const id = page.url().split('#book-')[1];
     const leaf = await page.evaluate(id => {
@@ -761,6 +788,31 @@ try {
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     }
     if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'records.png'),fullPage:true});
+  });
+
+  await step('책 추가 보관 실패 시 입력을 보존하고 재시도 가능', async () => {
+    await page.goto(base + '#add');
+    await page.locator('#f-title').fill('보관 실패 재시도 책');
+    await page.locator('#f-toc').fill('1장. 시작\n2장. 마침');
+    await page.evaluate(() => {
+      window.__quotaSet = Storage.prototype.setItem;
+      Storage.prototype.setItem = function(k,v) {
+        if (k.startsWith('chaekgalpi-pending-v1:')) throw new DOMException('quota','QuotaExceededError');
+        return window.__quotaSet.call(this,k,v);
+      };
+    });
+    try {
+      await page.click('#f-submit');
+      await page.locator('#f-err:visible').waitFor();
+      assert.match(page.url(), /#add$/, '보관 실패 시 폼을 떠나면 안 됨');
+      assert.equal(await page.locator('#f-title').inputValue(), '보관 실패 재시도 책');
+    } finally {
+      await page.evaluate(() => { Storage.prototype.setItem = window.__quotaSet; });
+    }
+    await page.click('#f-submit');
+    await page.waitForURL(/#book-/);
+    await page.locator('#sync[data-state="saved"]').waitFor();
+    assert.equal(await page.locator('.chapters > li.leaf').count(), 2);
   });
 
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });

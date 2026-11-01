@@ -590,3 +590,20 @@ mark{background:var(--accent-soft);color:var(--ink);border-radius:2px;font-weigh
 .ch-memo .memo-preview>summary{position:relative;padding-right:18px}
 .ch-memo .memo-preview>summary::after{content:'⌄';position:absolute;right:0;top:0;color:var(--muted);font-size:14px}
 .ch-memo .memo-preview[open]>summary::after{content:'⌃'}
+
+/* 품질 개선 1단계: 작은 iPhone에서도 상태·입력·조작이 잘리지 않도록 보완합니다. */
+:where(a,button,input,select,textarea,summary):focus-visible{
+  outline:3px solid var(--accent);outline-offset:3px;
+}
+:where(input,select,textarea):focus-visible{border-color:var(--accent)}
+@media (max-width:600px){
+  .top-r{min-width:0;max-width:75%}
+  .sync{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .book-main,.book-sub,.book-next,.memo-hit-t{min-width:0;overflow-wrap:anywhere}
+  .form-actions{align-items:stretch}
+  .form-actions>.btn{min-height:48px}
+}
+@media (max-width:350px){
+  .top{flex-wrap:wrap;align-items:center}
+  .top-r{margin-left:auto;max-width:100%}
+}

@@ -1,22 +1,22 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=40";
-import { state } from "./state.js?v=40";
-import { setRenderer, render } from "./bus.js?v=40";
-import { initPrefs, saveFolded } from "./prefs.js?v=40";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=40";
-import { initSync, persist, removeBook } from "./sync.js?v=40";
-import { onAuth } from "./session.js?v=40";
-import { currentRoute } from "./router.js?v=40";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=40";
-import { loginView, loadingView } from "./view-common.js?v=40";
-import { libraryView } from "./view-library.js?v=40";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=40";
-import { yearView } from "./view-year.js?v=40";
-import { patchView, resetPatch } from "./patch.js?v=40";
-import { formView, bindForm } from "./view-form.js?v=40";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=40";
+import * as store from "./store.js?v=41";
+import { state } from "./state.js?v=41";
+import { setRenderer, render } from "./bus.js?v=41";
+import { initPrefs, saveFolded } from "./prefs.js?v=41";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=41";
+import { initSync, persist, removeBook } from "./sync.js?v=41";
+import { onAuth } from "./session.js?v=41";
+import { currentRoute } from "./router.js?v=41";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=41";
+import { loginView, loadingView } from "./view-common.js?v=41";
+import { libraryView } from "./view-library.js?v=41";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=41";
+import { yearView } from "./view-year.js?v=41";
+import { patchView, resetPatch } from "./patch.js?v=41";
+import { formView, bindForm } from "./view-form.js?v=41";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=41";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=40";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=41";
 
 var view = document.getElementById("view");
 
@@ -178,7 +178,9 @@ view.addEventListener("click", function (e) {
         var dta = view.querySelector('textarea[data-act="memotext"][data-i="' + di + '"]');
         var before = (dta ? dta.value.trim() : "") || dch.memo || state.ui.memoOrig.get(dk) || "";
         if (before && !preserve(b, "memo", di, before)) break;
-        dch.memo = ""; persist(b);
+        var previousMemo = dch.memo;
+        dch.memo = "";
+        if (!persist(b)) { dch.memo = previousMemo; state.localFailed.delete(b.id); break; }
         state.ui.openMemo.delete(dk); state.ui.memoOrig.delete(dk);
         if (before) {
           var dbid = b.id;
@@ -195,7 +197,7 @@ view.addEventListener("click", function (e) {
     case "del": if (b) { state.ui.confirmDel = b.id; render(); } break;
     case "delno": state.ui.confirmDel = null; render(); break;
     case "delyes":
-      if (b && preserve(b)) { state.ui.confirmDel = null; removeBook(b.id); location.hash = "library"; }
+      if (b && preserve(b) && removeBook(b.id)) { state.ui.confirmDel = null; location.hash = "library"; }
       break;
   }
 });

@@ -1,11 +1,11 @@
 // 로그인 상태와 저장소 실시간 목록을 연결합니다.
-import * as store from "./store.js?v=40";
-import { state } from "./state.js?v=40";
-import { render } from "./bus.js?v=40";
-import { setSync, hasPending, restorePending, flush, RECENT_MS } from "./sync.js?v=40";
-import { hideToast, showNotice } from "./undo.js?v=40";
-import { currentRoute } from "./router.js?v=40";
-import { normalizeBook, friendlyError } from "./core.js?v=40";
+import * as store from "./store.js?v=41";
+import { state } from "./state.js?v=41";
+import { render } from "./bus.js?v=41";
+import { setSync, hasPending, restorePending, flush, RECENT_MS } from "./sync.js?v=41";
+import { hideToast, showNotice } from "./undo.js?v=41";
+import { currentRoute } from "./router.js?v=41";
+import { normalizeBook, friendlyError } from "./core.js?v=41";
 
 function markReady() {
   if (state.ready) return;
@@ -15,7 +15,7 @@ function markReady() {
 }
 // 로그아웃·계정 전환 때 이전 계정의 저장 대기 상태가 남아 새 데이터를 막지 않도록 비웁니다.
 function resetSaving() {
-  state.epoch++; state.pending.clear(); state.conflicts.clear(); state.flushing = false;
+  state.epoch++; state.pending.clear(); state.localFailed.clear(); state.conflicts.clear(); state.flushing = false;
   clearTimeout(state.flushTimer); state.flushTimer = null; state.activeKey = null;
   clearTimeout(state.retryTimer); state.retryTimer = null; state.retryCount = 0;
   clearTimeout(state.readyTimer); state.readyTimer = null;
