@@ -26,7 +26,7 @@ export function showNotice(text) {
 export function mutate(b, fn) {
   const before = structuredClone(b);
   fn();
-  if (!persist(b)) Object.assign(b, before);
+  if (!persist(b)) { Object.assign(b, before); state.localFailed.delete(b.id); }
   render();
 }
 // 임의 동작을 되돌리는 안내(예: 지운 메모 복구)
