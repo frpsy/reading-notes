@@ -557,3 +557,36 @@ button,a,input,select,textarea,summary{touch-action:manipulation}
 .toast button{pointer-events:auto}
 /* 눌림 강조 깜박임 방지: 줄과 그 안의 버튼에 브라우저 기본 탭 강조가 겹쳐 두 번 깜박이므로 모두 끄고, 눌렀을 때의 변화(체크 표시)가 곧 반응입니다 */
 *,*::before,*::after{-webkit-tap-highlight-color:transparent}
+
+/* 펼쳐 읽기와 수정은 독립된 작업입니다. */
+.ch-memo .memo-preview .memo-text{display:block;-webkit-line-clamp:unset;white-space:pre-wrap;font-size:16px;color:var(--ink)}
+.ch-memo .memo-preview summary{cursor:pointer}
+.ch-memo .memo-excerpt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ch-memo .memo-preview[open] .memo-excerpt{display:none}
+mark{background:var(--accent-soft);color:var(--ink);border-radius:2px;font-weight:600}
+.trash-list{list-style:none;padding:0}.trash-list li{padding:16px 0;border-bottom:1px solid var(--line);display:flex;gap:16px;align-items:start;flex-wrap:wrap}.trash-list li>div{flex:1;min-width:180px}.trash-preview{white-space:pre-wrap;overflow-wrap:anywhere}
+/* 메모는 눌러서 읽고 위의 연필로 수정합니다. 아이콘은 옅게, 누르는 영역은 넉넉하게 둡니다. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.memo-btn.has,.note-pencil{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;border-radius:10px;background:color-mix(in srgb,var(--accent-soft) 45%,transparent);color:color-mix(in srgb,var(--accent) 65%,var(--muted));margin:0}
+.memo-btn svg,.note-pencil svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ch-memo .memo-preview{margin-top:0}
+.ch-memo .memo-tap{min-height:44px;cursor:pointer}
+.ch-memo .memo-preview summary{font-size:14px;line-height:1.6}
+.ch-memo .memo-preview[open] .memo-text{margin-top:4px}
+.ch-memo .memo-expand{display:none}
+.note-panel{display:flex;flex-direction:column}.note-panel>.dates{order:0}.note-panel>.note-editor{order:1}.note-panel>.memo-preview{order:2}
+.note-editor>summary{display:flex;align-items:center;justify-content:flex-end;list-style:none}.note-editor>summary::-webkit-details-marker{display:none}
+@media(max-width:600px){
+  .ch{padding-top:9px;padding-bottom:9px}
+  .ch-main{gap:0;padding-top:0}
+  .ch.leaf .ch-title{line-height:1.45}
+  .ch-meta{min-height:32px;column-gap:8px}
+  .ch-meta .memo-btn{min-height:32px}
+  .ch-meta .memo-btn.has{min-width:44px;padding:0 8px;margin-left:auto}
+  .ch-memo{margin-top:2px;padding:4px 9px}
+  .ch.group{padding-top:9px;padding-bottom:9px}
+  .ch.group .ch-meta{min-height:22px}
+}
+.ch-memo .memo-preview>summary{position:relative;padding-right:18px}
+.ch-memo .memo-preview>summary::after{content:'⌄';position:absolute;right:0;top:0;color:var(--muted);font-size:14px}
+.ch-memo .memo-preview[open]>summary::after{content:'⌃'}

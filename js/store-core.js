@@ -161,5 +161,27 @@ export function createStore(opts) {
     if (uid === user) callback(snap.docs.map(d => Object.assign({}, d.data(), { id: d.id })), { fromCache: snap.metadata.fromCache, empty: snap.empty });
   }
 
-  return { firebaseConfigured, start, signIn, signOut, watch, writePending, readPending, sendPending, discardPending, refresh };
+  // 휴지통은 계정·프로젝트별로 분리하고 항목마다 저장해 여러 탭의 추가가 겹치지 않게 합니다.
+  const trashPrefix = () => 'chaekgalpi-trash-v1:' + firebaseConfig.projectId + ':' + requireUser() + ':';
+  function readTrash(now = Date.now()) {
+    const p = trashPrefix(), ls = storage(), entries = [], keys = [];
+    for (let i = 0; i < ls.length; i++) { const k = ls.key(i); if (k?.startsWith(p)) keys.push(k); }
+    for (const k of keys) {
+      let e;
+      try { e = JSON.parse(ls.getItem(k)); } catch { throw new Error('휴지통을 읽지 못했습니다. 보관된 원문은 유지했습니다.'); }
+      if (!e || k !== p + e.key || !e.book || !['book','memo','note'].includes(e.kind) || !Number.isFinite(e.deletedAt)) throw new Error('휴지통을 읽지 못했습니다. 보관된 원문은 유지했습니다.');
+      if (now - e.deletedAt >= 30 * 86400000) ls.removeItem(k);
+      else entries.push(e);
+    }
+    return entries.sort((a,b) => b.deletedAt - a.deletedAt);
+  }
+  function archiveTrash(book, kind = 'book', index = -1, text = '') {
+    // 보관 실패 시 호출자는 삭제를 중단합니다.
+    readTrash();
+    const entry = { key: crypto.randomUUID(), deletedAt: Date.now(), kind, index, text, book: structuredClone(book) };
+    try { storage().setItem(trashPrefix() + entry.key, JSON.stringify(entry)); }
+    catch { throw new Error('휴지통에 보관하지 못해 삭제하지 않았습니다. 저장 공간을 확보해 주세요.'); }
+    return entry.key;
+  }
+  return { readTrash, archiveTrash, firebaseConfigured, start, signIn, signOut, watch, writePending, readPending, sendPending, discardPending, refresh };
 }

@@ -154,3 +154,25 @@ test('일시 오류만 자동 재시도하고 간격은 최대 1분', async () =
   assert.ok(!isTransient(new Error('챕터 메모는 2,000자까지 입력할 수 있습니다.')));
   assert.deepEqual([0, 1, 2, 3, 4, 5, 10].map(retryDelay), [2000, 4000, 8000, 16000, 32000, 60000, 60000]);
 });
+
+test('휴지통은 계정별 격리·새 인스턴스 복구·30일 만료를 보장', async () => {
+  const s = await setup();
+  const b = book(); b.chapters[0].memo = '삭제 전 원문';
+  const key = s.store.archiveTrash(b,'memo',0,b.chapters[0].memo);
+  b.chapters[0].memo = '';
+  assert.equal(s.store.readTrash()[0].book.chapters[0].memo,'삭제 전 원문');
+  await s.auth('b'); assert.deepEqual(s.store.readTrash(),[]);
+  await s.auth('a');
+  const reloaded = await setup(s.storage);
+  assert.equal(reloaded.store.readTrash()[0].key,key);
+  const at = reloaded.store.readTrash()[0].deletedAt;
+  assert.equal(reloaded.store.readTrash(at + 30 * 86400000 - 1).length,1);
+  assert.equal(reloaded.store.readTrash(at + 30 * 86400000).length,0);
+  await reloaded.auth(null);
+  assert.throws(() => reloaded.store.readTrash(),/로그인/);
+});
+
+test('휴지통 저장 공간이 부족하면 삭제 전에 실패를 알림', async () => {
+  const s = await setup(); s.storage.setItem = () => { throw Error('quota'); };
+  assert.throws(() => s.store.archiveTrash(book()),/삭제하지 않았습니다/);
+});

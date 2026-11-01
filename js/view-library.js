@@ -1,9 +1,9 @@
 // 서재 화면: 책 목록, 상태 필터, 검색, 최근 12주 기록.
-import { state } from "./state.js?v=39";
-import { esc, fmt, ago } from "./util.js?v=39";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos } from "./core.js?v=39";
-import { coverHtml, chipHtml } from "./view-common.js?v=39";
-import { catalogHtml } from "./catalog.js?v=39";
+import { state } from "./state.js?v=40";
+import { esc, fmt, ago } from "./util.js?v=40";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=40";
+import { coverHtml, chipHtml } from "./view-common.js?v=40";
+import { catalogHtml } from "./catalog.js?v=40";
 
 function nextLine(b, m) {
   if (m.status === 'done') return '';
@@ -66,7 +66,7 @@ export function libraryView() {
     x.m.doneDates.forEach(function (d) { var n = dnum(d); if (n != null && n >= t - 6 && n <= t) week++ });
   });
   var head = '<div class="lib-head"><h1 class="page">내 서재</h1><a class="btn primary" href="#add">책 추가</a></div>';
-  var note = catalogHtml() +
+  var note = '<div class="tools"><a class="btn sm" href="#records">기록 관리 · 휴지통</a></div>' + catalogHtml() +
     (state.mode === 'firebase' ? '<div class="tools"><button type="button" class="btn sm" data-act="logout">로그아웃' + (state.userEmail ? ' (' + esc(state.userEmail) + ')' : '') + '</button></div>' : '');
   if (!all.length) {
     return head + '<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>\'책 추가\'에서 목차를 붙여 넣거나, 아래 \'담을 수 있는 책\'에서 서재에 담기를 누르세요.</p></div>' + note;
@@ -97,7 +97,7 @@ export function libraryView() {
   var insights = '<details class="library-insights" data-disclosure="library-insights"><summary><span>독서 활동</span><span class="disclosure-hint">' + currentStreak(activity) + '일 연속 · 최근 7일 ' + week + '챕터</span></summary><div class="insights-body">' + strip + activityHtml(books) + '</div></details>';
   var memoHits = state.ui.q ? searchMemos(all.map(function (x) { return x.b }), state.ui.q) : [];
   var memoHtml = memoHits.length ? '<div class="sec-h"><h2 class="sec">메모에서 찾음</h2></div><ul class="memo-hits">' + memoHits.map(function (h) {
-    return '<li><a href="#book-' + esc(h.id) + '" data-act="jump" data-id="' + esc(h.id) + '" data-i="' + h.i + '"><span class="memo-hit-h"><b>' + esc(h.title) + '</b> · ' + esc(h.t) + '</span><span class="memo-hit-t">' + esc(h.text) + '</span></a></li>';
+    return '<li><a href="#book-' + esc(h.id) + '" data-act="jump" data-id="' + esc(h.id) + '" data-i="' + h.i + '"><span class="memo-hit-h"><b>' + esc(h.title) + '</b> · ' + esc(h.t) + '</span><span class="memo-hit-t">' + highlightMemo(h.text, state.ui.q) + '</span></a></li>';
   }).join('') + '</ul>' : '';
   return head + search + tabs + rows + memoHtml + reminderHtml(all, activity) + insights + note;
 }

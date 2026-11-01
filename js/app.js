@@ -1,20 +1,22 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=39";
-import { state } from "./state.js?v=39";
-import { setRenderer, render } from "./bus.js?v=39";
-import { initPrefs, saveFolded } from "./prefs.js?v=39";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=39";
-import { initSync, persist, removeBook } from "./sync.js?v=39";
-import { onAuth } from "./session.js?v=39";
-import { currentRoute } from "./router.js?v=39";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=39";
-import { loginView, loadingView } from "./view-common.js?v=39";
-import { libraryView } from "./view-library.js?v=39";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=39";
-import { yearView } from "./view-year.js?v=39";
-import { patchView, resetPatch } from "./patch.js?v=39";
-import { formView, bindForm } from "./view-form.js?v=39";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=39";
+import * as store from "./store.js?v=40";
+import { state } from "./state.js?v=40";
+import { setRenderer, render } from "./bus.js?v=40";
+import { initPrefs, saveFolded } from "./prefs.js?v=40";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=40";
+import { initSync, persist, removeBook } from "./sync.js?v=40";
+import { onAuth } from "./session.js?v=40";
+import { currentRoute } from "./router.js?v=40";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=40";
+import { loginView, loadingView } from "./view-common.js?v=40";
+import { libraryView } from "./view-library.js?v=40";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=40";
+import { yearView } from "./view-year.js?v=40";
+import { patchView, resetPatch } from "./patch.js?v=40";
+import { formView, bindForm } from "./view-form.js?v=40";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=40";
+
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=40";
 
 var view = document.getElementById("view");
 
@@ -31,6 +33,7 @@ function draw() {
   else if (!state.ready) html = loadingView();
   else if (r.name === "library") html = libraryView();
   else if (r.name === "book") html = bookView(r.id);
+  else if (r.name === "records") html = recordsView();
   else if (r.name === "year") html = yearView(r.year);
   else html = formView(r.id);
   if (state.phase === "app" && state.ready && r.name === "book") patchView(view, html, "book:" + r.id);
@@ -96,11 +99,14 @@ view.addEventListener("click", function (e) {
   if (!el) {
     // 챕터 줄의 빈 곳(쪽수 줄·여백)을 눌러도 체크됩니다. 버튼·링크·메모·옵션은 제외합니다.
     var row = e.target.closest(".chapters > li.ch.leaf");
-    if (row && !e.target.closest("button, a, summary, details, input, textarea, label")) el = row.querySelector('.chk[data-act="toggle"]');
+    if (row && !e.target.closest("button, a, summary, details, input, textarea, label, .ch-memo")) el = row.querySelector('.chk[data-act="toggle"]');
   }
   if (!el) return;
   var act = el.dataset.act, r = currentRoute(), b = r.name === "book" ? state.books.get(r.id) : null;
   switch (act) {
+    case "export-json": exportRecords('json'); break;
+    case "export-md": exportRecords('md'); break;
+    case "trash-restore": restoreTrash(el.dataset.key); break;
     case "login":
       state.authMsg = "";
       store.signIn().catch(function (err) {
@@ -171,6 +177,7 @@ view.addEventListener("click", function (e) {
         var di = +el.dataset.i, dk = b.id + ":" + di, dch = b.chapters[di];
         var dta = view.querySelector('textarea[data-act="memotext"][data-i="' + di + '"]');
         var before = (dta ? dta.value.trim() : "") || dch.memo || state.ui.memoOrig.get(dk) || "";
+        if (before && !preserve(b, "memo", di, before)) break;
         dch.memo = ""; persist(b);
         state.ui.openMemo.delete(dk); state.ui.memoOrig.delete(dk);
         if (before) {
@@ -188,7 +195,7 @@ view.addEventListener("click", function (e) {
     case "del": if (b) { state.ui.confirmDel = b.id; render(); } break;
     case "delno": state.ui.confirmDel = null; render(); break;
     case "delyes":
-      if (b) { state.ui.confirmDel = null; removeBook(b.id); location.hash = "library"; }
+      if (b && preserve(b)) { state.ui.confirmDel = null; removeBook(b.id); location.hash = "library"; }
       break;
   }
 });
@@ -202,13 +209,22 @@ function growMemo(ta, force) {
   ta.style.height = 'auto';
   ta.style.height = Math.min(ta.scrollHeight + 2, Math.round(window.innerHeight * 0.6)) + 'px';
 }
+const noteOriginal = new WeakMap();
+view.addEventListener('focusin', function (e) {
+  if (e.target.dataset.act === 'note') noteOriginal.set(e.target,e.target.value);
+});
 view.addEventListener("input", function (e) {
   if (e.target.dataset && e.target.dataset.act === "search") { state.ui.q = e.target.value; render(); }
   var el = e.target, act = el.dataset && el.dataset.act;
   if (act !== 'note' && act !== 'memotext') return;
   var r = currentRoute(), b = r.name === 'book' ? state.books.get(r.id) : null;
   if (!b) return;
-  if (act === 'note') { b.note = el.value; persist(b); return; }
+  if (act === 'note') {
+    if (!el.value.trim() && b.note && !preserve(b,'note',-1,noteOriginal.get(el) || b.note)) { el.value = b.note; return; }
+    b.note = el.value; persist(b); return;
+  }
+  var oldMemo = b.chapters[+el.dataset.i].memo;
+  if (!el.value.trim() && oldMemo && !preserve(b,'memo',+el.dataset.i,state.ui.memoOrig.get(b.id + ':' + el.dataset.i) || oldMemo)) { el.value = oldMemo; return; }
   b.chapters[+el.dataset.i].memo = el.value.trim(); refreshMemos(b);
   growMemo(el);
   // 입력창에는 저장 상태를 보여 주지 않습니다. 보관·저장에 실패하면 상단 저장 표시와 안내가 알려 줍니다.
