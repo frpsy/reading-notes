@@ -116,8 +116,11 @@ export function bindForm(id) {
     autoDates(b);
     var error = validateBook(b);
     if (error) { showErr(error); return; }
+    if (!persist(b)) {
+      showErr('변경을 기기에 보관하지 못했습니다. 저장 공간을 확보한 뒤 다시 저장해 주세요.');
+      return;
+    }
     state.books.set(b.id, b);
-    persist(b);
     location.hash = 'book-' + b.id;
   });
 }
