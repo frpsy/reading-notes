@@ -24,7 +24,10 @@ export function showNotice(text) {
   clearTimeout(state.toastTimer); state.toastTimer = setTimeout(hideToast, 10000);
 }
 export function mutate(b, fn) {
-  fn(); persist(b); render();
+  const before = structuredClone(b);
+  fn();
+  if (!persist(b)) Object.assign(b, before);
+  render();
 }
 // 임의 동작을 되돌리는 안내(예: 지운 메모 복구)
 export function offerUndo(label, restore) { showToast(label); state.undo = { restore: restore }; }
