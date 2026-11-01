@@ -57,7 +57,10 @@ try{
     const title='LongChapterTitle'.repeat(13);
     await page.evaluate(title=>{const docs=JSON.parse(localStorage.getItem('e2e-books'));docs.design.chapters[0].t=title;localStorage.setItem('e2e-books',JSON.stringify(docs));},title);
     await page.reload();await page.locator('details.memos>summary').click();await fits('long memo heading');
-    await page.evaluate(()=>document.documentElement.style.fontSize='200%');await fits('200% text detail');
+    const fontBefore=await page.locator('.ch-title').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
+    await page.evaluate(()=>document.documentElement.style.fontSize='200%');
+    const fontAfter=await page.locator('.ch-title').first().evaluate(el=>parseFloat(getComputedStyle(el).fontSize));
+    assert.ok(fontAfter>=fontBefore*1.9,'chapter text actually enlarges');await fits('200% text detail');
     await page.goto(url+'#library');await page.locator('a.book').waitFor();await fits('200% text library');
     await page.goto(url+'#add');await page.locator('#f-title').waitFor();await fits('200% text form');
     await page.evaluate(()=>document.documentElement.style.fontSize='');
