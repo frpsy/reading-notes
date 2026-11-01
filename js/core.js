@@ -488,17 +488,30 @@ export function carryOver(oldChapters, items) {
 }
 
 // 챕터 메모·독서 메모에서 검색어 찾기(대소문자·공백 무시). 결과는 책 순서·목차 순서, 최대 limit 개
+export function memoMatch(text, q) {
+  const chars = Array.from(String(text || '')), map = [], normalized = [];
+  chars.forEach((ch,i) => { if (!/\s/.test(ch)) for (const c of ch.toLowerCase()) { normalized.push(c); map.push(i); } });
+  const needle = Array.from(String(q || '').toLowerCase().replace(/\s+/g,''));
+  const hay = normalized.join(''), key = needle.join('');
+  const at = key ? hay.indexOf(key) : -1;
+  if (at < 0) return null;
+  // indexOf는 UTF-16 위치를 반환하므로 코드 포인트 위치로 환산합니다.
+  const start = Array.from(hay.slice(0,at)).length;
+  return { start: map[start], end: map[start + needle.length - 1] + 1 };
+}
+export function highlightMemo(text, q) {
+  const m = memoMatch(text,q), c = Array.from(String(text || ''));
+  return m ? escapeHtml(c.slice(0,m.start).join('')) + '<mark>' + escapeHtml(c.slice(m.start,m.end).join('')) + '</mark>' + escapeHtml(c.slice(m.end).join('')) : escapeHtml(text);
+}
 export function searchMemos(books, q, limit = 30) {
   const norm = (s) => String(s || "").toLowerCase().replace(/\s+/g, "");
   const k = norm(q);
   if (!k) return [];
   const out = [];
   const snippet = (text) => {
-    const flat = String(text).replace(/\s+/g, " ").trim(), low = flat.toLowerCase();
-    const first = String(q).trim().toLowerCase().split(/\s+/)[0];
-    const at = Math.max(0, low.indexOf(first));
-    const start = Math.max(0, at - 20);
-    return (start > 0 ? "…" : "") + Array.from(flat).slice(start, start + 80).join("") + (Array.from(flat).length > start + 80 ? "…" : "");
+    const flat = String(text).replace(/\s+/g, ' ').trim(), chars = Array.from(flat), m = memoMatch(flat,q);
+    const start = Math.max(0, (m?.start || 0) - 20), end = Math.min(chars.length, Math.max(start + 80, m?.end || 0));
+    return (start ? '…' : '') + chars.slice(start,end).join('') + (end < chars.length ? '…' : '');
   };
   for (const b of books) {
     (b.chapters || []).forEach((c, i) => { if (c.memo && norm(c.memo).includes(k)) out.push({ id: b.id, title: b.title, i, t: c.t, text: snippet(c.memo) }); });
