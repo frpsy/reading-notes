@@ -178,7 +178,9 @@ view.addEventListener("click", function (e) {
         var dta = view.querySelector('textarea[data-act="memotext"][data-i="' + di + '"]');
         var before = (dta ? dta.value.trim() : "") || dch.memo || state.ui.memoOrig.get(dk) || "";
         if (before && !preserve(b, "memo", di, before)) break;
-        dch.memo = ""; persist(b);
+        var previousMemo = dch.memo;
+        dch.memo = "";
+        if (!persist(b)) { dch.memo = previousMemo; break; }
         state.ui.openMemo.delete(dk); state.ui.memoOrig.delete(dk);
         if (before) {
           var dbid = b.id;
@@ -195,7 +197,7 @@ view.addEventListener("click", function (e) {
     case "del": if (b) { state.ui.confirmDel = b.id; render(); } break;
     case "delno": state.ui.confirmDel = null; render(); break;
     case "delyes":
-      if (b && preserve(b)) { state.ui.confirmDel = null; removeBook(b.id); location.hash = "library"; }
+      if (b && preserve(b) && removeBook(b.id)) { state.ui.confirmDel = null; location.hash = "library"; }
       break;
   }
 });
