@@ -33,7 +33,7 @@ export function setSync(s, msg = '') {
   const copy = document.getElementById('sync-copy');
   if (copy) copy.hidden = s !== 'error' || !state.conflicts.size;
 }
-export function hasPending(id) { return [...state.pending.values()].some(x => x.id === id); }
+export function hasPending(id) { return state.localFailed.has(id) || [...state.pending.values()].some(x => x.id === id); }
 export const RECENT_MS = 10000;
 function touch(id, deleted) { state.recent.set(id, { t: Date.now(), deleted: !!deleted }); }
 function stage(id, kind, item) {
@@ -46,7 +46,14 @@ function stage(id, kind, item) {
   // 로컬 보관 성공 전에는 화면의 저장 기준이나 서버 대기열을 바꾸지 않습니다.
   // 특히 저장 공간이 가득 찼을 때 삭제/수정이 성공한 것처럼 보이지 않게 합니다.
   try { store.writePending(record); }
-  catch (e) { setSync('error', '기기에 보관하지 못했습니다. 창을 닫지 말고 저장 공간을 확보한 뒤 다시 시도해 주세요.'); return false; }
+  catch (e) {
+    // 메모·날짜처럼 이미 화면의 책 객체가 바뀐 경우, 복구 가능한 메모리 사본을 유지합니다.
+    // 삭제나 폼 입력은 각각 기존 화면/폼을 유지하므로 로컬 실패 목록에 넣지 않습니다.
+    if (kind === 'save' && state.books.get(id) === item) state.localFailed.add(id);
+    setSync('error', '기기에 보관하지 못했습니다. 창을 닫지 말고 저장 공간을 확보한 뒤 다시 시도해 주세요.');
+    return false;
+  }
+  state.localFailed.delete(id);
   touch(id, kind === 'delete');
   state.pending.set(key, record);
   if (item) state.lastJson.set(id, JSON.stringify(item)); else state.lastJson.delete(id);
@@ -102,8 +109,12 @@ export async function flush() {
       state.flushing = false;
       if (retryMsg && state.pending.size) setSync('error', retryMsg + ' ' + Math.round(scheduleRetry() / 1000) + '초 뒤 자동으로 다시 보냅니다.');
       if (!state.pending.size) {
-        setSync('saved');
-        store.refresh().catch(e => { if (epoch === state.epoch) setSync('error', friendlyError(e, '기록을 불러오지 못했습니다. 연결을 확인한 뒤 상단의 상태 버튼을 눌러 다시 시도해 주세요.')); });
+        if (state.localFailed.size) {
+          setSync('error', '아직 기기에 보관하지 못한 변경이 있습니다. 창을 닫지 말고 저장 공간 확보 후 다시 시도해 주세요.');
+        } else {
+          setSync('saved');
+          store.refresh().catch(e => { if (epoch === state.epoch) setSync('error', friendlyError(e, '기록을 불러오지 못했습니다. 연결을 확인한 뒤 상단의 상태 버튼을 눌러 다시 시도해 주세요.')); });
+        }
       }
     }
   }
@@ -119,8 +130,19 @@ export async function restorePending(epoch = state.epoch) {
   if (state.pending.size) setSync('saving');
   return records.quarantined || 0;
 }
+function retryLocalFailures() {
+  for (const id of [...state.localFailed]) {
+    const b = state.books.get(id);
+    if (!b) { state.localFailed.delete(id); continue; }
+    // 실패했던 최신 화면 값을 보관하고, 성공한 경우만 실패 목록에서 제거합니다.
+    if (!persist(b)) break;
+  }
+}
 export function initSync() {
-  window.addEventListener('online', () => { if (state.pending.size) { setSync('saving'); flush(); } });
+  window.addEventListener('online', () => {
+    if (state.localFailed.size) retryLocalFailures();
+    if (state.pending.size) { setSync('saving'); flush(); }
+  });
   window.addEventListener('offline', () => { if (state.pending.size) setSync('offline'); });
   document.getElementById('sync-copy').addEventListener('click', () => {
     for (const id of [...state.conflicts]) {
@@ -140,6 +162,8 @@ export function initSync() {
   });
   document.getElementById('sync').addEventListener('click', () => {
     if (state.phase === 'app' && !state.flushing) {
+      if (state.localFailed.size) retryLocalFailures();
+      if (state.localFailed.size) return; // 보관 실패 메시지를 숨기지 않습니다.
       setSync('saving');
       if (state.pending.size) flush();
       else {
