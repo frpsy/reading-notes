@@ -37,17 +37,19 @@ export function hasPending(id) { return [...state.pending.values()].some(x => x.
 export const RECENT_MS = 10000;
 function touch(id, deleted) { state.recent.set(id, { t: Date.now(), deleted: !!deleted }); }
 function stage(id, kind, item) {
-  touch(id, kind === 'delete');
   const previous = state.lastJson.get(id);
   const queued = [...state.pending.values()].filter(x => x.id === id).at(-1);
   const replace = !!navigator.locks && kind === 'save' && queued?.kind === 'save' && queued.key !== state.activeKey;
   const key = replace ? queued.key : Date.now().toString().padStart(16, '0') + '-' + (++sequence).toString().padStart(8, '0') + '-' + crypto.randomUUID();
   const record = { key, id, kind, base: replace ? queued.base : (previous ? JSON.parse(previous) : null) };
   if (item) record.item = structuredClone(item);
-  state.pending.set(key, record);
-  if (item) state.lastJson.set(id, JSON.stringify(item)); else state.lastJson.delete(id);
+  // 로컬 보관 성공 전에는 화면의 저장 기준이나 서버 대기열을 바꾸지 않습니다.
+  // 특히 저장 공간이 가득 찼을 때 삭제/수정이 성공한 것처럼 보이지 않게 합니다.
   try { store.writePending(record); }
   catch (e) { setSync('error', '기기에 보관하지 못했습니다. 창을 닫지 말고 저장 공간을 확보한 뒤 다시 시도해 주세요.'); return false; }
+  touch(id, kind === 'delete');
+  state.pending.set(key, record);
+  if (item) state.lastJson.set(id, JSON.stringify(item)); else state.lastJson.delete(id);
   setSync('saving');
   // 서버 전송만 묶습니다. 기기 보관은 위에서 이미 완료했습니다.
   clearTimeout(state.flushTimer); state.flushTimer = setTimeout(flush, 150); return true;
@@ -55,9 +57,16 @@ function stage(id, kind, item) {
 export function persist(b) {
   const error = validateBook(b);
   if (error) { setSync('error', error); return false; }
-  b.updatedAt = Date.now(); return stage(b.id, 'save', b);
+  const previousUpdatedAt = b.updatedAt;
+  b.updatedAt = Date.now();
+  if (!stage(b.id, 'save', b)) { b.updatedAt = previousUpdatedAt; return false; }
+  return true;
 }
-export function removeBook(id) { stage(id, 'delete'); state.books.delete(id); }
+export function removeBook(id) {
+  if (!stage(id, 'delete')) return false;
+  state.books.delete(id);
+  return true;
+}
 export async function flush() {
   if (state.flushing || state.phase !== 'app') return;
   const epoch = state.epoch;
