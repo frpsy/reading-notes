@@ -13,7 +13,7 @@ export function coverHtml(b, lg) {
   return '<span class="cover' + (lg ? ' lg' : '') + '" style="--h:' + hue(b.title || '') + '" aria-hidden="true">' + esc(ch) + '</span>';
 }
 export function chipHtml(m) { return '<span class="chip ' + m.status + '">' + ST[m.status] + '</span>'; }
-export function loadingView() { return '<p class="muted">불러오는 중…</p>'; }
+export function loadingView() { return '<p class="muted" role="status" aria-live="polite">불러오는 중…</p>'; }
 export function notFound() { return '<p>이 책을 찾을 수 없습니다.</p><p><a href="#library">서재로 돌아가기</a></p>'; }
 
 // 읽는 속도 문구: 소수 첫째 자리까지, 끝의 .0 은 뺍니다
