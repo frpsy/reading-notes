@@ -15,7 +15,7 @@ function markReady() {
 }
 // 로그아웃·계정 전환 때 이전 계정의 저장 대기 상태가 남아 새 데이터를 막지 않도록 비웁니다.
 function resetSaving() {
-  state.epoch++; state.pending.clear(); state.conflicts.clear(); state.flushing = false;
+  state.epoch++; state.pending.clear(); state.localFailed.clear(); state.conflicts.clear(); state.flushing = false;
   clearTimeout(state.flushTimer); state.flushTimer = null; state.activeKey = null;
   clearTimeout(state.retryTimer); state.retryTimer = null; state.retryCount = 0;
   clearTimeout(state.readyTimer); state.readyTimer = null;
