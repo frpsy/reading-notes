@@ -1,22 +1,22 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=41";
-import { state } from "./state.js?v=41";
-import { setRenderer, render } from "./bus.js?v=41";
-import { initPrefs, saveFolded } from "./prefs.js?v=41";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=41";
-import { initSync, persist, removeBook } from "./sync.js?v=41";
-import { onAuth } from "./session.js?v=41";
-import { currentRoute } from "./router.js?v=41";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=41";
-import { loginView, loadingView } from "./view-common.js?v=41";
-import { libraryView } from "./view-library.js?v=41";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=41";
-import { yearView } from "./view-year.js?v=41";
-import { patchView, resetPatch } from "./patch.js?v=41";
-import { formView, bindForm } from "./view-form.js?v=41";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=41";
+import * as store from "./store.js?v=42";
+import { state } from "./state.js?v=42";
+import { setRenderer, render } from "./bus.js?v=42";
+import { initPrefs, saveFolded } from "./prefs.js?v=42";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=42";
+import { initSync, persist, removeBook } from "./sync.js?v=42";
+import { onAuth } from "./session.js?v=42";
+import { currentRoute } from "./router.js?v=42";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=42";
+import { loginView, loadingView } from "./view-common.js?v=42";
+import { libraryView } from "./view-library.js?v=42";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=42";
+import { yearView } from "./view-year.js?v=42";
+import { patchView, resetPatch } from "./patch.js?v=42";
+import { formView, bindForm } from "./view-form.js?v=42";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=42";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=41";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=42";
 
 var view = document.getElementById("view");
 
@@ -160,7 +160,7 @@ view.addEventListener("click", function (e) {
             growMemo(ta, true); ta.focus();
             ta.setSelectionRange(ta.value.length, ta.value.length);
             // 키보드가 올라온 뒤에도 입력란이 보이도록 화면 가운데로
-            setTimeout(function () { if (document.activeElement === ta) ta.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 300);
+            setTimeout(function () { if (document.activeElement === ta) ta.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }, 300);
           }
         }
       }
@@ -209,7 +209,7 @@ function growMemo(ta, force) {
   if (!force && len >= last && ta.scrollHeight <= ta.clientHeight) return;
   if (!force && len < last && last - len < 200) return;
   ta.style.height = 'auto';
-  ta.style.height = Math.min(ta.scrollHeight + 2, Math.round(window.innerHeight * 0.6)) + 'px';
+  ta.style.height = Math.min(ta.scrollHeight + 2, Math.max(96, Math.round((window.visualViewport?.height || window.innerHeight) * 0.6))) + 'px';
 }
 const noteOriginal = new WeakMap();
 view.addEventListener('focusin', function (e) {
