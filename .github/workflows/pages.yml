@@ -32,6 +32,9 @@ jobs:
           npx playwright install --with-deps chromium
           npm run e2e
 
+      - name: 대용량 독서 기록 성능 측정
+        run: npm run perf
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
