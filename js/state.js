@@ -3,6 +3,7 @@ export const state = {
   books: new Map(),
   lastJson: new Map(),
   pending: new Map(),
+  localFailed: new Set(), // 저장 공간 부족으로 기기에 기록하지 못한, 현재 화면의 변경. 다시 시도 전까지 원격 스냅샷으로 덮지 않음
   conflicts: new Set(),
   flushing: false,
   activeKey: null,
