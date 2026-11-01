@@ -29,8 +29,18 @@ jobs:
           DESIGN_SCREENSHOT_DIR: design-screenshots
         run: |
           npm i --no-save playwright@1.63.0
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
           npm run e2e
+
+      - name: 동일 조건 변경 전·후 캡처 및 반응형·WebKit 검증
+        env:
+          DESIGN_SCREENSHOT_DIR: design-screenshots
+        run: |
+          git fetch --depth=1 origin cd032df7c4bd45e3c9f57309b128d2dd3a55591a
+          mkdir -p ../design-baseline
+          git archive cd032df7c4bd45e3c9f57309b128d2dd3a55591a | tar -x -C ../design-baseline
+          DESIGN_ROOT=../design-baseline DESIGN_BASELINE=1 node e2e/design.mjs
+          node e2e/design.mjs
 
       - name: 대용량 독서 기록 성능 측정
         run: npm run perf
