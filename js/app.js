@@ -180,7 +180,7 @@ view.addEventListener("click", function (e) {
         if (before && !preserve(b, "memo", di, before)) break;
         var previousMemo = dch.memo;
         dch.memo = "";
-        if (!persist(b)) { dch.memo = previousMemo; break; }
+        if (!persist(b)) { dch.memo = previousMemo; state.localFailed.delete(b.id); break; }
         state.ui.openMemo.delete(dk); state.ui.memoOrig.delete(dk);
         if (before) {
           var dbid = b.id;
