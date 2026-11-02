@@ -600,3 +600,47 @@ mark{background:var(--accent-soft);color:var(--ink);border-radius:2px;font-weigh
   .lib-actions{gap:6px}
   .lib-actions .btn{padding:0 11px;font-size:.8125rem}
 }
+
+/* 2026-11: 주요 화면의 간격과 정렬을 공통 리듬으로 통일합니다. */
+.top{min-height:48px}
+.top-r{min-width:0}
+.settings-nav{flex:none}
+.lib-head{min-width:0;gap:12px}
+.lib-head>.page{min-width:0}
+.lib-actions{flex:none;flex-wrap:wrap;justify-content:flex-end}
+.lib-actions .btn{white-space:nowrap}
+.library-shelf:first-of-type{margin-top:12px}
+.library-shelf .shelf-title{margin-inline:2px}
+a.book .book-sub,a.book .book-meta{min-width:0;overflow-wrap:anywhere}
+.settings-section{max-width:640px;margin-top:28px}
+.settings-section>.sec{margin-bottom:8px}
+.settings-item{padding-inline:12px;gap:16px;min-height:56px}
+.settings-item>span:first-child{min-width:0;overflow-wrap:anywhere}
+.settings-link{border-radius:10px}
+.settings-link:hover{background:var(--surface-2)}
+.settings-item .btn{flex:none;min-height:44px;border-radius:10px}
+.settings-detail{margin:8px 12px 14px}
+.settings-section>[data-act="logout"]{margin:4px 12px 0;min-height:44px}
+.activity-page{max-width:640px}
+.activity-page .strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 16px}
+.activity-page .strip .s{min-width:0}
+.activity-page .heat{max-width:100%}
+@media(max-width:600px){
+  .top{gap:8px}
+  .top-r{flex-wrap:nowrap}
+  .lib-head{align-items:center;gap:10px}
+  .lib-head h1.page{font-size:1.5rem;line-height:1.2;white-space:nowrap}
+  .lib-actions{gap:6px}
+  .lib-actions .btn{min-height:44px;padding-inline:12px}
+  .settings-item{padding-inline:8px}
+  .activity-page .strip{gap:20px 12px}
+}
+@media(max-width:370px){
+  .lib-head{align-items:stretch;flex-wrap:wrap}
+  .lib-head h1.page{flex:1 0 100%}
+  .lib-actions{width:100%;justify-content:stretch}
+  .lib-actions .btn{flex:1 1 0}
+}
+@media(hover:hover){
+  .settings-link:hover{background:var(--surface-2)}
+}
