@@ -25,8 +25,12 @@ export function setSync(s, msg = '') {
   clearTimeout(savingTextTimer);
   const wasSaved = el.dataset.state === 'saved';
   el.dataset.state = s; el.title = msg;
-  // 버튼을 누를 때마다 '저장됨 → 저장 중… → 저장됨'으로 글자와 너비가 바뀌어 깜박이므로, 저장이 0.8초 넘게 걸릴 때만 '저장 중…'을 보여 줍니다.
-  if (s === 'saving' && wasSaved) savingTextTimer = setTimeout(function () { if (el.dataset.state === 'saving') el.textContent = TEXT.saving; }, 800);
+  // 정상 저장은 상단 버튼을 숨깁니다. 상태값은 유지해 테스트·동기화 로직을 보존합니다.
+  // 빠른 저장에서는 버튼이 깜박이지 않게 하고, 0.8초 넘는 저장만 노출합니다.
+  el.hidden = s === 'saved' || (s === 'saving' && wasSaved);
+  if (s === 'saving' && wasSaved) savingTextTimer = setTimeout(function () {
+    if (el.dataset.state === 'saving') { el.textContent = TEXT.saving; el.hidden = false; }
+  }, 800);
   else el.textContent = TEXT[s];
   const detail = document.getElementById('sync-detail');
   if (detail) { detail.textContent = msg; detail.hidden = !msg; }
