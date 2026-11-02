@@ -715,3 +715,11 @@ a.book .chip{font-weight:600}
 @media(prefers-reduced-motion:reduce){
   a.book,.settings-item,.settings-nav,.search{transition:none}
 }
+
+/* iOS Safari/PWA: 반투명 상단 시스템 UI와 브랜드 텍스트 사이의 안전 여백. */
+html{background:var(--bg)}
+@supports (-webkit-touch-callout:none){
+  @media(max-width:600px){
+    body{padding-top:max(32px,calc(env(safe-area-inset-top,0px) + 14px))}
+  }
+}
