@@ -100,6 +100,13 @@ try {
     assert.equal(await view.locator('[data-act="catadd"]').count(), 0);
   });
 
+  await step('정상 저장 상태의 상단 버튼은 표시하지 않고, 동기화 상태는 유지', async () => {
+    await page.goto(base + '#library');
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
+    assert.equal(await page.locator('#sync').isVisible(), false);
+    assert.equal(await page.locator('#settings-link').isVisible(), true);
+  });
+
   await step("준비된 책 담기", async () => {
     await page.goto(base + '#catalog');
     await page.locator('[data-act="catadd"]').first().click();
@@ -239,7 +246,7 @@ try {
     await page.reload();
     await page.locator('#d-note').waitFor({state:'attached'});
     assert.equal(await page.locator('#d-note').inputValue(), '입력 직후에도 남는 메모');
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
   });
 
   await step('두 탭의 서로 다른 챕터 변경을 모두 보존', async () => {
@@ -251,8 +258,8 @@ try {
     await page.locator('textarea[data-act="memotext"]').first().fill('첫 탭의 메모');
     await other.locator('.memo-btn[data-act="memo"]').nth(1).click();
     await other.locator('textarea[data-act="memotext"]').fill('둘째 탭의 메모');
-    await page.locator('#sync[data-state="saved"]').waitFor();
-    await other.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
+    await other.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     await page.reload();
     await view.getByText('첫 탭의 메모', {exact:true}).first().waitFor();
     await view.getByText('둘째 탭의 메모', {exact:true}).first().waitFor();
@@ -264,7 +271,7 @@ try {
     await editNote( '오프라인에서 쓴 메모');
     await page.locator('#sync[data-state="offline"]').waitFor();
     await ctx.setOffline(false);
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     await page.reload();
     await page.locator('#d-note').waitFor({state:'attached'});
     assert.equal(await page.locator('#d-note').inputValue(), '오프라인에서 쓴 메모');
@@ -277,7 +284,7 @@ try {
     const msg = await page.locator('#sync-detail').innerText();
     assert.match(msg, /서버에 연결하지 못했습니다.*자동으로 다시 보냅니다/);
     assert.ok(!/client is offline/.test(msg), '영문 원문 미노출');
-    await page.locator('#sync[data-state="saved"]').waitFor({ timeout: 10000 });
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached', timeout: 10000 });
     const saved = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('e2e-books'))).some(b => b.note === '자동 재시도 확인'));
     assert.ok(saved);
   });
@@ -292,7 +299,7 @@ try {
     assert.ok(count > 0);
     await page.evaluate(() => { window.__failWrites = false; });
     await page.click('#sync');
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     assert.equal(await view.locator('a.book', {hasText:'제목 <img'}).count(), 0);
     assert.equal(await page.evaluate(() => Object.keys(localStorage).filter(k=>k.startsWith('chaekgalpi-pending-v1:')).length), 0);
   });
@@ -311,7 +318,7 @@ try {
     assert.match(await page.locator('#sync-detail').innerText(), /창을 닫지 말고/);
     await page.evaluate(() => { Storage.prototype.setItem = window.__originalSetItem; });
     await page.click('#sync');
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     await page.reload(); await page.locator('#d-note').waitFor({state:'attached'});
     assert.equal(await page.locator('#d-note').inputValue(), '저장 공간 복구 후 남는 메모');
   });
@@ -379,7 +386,7 @@ try {
     await page.evaluate(() => { Storage.prototype.setItem = window.__realSet; });
     await ta.fill('보관 확인');
     await page.locator('button.memo-done').click();
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
   });
 
   await step('동시 목차 충돌은 원본을 보존하고 새 책으로 복구', async () => {
@@ -398,7 +405,7 @@ try {
     await page.locator('#sync[data-state="error"]').waitFor();
     assert.equal(await page.locator('#sync-copy').isVisible(), true);
     await page.click('#sync-copy');
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     assert.equal(await page.locator('#sync-copy').isVisible(), false);
     const result = await page.evaluate(id => {
       const docs = JSON.parse(localStorage.getItem('e2e-books'));
@@ -438,7 +445,7 @@ try {
     await page.locator('#toast', { hasText: '메모를 지웠습니다' }).waitFor();
     await page.click('[data-undo]');
     await page.locator('.memo-tap', { hasText: '지울 메모' }).waitFor();
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
   });
 
   await step('서재 메모 검색 → 해당 챕터로 이동, 뒤로 가면 서재 스크롤 복원', async () => {
@@ -472,7 +479,7 @@ try {
     await page.locator('.memo-btn[data-act="memo"]').first().click();
     await page.locator('textarea[data-act="memotext"]').first().fill(long);
     await page.locator('button.memo-btn.save').first().click();
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     const preview = page.locator('.chapters .ch-memo .memo-preview').first();
     assert.ok((await preview.locator('.memo-excerpt').boundingBox()).height < 80, '목록 메모는 2줄 미리보기');
     assert.equal(await preview.locator('.memo-text').textContent(), long, '원문은 그대로');
@@ -491,7 +498,7 @@ try {
     await collected.locator('summary').click();
     assert.equal(await collected.locator('.memo-text').innerText(), long);
     await editNote( long);
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     await page.reload();
     await page.locator('.note-editor').waitFor();
     assert.equal(await page.locator('#d-note').isVisible(), false);
@@ -594,7 +601,7 @@ try {
     await page.locator('.memo-tap', { hasText: '삭제할 메모' }).waitFor();
     await page.locator('.ch.leaf',{hasText:'삭제할 메모'}).locator('.memo-btn.has').click();
     await page.click('button.memo-del');
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     const left = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('e2e-books'))).some(b => b.chapters.some(c => c.memo === '삭제할 메모')));
     assert.equal(left, false, '서버에도 삭제됨');
   });
@@ -676,16 +683,16 @@ try {
     await page.goto(page.url().replace(/#.*/, '#library'));
     await view.locator('a.book', { hasText: '묶음 점검용 책' }).click();
     await page.waitForURL(/#book-/);
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     await page.evaluate(() => { window.__syncTexts = []; new MutationObserver(() => window.__syncTexts.push(document.getElementById('sync').textContent)).observe(document.getElementById('sync'), { childList: true, characterData: true, subtree: true }); });
     await page.locator('.chapters > li.leaf .chk').first().click();
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     await page.waitForTimeout(1000);
     assert.ok(!(await page.evaluate(() => window.__syncTexts)).includes('저장 중…'), '빠른 저장에서 저장 중… 이 깜박이지 않음');
     await page.evaluate(() => { window.__writeDelay = 1500; window.__syncTexts = []; });
     await page.locator('.chapters > li.leaf .chk').first().click();
     await page.locator('#sync', { hasText: '저장 중…' }).waitFor({ timeout: 3000 });
-    await page.locator('#sync[data-state="saved"]').waitFor({ timeout: 8000 });
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached', timeout: 8000 });
     await page.evaluate(() => { window.__writeDelay = 0; });
   });
 
@@ -693,7 +700,7 @@ try {
     await page.goto(page.url().replace(/#.*/, '#library'));
     await view.locator('a.book', { hasText: '묶음 점검용 책' }).click();
     await page.waitForURL(/#book-/);
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     await page.locator('.chapters > li.leaf .chk').first().waitFor();
     await page.waitForTimeout(500);
     await page.evaluate(() => {
@@ -721,7 +728,7 @@ try {
     const seq = await page.evaluate(() => window.__seq);
     assert.equal(seq.length, 6, '5번 누르면 5번만 바뀜: ' + JSON.stringify(seq));
     assert.equal(await first.getAttribute('aria-checked'), 'true');
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     const ui = Number(/(\d+)\s*\//.exec(await page.locator('.reading-progress .of').innerText())[1]); // 접힌 묶음과 무관한 '읽은 수 / 전체'
     const server = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('e2e-books'))).find(b => b.title === '묶음 점검용 책').chapters.filter(c => c.done).length);
     assert.equal(server, ui, '화면과 서버의 체크 수가 같음(화면 ' + ui + ', 서버 ' + server + ')');
@@ -772,7 +779,7 @@ try {
     await page.waitForURL(/#book-/);
     assert.match(await page.locator('.head h1').innerText(), /묶음 점검용 책.*복구본/);
     assert.ok(await page.locator('.ch.leaf').count() > 0);
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
   });
 
   await step('메모 삭제의 6초 되돌리기가 지나도 휴지통에서 복구', async () => {
@@ -786,7 +793,7 @@ try {
     await entry.locator('[data-act="trash-restore"]').click();
     await page.waitForURL(/#book-/);
     await page.locator('.ch-memo', {hasText:'휴지통에서 찾을 메모 🙂 <태그>'}).waitFor();
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
   });
 
   await step('검색어 공백 무시 강조·백업과 Markdown 원문 보존', async () => {
@@ -833,7 +840,7 @@ try {
     }
     await page.click('#f-submit');
     await page.waitForURL(/#book-/);
-    await page.locator('#sync[data-state="saved"]').waitFor();
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     assert.equal(await page.locator('.chapters > li.leaf').count(), 2);
   });
 
