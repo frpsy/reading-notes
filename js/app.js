@@ -22,7 +22,8 @@ import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js
 var view = document.getElementById("view");
 
 function draw() {
-  document.getElementById("sync").hidden = state.phase !== "app";
+  const syncButton = document.getElementById("sync");
+  syncButton.hidden = state.phase !== "app" || syncButton.dataset.quiet === "true";
   document.getElementById("settings-link").hidden = state.phase !== "app";
   var ae = document.activeElement, fk = null;
   if (ae && ae !== document.body && ae.dataset && ae.dataset.act) {
