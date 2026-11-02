@@ -59,13 +59,15 @@ function memoExcerpt(text) {
   return chars.slice(0, 160).join('').replace(/\s+/g, ' ').trim() + (chars.length > 160 ? '…' : '');
 }
 function memoPreview(text, index, scope = 'collection') {
-  if (!longMemo(text) && scope === 'collection') return '<p class="memo-text">' + esc(text) + '</p>';
-  var excerpt = memoExcerpt(text);
+  // 읽기 화면의 시작/끝 빈 줄만 숨깁니다. 편집용 원문과 저장 데이터는 그대로 둡니다.
+  var visible = String(text || '').replace(/^(?:[ \\t]*\\r?\\n)+/, '').replace(/(?:\\r?\\n[ \\t]*)+$/, '');
+  if (!longMemo(visible) && scope === 'collection') return '<p class="memo-text">' + esc(visible) + '</p>';
+  var excerpt = memoExcerpt(visible);
   var editable = scope === 'chapter' || scope === 'note';
   var act = scope === 'chapter' ? ' data-act="memo" data-i="' + index + '"' : ' data-act="edit-note"';
   var body = editable
-    ? '<button type="button" class="memo-text memo-edit-tap"' + act + ' aria-label="펼친 메모 수정">' + esc(text) + '</button>'
-    : '<p class="memo-text">' + esc(text) + '</p>';
+    ? '<button type="button" class="memo-text memo-edit-tap"' + act + ' aria-label="펼친 메모 수정">' + esc(visible) + '</button>'
+    : '<p class="memo-text">' + esc(visible) + '</p>';
   return '<details class="memo-preview" data-disclosure="preview-' + scope + '-' + index + '" data-memo-index="' + index + '"><summary class="memo-tap"><span class="memo-excerpt">' + esc(excerpt) + '</span><span class="memo-expand">전체 보기</span><span class="memo-collapse">접기</span></summary>' + body + '</details>';
 }
 function noteEditor(note) {
