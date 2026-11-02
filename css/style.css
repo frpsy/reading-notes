@@ -652,7 +652,7 @@ a.book .book-sub,a.book .book-meta{min-width:0;overflow-wrap:anywhere}
   :root:not([data-theme="light"]){--book-shadow:none}
 }
 .top{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:30px}
-.brand{letter-spacing:-.055em}
+.brand{font-family:var(--sans);font-weight:750;letter-spacing:-.025em;text-shadow:none;filter:none;opacity:1}
 .settings-nav{border:1px solid transparent;transition:background var(--duration),color var(--duration)}
 .settings-nav:hover,.settings-nav:focus-visible{background:var(--surface-2);color:var(--ink)}
 h1.page{letter-spacing:-.045em}
@@ -714,4 +714,12 @@ a.book .chip{font-weight:600}
 }
 @media(prefers-reduced-motion:reduce){
   a.book,.settings-item,.settings-nav,.search{transition:none}
+}
+
+/* iOS Safari/PWA: 반투명 상단 시스템 UI와 브랜드 텍스트 사이의 안전 여백. */
+html{background:var(--bg)}
+@supports (-webkit-touch-callout:none){
+  @media(max-width:600px){
+    body{padding-top:max(32px,calc(env(safe-area-inset-top,0px) + 14px))}
+  }
 }
