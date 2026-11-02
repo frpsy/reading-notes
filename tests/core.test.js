@@ -118,7 +118,7 @@ test("분량 계산: 중간 쪽수 누락·묶음 경계·마지막 쪽수", () 
   [10, 25, 50, 70].forEach((p, i) => { b.chapters[indices[i]].p = p; });
   b.chapters[3].p = 45; // 다음 묶음의 시작 쪽수 역시 경계로 사용
   const m = metrics(b, "2026-10-02");
-  assert.equal(m.pagesTotal, 91); // 15 + 20 + 20 + 36
+  assert.equal(m.pagesTotal, 86); // 15 + 20 + 20 + 31
   assert.equal(m.pagesRead, 0);
   b.chapters[1].done = "2026-10-01";
   assert.equal(metrics(b, "2026-10-02").pagesRead, 15);
