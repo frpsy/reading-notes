@@ -28,7 +28,7 @@ const browser = await chromium.launch();
 let failed = false;
 async function step(name, fn) {
   try { await fn(); console.log("ok -", name); }
-  catch (e) { failed = true; console.log("not ok -", name, "\n ", e.message.split("\n")[0]); }
+  catch (e) { failed = true; console.log("not ok -", name, "\n ", e.stack || e.message); }
 }
 
 try {
@@ -169,7 +169,7 @@ try {
     await page.click('#settings-link');
     await view.getByText('설정', {exact:true}).first().waitFor();
     await page.click('a[href="#activity"]');
-    assert.equal(await page.locator('.heat').isVisible(), true);
+    await page.locator('.heat').waitFor({state:'visible'});
     await page.goto(base + '#library');
     await page.setViewportSize({width:1280,height:900});
     if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-desktop.png')});
