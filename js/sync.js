@@ -1,8 +1,8 @@
 // 로그인 계정의 변경을 즉시 기기에 보관한 뒤 서버로 전송합니다.
-import * as store from "./store.js?v=43";
-import { state } from "./state.js?v=43";
-import { validateBook, newId, friendlyError } from "./core.js?v=43";
-import { render } from "./bus.js?v=43";
+import * as store from "./store.js?v=44";
+import { state } from "./state.js?v=44";
+import { validateBook, newId, friendlyError } from "./core.js?v=44";
+import { render } from "./bus.js?v=44";
 const TEXT = { pending: '연결 중…', saved: '저장됨', saving: '저장 중…', error: '저장 실패 · 다시 시도', offline: '오프라인 · 기기에 보관 중' };
 let sequence = 0;
 // 연결·서버 사정으로 잠시 실패한 경우만 자동으로 다시 보냅니다(권한·형식·충돌 오류는 사용자 조치가 필요하므로 제외).
@@ -25,8 +25,13 @@ export function setSync(s, msg = '') {
   clearTimeout(savingTextTimer);
   const wasSaved = el.dataset.state === 'saved';
   el.dataset.state = s; el.title = msg;
-  // 버튼을 누를 때마다 '저장됨 → 저장 중… → 저장됨'으로 글자와 너비가 바뀌어 깜박이므로, 저장이 0.8초 넘게 걸릴 때만 '저장 중…'을 보여 줍니다.
-  if (s === 'saving' && wasSaved) savingTextTimer = setTimeout(function () { if (el.dataset.state === 'saving') el.textContent = TEXT.saving; }, 800);
+  // 정상 저장은 상단 버튼을 숨깁니다. 상태값은 유지해 테스트·동기화 로직을 보존합니다.
+  // 빠른 저장에서는 버튼이 깜박이지 않게 하고, 0.8초 넘는 저장만 노출합니다.
+  el.hidden = s === 'saved' || (s === 'saving' && wasSaved);
+  el.dataset.quiet = el.hidden ? 'true' : 'false';
+  if (s === 'saving' && wasSaved) savingTextTimer = setTimeout(function () {
+    if (el.dataset.state === 'saving') { el.textContent = TEXT.saving; el.hidden = false; el.dataset.quiet = 'false'; }
+  }, 800);
   else el.textContent = TEXT[s];
   const detail = document.getElementById('sync-detail');
   if (detail) { detail.textContent = msg; detail.hidden = !msg; }
