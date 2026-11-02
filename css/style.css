@@ -644,3 +644,74 @@ a.book .book-sub,a.book .book-meta{min-width:0;overflow-wrap:anywhere}
 @media(hover:hover){
   .settings-link:hover{background:var(--surface-2)}
 }
+
+/* Visual polish: 차분한 서재, 명확한 정보 위계, 일관된 상호작용 상태. */
+:root{--book-shadow:0 2px 12px rgb(12 37 27 / .035)}
+:root[data-theme="dark"]{--book-shadow:none}
+@media(prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--book-shadow:none}
+}
+.top{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:30px}
+.brand{letter-spacing:-.055em}
+.settings-nav{border:1px solid transparent;transition:background var(--duration),color var(--duration)}
+.settings-nav:hover,.settings-nav:focus-visible{background:var(--surface-2);color:var(--ink)}
+h1.page{letter-spacing:-.045em}
+.lib-head{margin-bottom:22px}
+.lib-actions .btn{font-weight:600}
+.lib-actions .btn:not(.primary){border-color:var(--line)}
+.search{width:100%;min-height:48px;border:1px solid var(--line);border-radius:var(--radius-control);background:var(--surface);transition:border-color var(--duration),box-shadow var(--duration)}
+.search:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;align-items:stretch;border-radius:14px;background:var(--surface-2);padding:4px;margin:0 0 24px}
+.tab{min-height:44px;min-width:0;padding:8px 6px;border-radius:10px;font-weight:500;line-height:1.3}
+.tab[aria-pressed="true"]{background:var(--surface);color:var(--accent);font-weight:700;box-shadow:0 1px 3px rgb(0 0 0 / .055)}
+.tab em{font-variant-numeric:tabular-nums}
+.library-shelf{margin-top:26px}
+.library-shelf .shelf-title{margin:0 2px 12px;line-height:1.4;font-size:.875rem;font-weight:650;color:var(--muted)}
+.library-shelf .shelf-title span{margin-left:8px;font-variant-numeric:tabular-nums;opacity:.7}
+.books{gap:12px}
+a.book{padding:21px 18px;gap:8px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-panel);box-shadow:var(--book-shadow);transition:background var(--duration),border-color var(--duration),box-shadow var(--duration)}
+a.book:last-child{border-bottom:1px solid var(--line)}
+a.book .cover{border-radius:3px 7px 7px 3px}
+a.book .book-main{gap:5px}
+a.book .book-title{font-size:1.09375rem;line-height:1.48;letter-spacing:-.025em}
+a.book .book-sub{line-height:1.55}
+a.book .pct{font-variant-numeric:tabular-nums;letter-spacing:-.035em}
+a.book .bar{height:5px;margin-top:9px;background:var(--surface-2)}
+a.book .book-meta{font-size:.8125rem;line-height:1.6}
+a.book .book-next{color:var(--accent);font-weight:500}
+a.book .chip{font-weight:600}
+@media(hover:hover){
+  a.book:hover{border-color:color-mix(in srgb,var(--accent) 28%,var(--line));box-shadow:0 4px 16px rgb(12 37 27 / .06)}
+}
+.settings-section{margin-top:32px}
+.settings-section>.sec{margin:0 0 12px 3px;font-size:.8125rem;letter-spacing:.015em;color:var(--muted)}
+.settings-section>.settings-item:first-of-type{border-top:1px solid var(--line)}
+.settings-item{padding:13px 14px;min-height:60px;line-height:1.5;transition:background var(--duration)}
+.settings-link{border-radius:0}
+.settings-item .btn{border-radius:10px}
+.settings-detail{padding:0 2px}
+.activity-page .strip{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-panel);padding:22px;row-gap:24px}
+.activity-page .strip .s>b{color:var(--ink)}
+.activity-page .activity{padding:20px 4px}
+@media(max-width:600px){
+  .top{padding-bottom:12px;margin-bottom:25px}
+  .brand{font-size:1.375rem}
+  .lib-head{margin-bottom:18px}
+  .tabs{margin-bottom:22px}
+  .library-shelf{margin-top:22px}
+  .books{gap:10px}
+  a.book{padding:18px 16px;gap:7px 13px}
+  a.book .book-title{font-size:1.0625rem;line-height:1.48}
+  a.book .book-meta{font-size:.875rem}
+  a.book .bar{height:5px;margin-top:3px}
+  .settings-section{margin-top:27px}
+  .settings-item{padding-inline:10px}
+  .activity-page .strip{padding:18px}
+}
+@media(max-width:370px){
+  a.book{padding:16px 14px}
+  .tab{padding-inline:2px;font-size:.75rem}
+}
+@media(prefers-reduced-motion:reduce){
+  a.book,.settings-item,.settings-nav,.search{transition:none}
+}
