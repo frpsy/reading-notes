@@ -49,6 +49,23 @@ try{
       await page.goto(url+route);await page.locator(ready).first().waitFor();await page.evaluate(()=>document.fonts.ready);
       if(!baseline){
        await fits(`${theme} ${width} ${label}`);
+       // iOS 상단 제목·안전 영역·헤더 버튼 겹침 예방 불변식.
+       const header=await page.locator('.top').boundingBox();
+       const brand=await page.locator('.brand').boundingBox();
+       const controls=await page.locator('.top-r').boundingBox();
+       assert.ok(header&&brand&&controls,'header elements should have visible bounds');
+       assert.ok(brand.x+brand.width<=controls.x+1 || brand.y+brand.height<=controls.y+1 || controls.y+controls.height<=brand.y+1,'header brand and controls must never overlap');
+       const brandStyle=await page.locator('.brand').evaluate(el=>{
+        const st=getComputedStyle(el);
+        return {font:st.fontFamily,opacity:st.opacity,filter:st.filter,shadow:st.textShadow};
+       });
+       assert.equal(brandStyle.opacity,'1','header brand must remain opaque');
+       assert.equal(brandStyle.filter,'none','header brand must not be blurred');
+       assert.equal(brandStyle.shadow,'none','header brand must not use shadow');
+       assert.ok(!/Noto Serif|Nanum Myeongjo|serif/i.test(brandStyle.font),'small brand uses crisp sans font');
+       if(name==='webkit'&&width<=600)assert.ok(brand.y>=28,'iOS WebKit brand respects minimum upper spacing');
+       if(label==='library')assert.equal(await page.locator('#sync[data-state="saved"]').isVisible(),false,'normal save status must not appear as top button');
+
        if(label==='library'){
         const a=await page.locator('.lib-head h1').boundingBox(), b=await page.locator('.lib-actions').boundingBox();
         assert.ok(a&&b, 'library heading and actions visible');
