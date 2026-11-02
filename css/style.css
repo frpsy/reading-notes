@@ -652,7 +652,7 @@ a.book .book-sub,a.book .book-meta{min-width:0;overflow-wrap:anywhere}
   :root:not([data-theme="light"]){--book-shadow:none}
 }
 .top{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:30px}
-.brand{letter-spacing:-.055em}
+.brand{font-family:var(--sans);font-weight:750;letter-spacing:-.025em;text-shadow:none;filter:none;opacity:1}
 .settings-nav{border:1px solid transparent;transition:background var(--duration),color var(--duration)}
 .settings-nav:hover,.settings-nav:focus-visible{background:var(--surface-2);color:var(--ink)}
 h1.page{letter-spacing:-.045em}
