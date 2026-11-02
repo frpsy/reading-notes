@@ -60,7 +60,7 @@ function memoExcerpt(text) {
 }
 function memoPreview(text, index, scope = 'collection') {
   // 읽기 화면의 시작/끝 빈 줄만 숨깁니다. 편집용 원문과 저장 데이터는 그대로 둡니다.
-  var visible = String(text || '').replace(/^(?:[ \\t]*\\r?\\n)+/, '').replace(/(?:\\r?\\n[ \\t]*)+$/, '');
+  var visible = String(text || '').replace(/^(?:[ \t]*\r?\n)+/, '').replace(/(?:\r?\n[ \t]*)+$/, '');
   if (!longMemo(visible) && scope === 'collection') return '<p class="memo-text">' + esc(visible) + '</p>';
   var excerpt = memoExcerpt(visible);
   var editable = scope === 'chapter' || scope === 'note';
