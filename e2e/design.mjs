@@ -74,6 +74,8 @@ try{
     await page.locator('.ch.leaf .chk').nth(1).focus();await page.keyboard.press('Space');
     assert.equal(await page.locator('.ch.leaf .chk').nth(1).getAttribute('aria-checked'),'true');
     assert.equal(await page.getByRole('progressbar',{name:'읽은 챕터'}).getAttribute('aria-valuenow'),'2');
+    // Build the second book only from the committed fixture, not an in-flight write.
+    await page.waitForFunction(()=>{const b=JSON.parse(localStorage.getItem('e2e-books')).design;return b.chapters[0].memo==='키보드로 기록한 메모'&&!!b.chapters[1].done;});
     await page.goto(url+'#add');await page.locator('#f-submit').click();
     assert.equal(await page.locator('#f-title').getAttribute('aria-invalid'),'true');
     assert.equal(await page.evaluate(()=>document.activeElement.id),'f-title');
