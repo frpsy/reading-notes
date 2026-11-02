@@ -3,7 +3,6 @@ import { state } from "./state.js?v=43";
 import { esc, fmt, ago } from "./util.js?v=43";
 import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=43";
 import { coverHtml, chipHtml } from "./view-common.js?v=43";
-import { catalogHtml } from "./catalog.js?v=43";
 
 function nextLine(b, m) {
   if (m.status === 'done') return '';
@@ -65,16 +64,10 @@ export function libraryView() {
     if (x.m.status === 'done' && x.m.endStr && x.m.endStr.slice(0, 4) === yr) doneYear++;
     x.m.doneDates.forEach(function (d) { var n = dnum(d); if (n != null && n >= t - 6 && n <= t) week++ });
   });
-  var head = '<div class="lib-head"><h1 class="page">내 서재</h1><a class="btn primary" href="#add">책 추가</a></div>';
-  var note = '<div class="tools"><a class="btn sm" href="#records">기록 관리 · 휴지통</a></div>' + catalogHtml() +
-    (state.mode === 'firebase' ? '<div class="tools"><button type="button" class="btn sm" data-act="logout">로그아웃' + (state.userEmail ? ' (' + esc(state.userEmail) + ')' : '') + '</button></div>' : '');
+  var head = '<div class="lib-head"><h1 class="page">내 서재</h1><div class="lib-actions"><a class="btn" href="#catalog">책 찾기</a><a class="btn primary" href="#add">책 추가</a></div></div>';
   if (!all.length) {
-    return head + '<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>\'책 추가\'에서 목차를 붙여 넣거나, 아래 \'담을 수 있는 책\'에서 서재에 담기를 누르세요.</p></div>' + note;
+    return head + '<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>책을 직접 추가하거나 준비된 책을 찾아보세요.</p><a class="btn" href="#catalog">책 찾기</a></div>';
   }
-  var strip = '<div class="strip"><div class="s"><b>' + cnt.reading + '</b><span>읽는 중</span></div>' +
-    '<div class="s"><b>' + cnt.done + '</b><span>완독</span></div>' +
-    '<a class="s" href="#year"><b>' + doneYear + '</b><span>올해 완독 · 연간 기록 ›</span></a>' +
-    '<div class="s"><b>' + week + '</b><span>최근 7일 완료 챕터</span></div></div>';
   var tabs = '<div class="tabs" role="group" aria-label="상태 필터">' + [['all', '전체'], ['reading', '읽는 중'], ['todo', '읽을 예정'], ['done', '완독']].map(function (x) {
     return '<button type="button" class="tab" data-act="filter" data-v="' + x[0] + '" aria-pressed="' + (state.ui.filter === x[0]) + '">' + x[1] + '<em>' + cnt[x[0]] + '</em></button>';
   }).join('') + '</div>';
@@ -94,12 +87,37 @@ export function libraryView() {
     return '<section class="library-shelf" aria-label="' + labels[status] + '"><h2 class="shelf-title">' + labels[status] + '<span>' + books.length + '</span></h2><div class="books">' + books.map(function (x) { return bookRow(x.b, x.m); }).join('') + '</div></section>';
   }).join('') : '<div class="books">' + list.map(function (x) { return bookRow(x.b, x.m); }).join('') + '</div>') : '<div class="empty search-empty"><h2>' + (state.ui.q ? '검색 결과가 없습니다.' : '해당하는 책이 없습니다.') + '</h2><p>다른 검색어를 입력하거나 전체 서재를 확인해 보세요.</p><button class="btn" type="button" data-act="reset-search">전체 서재 보기</button></div>';
   var search = all.length > 0 ? '<input type="search" class="search" data-act="search" value="' + esc(state.ui.q) + '" placeholder="제목·저자·메모 검색" aria-label="제목·저자·메모 검색" autocomplete="off">' : '';
-  var books = all.map(function (x) { return x.b; }), activity = activityByDate(books);
-  var insights = '<details class="library-insights" data-disclosure="library-insights"><summary><span>독서 활동</span><span class="disclosure-hint">' + currentStreak(activity) + '일 연속 · 최근 7일 ' + week + '챕터</span></summary><div class="insights-body">' + strip + activityHtml(books) + '</div></details>';
   var memoHits = state.ui.q ? searchMemos(filtered.map(function (x) { return x.b }), state.ui.q) : [];
   var memoHtml = memoHits.length ? '<div class="sec-h"><h2 class="sec">메모에서 찾음</h2></div><ul class="memo-hits">' + memoHits.map(function (h) {
     return '<li><a href="#book-' + esc(h.id) + '" data-act="jump" data-id="' + esc(h.id) + '" data-i="' + h.i + '"><span class="memo-hit-h"><b>' + esc(h.title) + '</b> · ' + esc(h.t) + '</span><span class="memo-hit-t">' + highlightMemo(h.text, state.ui.q) + '</span></a></li>';
   }).join('') + '</ul>' : '';
   var resultStatus = state.ui.q ? '<p class="search-status" role="status">책 ' + list.length + '권 · 메모 ' + memoHits.length + '개</p>' : '';
-  return head + search + tabs + resultStatus + rows + memoHtml + (!state.ui.q && state.ui.filter === 'all' ? reminderHtml(all, activity) : '') + insights + note;
+  var reminder = !state.ui.q && state.ui.filter === 'all' ? reminderHtml(all, activityByDate(all.map(function (x) { return x.b; }))) : '';
+  return head + reminder + search + tabs + resultStatus + rows + memoHtml;
+}
+
+export function activityView() {
+  const books = Array.from(state.books.values());
+  const map = activityByDate(books);
+  const all = books.map(function (b) { return calcMetrics(b); });
+  const year = String(new Date().getFullYear());
+  let reading = 0, done = 0, doneYear = 0, week = 0;
+  const today = dnum(todayStr());
+  all.forEach(function (m) {
+    if (m.status === 'reading') reading++;
+    if (m.status === 'done') {
+      done++;
+      if (m.endStr && m.endStr.slice(0, 4) === year) doneYear++;
+    }
+    m.doneDates.forEach(function (date) {
+      const day = dnum(date);
+      if (day != null && day >= today - 6 && day <= today) week++;
+    });
+  });
+  const strip = '<div class="strip"><div class="s"><b>' + reading + '</b><span>읽는 중</span></div>' +
+    '<div class="s"><b>' + done + '</b><span>완독</span></div>' +
+    '<a class="s" href="#year"><b>' + doneYear + '</b><span>올해 완독 · 연간 기록 ›</span></a>' +
+    '<div class="s"><b>' + week + '</b><span>최근 7일 챕터</span></div></div>';
+  return '<a class="back" href="#settings">← 설정</a><h1 class="page">독서 활동</h1>' +
+    '<section class="activity-page">' + strip + activityHtml(books) + '</section>';
 }
