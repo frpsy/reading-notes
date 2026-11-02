@@ -9,7 +9,8 @@ import { onAuth } from "./session.js?v=43";
 import { currentRoute } from "./router.js?v=43";
 import { loadCatalog, addFromCatalog } from "./catalog.js?v=43";
 import { loginView, loadingView } from "./view-common.js?v=43";
-import { libraryView } from "./view-library.js?v=43";
+import { libraryView, activityView } from "./view-library.js?v=43";
+import { settingsView, catalogView } from "./view-settings.js?v=43";
 import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=43";
 import { yearView } from "./view-year.js?v=43";
 import { patchView, resetPatch } from "./patch.js?v=43";
@@ -22,6 +23,7 @@ var view = document.getElementById("view");
 
 function draw() {
   document.getElementById("sync").hidden = state.phase !== "app";
+  document.getElementById("settings-link").hidden = state.phase !== "app";
   var ae = document.activeElement, fk = null;
   if (ae && ae !== document.body && ae.dataset && ae.dataset.act) {
     fk = '[data-act="' + ae.dataset.act + '"]' + (ae.dataset.i != null ? '[data-i="' + ae.dataset.i + '"]' : "");
@@ -34,6 +36,9 @@ function draw() {
   else if (r.name === "library") html = libraryView();
   else if (r.name === "book") html = bookView(r.id);
   else if (r.name === "records") html = recordsView();
+  else if (r.name === "settings") html = settingsView();
+  else if (r.name === "catalog") html = catalogView();
+  else if (r.name === "activity") html = activityView();
   else if (r.name === "year") html = yearView(r.year);
   else html = formView(r.id);
   if (state.phase === "app" && state.ready && r.name === "book") patchView(view, html, "book:" + r.id);
@@ -81,7 +86,7 @@ function applyJump() {
 window.addEventListener("hashchange", function () {
   state.ui.confirmDel = null; hideToast(); render();
   if (applyJump()) return;
-  var r = currentRoute(), keep = r.name === "library" || r.name === "year";
+  var r = currentRoute(), keep = r.name === "library" || r.name === "year" || r.name === "settings" || r.name === "activity" || r.name === "catalog";
   window.scrollTo(0, keep ? (scrollPos[location.hash || "#library"] || 0) : 0);
 });
 

@@ -41,7 +41,11 @@ try{
     await page.emulateMedia({colorScheme:theme,reducedMotion:'reduce'});
     for(const width of baseline?[390,1280]:[320,375,390,430,768,1280]){
      await page.setViewportSize({width,height:900});
-     for(const [route,ready,label] of [['#library','a.book','library'],['#book-design','.chapters','detail'],['#add','#f-title','form'],['#records','[data-act="export-json"]','records']]){
+     for(const [route,ready,label] of [
+      ['#library','a.book','library'],['#book-design','.chapters','detail'],
+      ['#add','#f-title','form'],['#records','[data-act="export-json"]','records'],
+      ...(baseline ? [] : [['#settings','#theme','settings'],['#activity','.activity-page','activity'],['#catalog','h1.page','catalog']])
+     ]){
       await page.goto(url+route);await page.locator(ready).first().waitFor();await page.evaluate(()=>document.fonts.ready);
       if(!baseline)await fits(`${theme} ${width} ${label}`);
       if(name==='chromium'&&[390,1280].includes(width))await page.screenshot({path:`${out}/${label}-${theme}-${width}.png`,fullPage:false});
@@ -105,6 +109,8 @@ try{
     assert.equal(await page.locator('[data-act="search"]').inputValue(),'');
     assert.equal(await page.locator('[data-v="all"]').getAttribute('aria-pressed'),'true');
     assert.equal(await page.evaluate(()=>document.activeElement.dataset.act),'search');
+    await page.goto(url+'#settings');
+    await page.locator('#theme').waitFor();
     await page.locator('#theme').click();
     assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'),'#F7F6F2');
     await page.locator('#theme').click();

@@ -112,6 +112,35 @@ test("분량 기준 진행률", () => {
   assert.ok(Math.abs(m.pagePct - 10 / 91) < 1e-9);
 });
 
+test("분량 계산: 중간 쪽수 누락·묶음 경계·마지막 쪽수", () => {
+  const b = book({ totalPages: 100 });
+  const indices = [1, 2, 4, 5];
+  [10, 25, 50, 70].forEach((p, i) => { b.chapters[indices[i]].p = p; });
+  b.chapters[3].p = 45; // 다음 묶음의 시작 쪽수 역시 경계로 사용
+  const m = metrics(b, "2026-10-02");
+  assert.equal(m.pagesTotal, 86); // 15 + 20 + 20 + 31
+  assert.equal(m.pagesRead, 0);
+  b.chapters[1].done = "2026-10-01";
+  assert.equal(metrics(b, "2026-10-02").pagesRead, 15);
+  b.chapters[2].p = null;
+  assert.equal(metrics(b, "2026-10-02").pagePct, null, "읽을 단위의 시작 쪽수가 없으면 계산하지 않음");
+  b.chapters[2].p = 25;
+  b.totalPages = null;
+  assert.equal(metrics(b, "2026-10-02").pagesTotal, null, "마지막 쪽수를 알 수 없으면 계산하지 않음");
+});
+
+test("분량 계산: 3,000개 챕터의 일관성", () => {
+  const chapters = Array.from({ length: 3000 }, (_, i) => ({
+    t: String(i + 1), lv: 0, p: i + 1,
+    done: i < 1500 ? "2026-10-01" : null, memo: "",
+  }));
+  const m = metrics(book({ chapters, totalPages: 3000 }), "2026-10-02");
+  assert.equal(m.L, 3000);
+  assert.equal(m.pagesTotal, 3000);
+  assert.equal(m.pagesRead, 1500);
+  assert.equal(m.pagePct, 0.5);
+});
+
 test("연속 stale 표시", () => {
   const b = book({ startDate: "2026-10-01" });
   toggleChapter(b, 1, "2026-10-02");

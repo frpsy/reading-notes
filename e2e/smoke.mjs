@@ -28,7 +28,7 @@ const browser = await chromium.launch();
 let failed = false;
 async function step(name, fn) {
   try { await fn(); console.log("ok -", name); }
-  catch (e) { failed = true; console.log("not ok -", name, "\n ", e.message.split("\n")[0]); }
+  catch (e) { failed = true; console.log("not ok -", name, "\n ", e.stack || e.message); }
 }
 
 try {
@@ -82,7 +82,26 @@ try {
     assert.equal(await page.locator('#sync-copy').isVisible(), false);
   });
 
+  await step("설정 화면: 테마·계정·기록 관리 분리", async () => {
+    await page.goto(base + '#settings');
+    await view.getByRole('heading', {name:'설정'}).waitFor();
+    assert.equal(await page.locator('#theme').isVisible(), true);
+    assert.equal(await view.locator('[data-act="logout"]').count(), 1);
+    assert.equal(await view.locator('a[href="#records"]').count(), 1);
+    const before = await page.locator('#theme').innerText();
+    await page.locator('#theme').click();
+    assert.notEqual(await page.locator('#theme').innerText(), before);
+    await page.reload();
+    assert.notEqual(await page.locator('#theme').innerText(), before, '테마 설정 유지');
+    await page.goto(base + '#library');
+    assert.equal(await view.locator('[data-act="logout"]').count(), 0);
+    assert.equal(await view.locator('#theme').count(), 0);
+    assert.equal(await view.locator('a[href="#records"]').count(), 0);
+    assert.equal(await view.locator('[data-act="catadd"]').count(), 0);
+  });
+
   await step("준비된 책 담기", async () => {
+    await page.goto(base + '#catalog');
     await page.locator('[data-act="catadd"]').first().click();
     await view.locator("a.book").first().waitFor();
   });
@@ -139,7 +158,7 @@ try {
     }
     await page.goto(base + '#library');
     await view.locator('a.book').first().waitFor();
-    assert.equal(await page.locator('.library-insights').getAttribute('open'), null);
+    assert.equal(await page.locator('.library-insights').count(), 0);
     assert.ok(await page.locator('a.book').first().evaluate(el => el.getBoundingClientRect().top < 400));
     assert.equal(await page.locator('.heat').isVisible(), false);
     if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-mobile.png')});
@@ -147,8 +166,11 @@ try {
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
     if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-320.png')});
     await page.setViewportSize({width:390,height:844});
-    await page.locator('.library-insights > summary').click();
-    assert.equal(await page.locator('.heat').isVisible(), true);
+    await page.click('#settings-link');
+    await view.getByText('설정', {exact:true}).first().waitFor();
+    await page.click('a[href="#activity"]');
+    await page.locator('.heat').waitFor({state:'visible'});
+    await page.goto(base + '#library');
     await page.setViewportSize({width:1280,height:900});
     if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-desktop.png')});
     await page.emulateMedia({colorScheme:'dark'});
@@ -202,8 +224,8 @@ try {
 
   await step("연간 기록", async () => {
     await page.goto(base + "#library");
-    if (!(await page.locator('.library-insights[open]').count())) await page.locator('.library-insights > summary').click();
-    await page.click('a.s[href="#year"]');
+    await page.goto(base + '#settings');
+    await page.click('a.settings-link[href="#year"]');
     await view.getByText("년 독서 기록").waitFor();
     assert.equal(await view.locator(".months .mo").count(), 12);
   });

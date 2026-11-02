@@ -11,8 +11,10 @@ function applyTheme(t) {
   // 홈 화면 앱과 Safari 상단도 현재 화면의 배경색에 맞춥니다.
   var chromeColor = document.querySelector('meta[name="theme-color"]');
   if (chromeColor) chromeColor.content = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-  themeEl.textContent = THEME_TEXT[t];
-  themeEl.setAttribute("aria-label", "화면 테마: " + THEME_TEXT[t] + " (누르면 바뀝니다)");
+  if (themeEl) {
+    themeEl.textContent = THEME_TEXT[t];
+    themeEl.setAttribute("aria-label", "화면 테마: " + THEME_TEXT[t] + " (누르면 바뀝니다)");
+  }
 }
 
 export function loadFolded() {
@@ -22,10 +24,13 @@ export function saveFolded() {
   try { localStorage.setItem("chaekgalpi-fold", JSON.stringify(Array.from(state.ui.folded))); } catch (e) { /* 무시 */ }
 }
 
+export function themeLabel() { return THEME_TEXT[curTheme]; }
+
 export function initPrefs() {
   state.ui.folded = loadFolded();
   curTheme = getTheme();
-  document.getElementById("theme").addEventListener("click", function () {
+  document.addEventListener("click", function (event) {
+    if (!event.target.closest("#theme")) return;
     var order = ["auto", "light", "dark"];
     curTheme = order[(order.indexOf(curTheme) + 1) % 3];
     try { localStorage.setItem("chaekgalpi-theme", curTheme); } catch (e) { /* 무시 */ }
