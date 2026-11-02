@@ -485,7 +485,7 @@ button,a,input,select,textarea,summary{touch-action:manipulation}
   a.book>.book-side{grid-column:1 / -1;grid-row:3;flex-direction:row;align-items:center;justify-content:flex-end;gap:8px;margin-top:4px}
   a.book .book-side .pct{margin-right:auto;color:var(--accent);font-size:1.25rem}
   a.book .bar{grid-column:1 / -1;grid-row:4;margin-top:2px;height:5px}
-  a.book .book-meta{grid-column:1 / -1;grid-row:5;font-size:0.75rem;line-height:1.8}
+  a.book .book-meta{grid-column:1 / -1;grid-row:5;font-size:0.875rem;line-height:1.6}
   a.book .book-next{grid-column:1 / -1;grid-row:6;font-size:.8125rem;overflow-wrap:anywhere;border-top:0;padding-top:4px}
   .library-insights{border-radius:16px;background:transparent;border:0;padding:20px 0}
   .library-insights .strip{gap:18px;display:grid;grid-template-columns:1fr 1fr}
