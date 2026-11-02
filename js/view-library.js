@@ -1,9 +1,9 @@
 // 서재 화면: 책 목록, 상태 필터, 검색, 최근 12주 기록.
-import { state } from "./state.js?v=42";
-import { esc, fmt, ago } from "./util.js?v=42";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=42";
-import { coverHtml, chipHtml } from "./view-common.js?v=42";
-import { catalogHtml } from "./catalog.js?v=42";
+import { state } from "./state.js?v=43";
+import { esc, fmt, ago } from "./util.js?v=43";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=43";
+import { coverHtml, chipHtml } from "./view-common.js?v=43";
+import { catalogHtml } from "./catalog.js?v=43";
 
 function nextLine(b, m) {
   if (m.status === 'done') return '';
@@ -37,8 +37,8 @@ function reminderHtml(all, map) {
   reading.sort(function (a, c) { return (c.m.last || '').localeCompare(a.m.last || '') });
   var x = reading[0], i = nextLeafIndex(x.b);
   var msg = st.state === 'risk'
-    ? '<b>오늘 아직 읽지 않았습니다.</b> 지금 한 챕터를 읽으면 ' + (st.streak + 1) + '일 연속이 됩니다.'
-    : '<b>마지막 기록 후 ' + st.gap + '일이 지났습니다.</b> 이어서 한 챕터 읽어 보세요.';
+    ? '<b>오늘도 한 챕터, 나의 속도로.</b> 읽던 곳에서 이어가세요.'
+    : '<b>다시 펼치고 싶은 순간에.</b> 읽던 곳을 기억해 두었습니다.';
   return '<a class="remind" href="#book-' + esc(x.b.id) + '"><span>' + msg + '</span><span class="remind-go">' + esc(x.b.title) + (i >= 0 ? ' · ' + esc(x.b.chapters[i].t) : '') + ' ›</span></a>';
 }
 
@@ -79,7 +79,8 @@ export function libraryView() {
     return '<button type="button" class="tab" data-act="filter" data-v="' + x[0] + '" aria-pressed="' + (state.ui.filter === x[0]) + '">' + x[1] + '<em>' + cnt[x[0]] + '</em></button>';
   }).join('') + '</div>';
   var order = { reading: 0, todo: 1, done: 2 };
-  var list = all.filter(function (x) { return (state.ui.filter === 'all' || x.m.status === state.ui.filter) && matchBook(x.b, state.ui.q) });
+  var filtered = all.filter(function (x) { return state.ui.filter === 'all' || x.m.status === state.ui.filter; });
+  var list = filtered.filter(function (x) { return matchBook(x.b, state.ui.q) });
   list.sort(function (a, c) {
     if (order[a.m.status] !== order[c.m.status]) return order[a.m.status] - order[c.m.status];
     if (a.m.status === 'reading') return (c.m.last || '').localeCompare(a.m.last || '');
@@ -91,13 +92,14 @@ export function libraryView() {
     if (!books.length) return '';
     var labels = { reading: '읽는 중', todo: '읽을 예정', done: '완독한 책' };
     return '<section class="library-shelf" aria-label="' + labels[status] + '"><h2 class="shelf-title">' + labels[status] + '<span>' + books.length + '</span></h2><div class="books">' + books.map(function (x) { return bookRow(x.b, x.m); }).join('') + '</div></section>';
-  }).join('') : '<div class="books">' + list.map(function (x) { return bookRow(x.b, x.m); }).join('') + '</div>') : '<p class="muted">' + (state.ui.q ? '검색 결과가 없습니다.' : '해당하는 책이 없습니다.') + '</p>';
+  }).join('') : '<div class="books">' + list.map(function (x) { return bookRow(x.b, x.m); }).join('') + '</div>') : '<div class="empty search-empty"><h2>' + (state.ui.q ? '검색 결과가 없습니다.' : '해당하는 책이 없습니다.') + '</h2><p>다른 검색어를 입력하거나 전체 서재를 확인해 보세요.</p><button class="btn" type="button" data-act="reset-search">전체 서재 보기</button></div>';
   var search = all.length > 0 ? '<input type="search" class="search" data-act="search" value="' + esc(state.ui.q) + '" placeholder="제목·저자·메모 검색" aria-label="제목·저자·메모 검색" autocomplete="off">' : '';
   var books = all.map(function (x) { return x.b; }), activity = activityByDate(books);
   var insights = '<details class="library-insights" data-disclosure="library-insights"><summary><span>독서 활동</span><span class="disclosure-hint">' + currentStreak(activity) + '일 연속 · 최근 7일 ' + week + '챕터</span></summary><div class="insights-body">' + strip + activityHtml(books) + '</div></details>';
-  var memoHits = state.ui.q ? searchMemos(all.map(function (x) { return x.b }), state.ui.q) : [];
+  var memoHits = state.ui.q ? searchMemos(filtered.map(function (x) { return x.b }), state.ui.q) : [];
   var memoHtml = memoHits.length ? '<div class="sec-h"><h2 class="sec">메모에서 찾음</h2></div><ul class="memo-hits">' + memoHits.map(function (h) {
     return '<li><a href="#book-' + esc(h.id) + '" data-act="jump" data-id="' + esc(h.id) + '" data-i="' + h.i + '"><span class="memo-hit-h"><b>' + esc(h.title) + '</b> · ' + esc(h.t) + '</span><span class="memo-hit-t">' + highlightMemo(h.text, state.ui.q) + '</span></a></li>';
   }).join('') + '</ul>' : '';
-  return head + search + tabs + rows + memoHtml + reminderHtml(all, activity) + insights + note;
+  var resultStatus = state.ui.q ? '<p class="search-status" role="status">책 ' + list.length + '권 · 메모 ' + memoHits.length + '개</p>' : '';
+  return head + search + tabs + resultStatus + rows + memoHtml + (!state.ui.q && state.ui.filter === 'all' ? reminderHtml(all, activity) : '') + insights + note;
 }

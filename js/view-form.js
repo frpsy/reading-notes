@@ -1,9 +1,9 @@
 // 책 추가·정보 수정 화면: 목차 붙여넣기, 미리보기, 준비된 책 불러오기.
-import { state } from "./state.js?v=42";
-import { esc } from "./util.js?v=42";
-import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver, findDuplicate } from "./core.js?v=42";
-import { persist } from "./sync.js?v=42";
-import { notFound } from "./view-common.js?v=42";
+import { state } from "./state.js?v=43";
+import { esc } from "./util.js?v=43";
+import { parseToc, tocText, todayStr, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver, findDuplicate } from "./core.js?v=43";
+import { persist } from "./sync.js?v=43";
+import { notFound } from "./view-common.js?v=43";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
@@ -23,7 +23,7 @@ export function formView(id) {
     '<h1 class="page">' + (b ? '정보·목차 수정' : '책 추가') + '</h1>' +
     '<form class="form" id="bookForm" novalidate>' +
       (b ? '' : '<label class="fld"><span>준비된 책에서 불러오기 (선택)</span><select id="f-cat"><option value="">직접 입력</option></select></label>') +
-      '<label class="fld"><span>제목</span><input id="f-title" type="text" maxlength="200" value="' + esc(v.title) + '" autocomplete="off"></label>' +
+      '<label class="fld"><span>제목</span><input id="f-title" aria-required="true" type="text" maxlength="200" value="' + esc(v.title) + '" autocomplete="off"></label>' +
       '<div class="row2">' +
         '<label class="fld"><span>저자 (선택)</span><input id="f-author" type="text" maxlength="100" value="' + esc(v.author) + '" autocomplete="off"></label>' +
         '<label class="fld"><span>총 쪽수 (선택)</span><input id="f-pages" type="number" inputmode="numeric" min="1" value="' + esc(v.pages) + '"></label>' +
@@ -32,8 +32,8 @@ export function formView(id) {
         '<label class="fld"><span>읽기 시작일 (선택)</span><input id="f-start" type="date" value="' + esc(v.start) + '"></label>' +
         '<label class="fld"><span>목표 완독일 (선택)</span><input id="f-goal" type="date" value="' + esc(v.goal) + '"></label>' +
       '</div>' +
-      '<label class="fld"><span>목차</span><textarea id="f-toc" spellcheck="false">' + esc(v.toc) + '</textarea></label>' +
-      '<p class="hint" style="margin:-8px 0 0">한 줄에 항목 하나. 공백 두 칸 또는 탭으로 들여쓰면 하위 항목이 되고, 1.1 같은 번호도 단계로 인식합니다. 줄 끝에 "........ 123"처럼 쓰면 시작 쪽수로 인식합니다.</p>' +
+      '<label class="fld"><span>목차</span><textarea id="f-toc" aria-required="true" aria-describedby="f-toc-hint" spellcheck="false">' + esc(v.toc) + '</textarea></label>' +
+      '<p class="hint toc-hint" id="f-toc-hint">한 줄에 챕터 하나씩 붙여 넣으세요. 쪽수는 없어도 괜찮습니다.</p><details class="toc-help"><summary>목차 입력 방법</summary><p>공백 두 칸 또는 탭으로 들여쓰면 하위 항목이 됩니다. 1.1 같은 번호도 단계로 인식합니다. 줄 끝에 "........ 123"처럼 쓰면 시작 쪽수를 함께 기록합니다.</p></details>' +
       '<div class="pv" id="toc-preview" aria-live="polite"></div>' +
       '<div class="lost-warn" id="f-lost" role="alert" hidden></div>' +
       '<p class="err" id="f-err" role="alert" hidden></p>' +
@@ -66,7 +66,24 @@ export function bindForm(id) {
   }
   var form = document.getElementById('bookForm'), err = document.getElementById('f-err');
   var lostBox = document.getElementById('f-lost'), submitBtn = document.getElementById('f-submit'), lostAck = null, dupAck = null;
-  function showErr(msg) { err.textContent = msg; err.hidden = false }
+  function showErr(msg, field) {
+    err.textContent = msg; err.hidden = false;
+    if (field) {
+      field.setAttribute('aria-invalid', 'true');
+      field.setAttribute('aria-describedby', field.id === 'f-toc' ? 'f-toc-hint f-err' : 'f-err');
+      field.focus();
+    }
+  }
+  form.addEventListener('input', function (e) {
+    if (!e.target.matches('input,textarea,select')) return;
+    // 이전 오류는 해당 입력을 고치기 시작하면 해제합니다.
+    if (e.target.getAttribute('aria-invalid') === 'true') {
+      e.target.removeAttribute('aria-invalid');
+      if (e.target.id === 'f-toc') e.target.setAttribute('aria-describedby', 'f-toc-hint');
+      else e.target.removeAttribute('aria-describedby');
+      err.hidden = true;
+    }
+  });
   // 목차를 다시 고치면 경고 확인을 처음부터 다시 받습니다.
   function resetLost() { lostAck = null; lostBox.hidden = true; lostBox.textContent = ''; submitBtn.textContent = id ? '저장' : '책 추가'; submitBtn.classList.remove('danger'); }
   ta.addEventListener('input', function () { upd(); resetLost(); }); upd();
@@ -75,8 +92,8 @@ export function bindForm(id) {
     ev.preventDefault();
     var title = document.getElementById('f-title').value.trim();
     var items = parseToc(ta.value);
-    if (!title) { showErr('제목을 입력해 주세요.'); return }
-    if (!items.length) { showErr('목차를 한 줄 이상 입력해 주세요.'); return }
+    if (!title) { showErr('제목을 입력해 주세요.', document.getElementById('f-title')); return }
+    if (!items.length) { showErr('목차를 한 줄 이상 입력해 주세요.', ta); return }
     var pages = parseInt(document.getElementById('f-pages').value, 10);
     var b = id ? structuredClone(state.books.get(id)) : null, isNew = !b;
     if (isNew) {

@@ -1,22 +1,22 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=42";
-import { state } from "./state.js?v=42";
-import { setRenderer, render } from "./bus.js?v=42";
-import { initPrefs, saveFolded } from "./prefs.js?v=42";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=42";
-import { initSync, persist, removeBook } from "./sync.js?v=42";
-import { onAuth } from "./session.js?v=42";
-import { currentRoute } from "./router.js?v=42";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=42";
-import { loginView, loadingView } from "./view-common.js?v=42";
-import { libraryView } from "./view-library.js?v=42";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=42";
-import { yearView } from "./view-year.js?v=42";
-import { patchView, resetPatch } from "./patch.js?v=42";
-import { formView, bindForm } from "./view-form.js?v=42";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=42";
+import * as store from "./store.js?v=43";
+import { state } from "./state.js?v=43";
+import { setRenderer, render } from "./bus.js?v=43";
+import { initPrefs, saveFolded } from "./prefs.js?v=43";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=43";
+import { initSync, persist, removeBook } from "./sync.js?v=43";
+import { onAuth } from "./session.js?v=43";
+import { currentRoute } from "./router.js?v=43";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=43";
+import { loginView, loadingView } from "./view-common.js?v=43";
+import { libraryView } from "./view-library.js?v=43";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=43";
+import { yearView } from "./view-year.js?v=43";
+import { patchView, resetPatch } from "./patch.js?v=43";
+import { formView, bindForm } from "./view-form.js?v=43";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=43";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=42";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=43";
 
 var view = document.getElementById("view");
 
@@ -191,6 +191,10 @@ view.addEventListener("click", function (e) {
         }
         render();
       }
+      break;
+    case "reset-search":
+      state.ui.q = ''; state.ui.filter = 'all'; render();
+      view.querySelector('[data-act="search"]')?.focus({ preventScroll: true });
       break;
     case "filter": state.ui.filter = el.dataset.v; render(); break;
     case "remaining": state.ui.onlyRemaining = !state.ui.onlyRemaining; render(); break;
