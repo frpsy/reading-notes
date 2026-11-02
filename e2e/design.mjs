@@ -47,7 +47,26 @@ try{
       ...(baseline ? [] : [['#settings','#theme','settings'],['#activity','.activity-page','activity'],['#catalog','h1.page','catalog']])
      ]){
       await page.goto(url+route);await page.locator(ready).first().waitFor();await page.evaluate(()=>document.fonts.ready);
-      if(!baseline)await fits(`${theme} ${width} ${label}`);
+      if(!baseline){
+       await fits(`${theme} ${width} ${label}`);
+       if(label==='library'){
+        const a=await page.locator('.lib-head h1').boundingBox(), b=await page.locator('.lib-actions').boundingBox();
+        assert.ok(a&&b, 'library heading and actions visible');
+        assert.ok(a.y+a.height<=b.y+1 || a.x+a.width<=b.x+1, 'library heading and actions do not overlap');
+        for(const button of await page.locator('.lib-actions .btn').all()){
+         const box=await button.boundingBox();
+         assert.ok(box&&box.height>=44, 'library action minimum touch height');
+        }
+       }
+       if(label==='settings'){
+        const links=page.locator('.settings-link');
+        for(const link of await links.all()){
+         const box=await link.boundingBox();
+         assert.ok(box&&box.height>=44, 'settings row minimum touch height');
+        }
+        assert.ok((await page.locator('#theme').boundingBox()).height>=44,'theme action minimum touch height');
+       }
+      }
       if(name==='chromium'&&[390,1280].includes(width))await page.screenshot({path:`${out}/${label}-${theme}-${width}.png`,fullPage:false});
      }
     }
