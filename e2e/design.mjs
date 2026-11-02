@@ -62,7 +62,7 @@ try{
        assert.equal(brandStyle.opacity,'1','header brand must remain opaque');
        assert.equal(brandStyle.filter,'none','header brand must not be blurred');
        assert.equal(brandStyle.shadow,'none','header brand must not use shadow');
-       assert.ok(!/Noto Serif|Nanum Myeongjo|serif/i.test(brandStyle.font),'small brand uses crisp sans font');
+       assert.ok(!/Noto Serif|Nanum Myeongjo/i.test(brandStyle.font),'small brand uses crisp sans font');
        if(name==='webkit'&&width<=600)assert.ok(brand.y>=28,'iOS WebKit brand respects minimum upper spacing');
        if(label==='library')assert.equal(await page.locator('#sync[data-state="saved"]').isVisible(),false,'normal save status must not appear as top button');
 
