@@ -1,23 +1,23 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=44";
-import { state } from "./state.js?v=44";
-import { setRenderer, render } from "./bus.js?v=44";
-import { initPrefs, saveFolded } from "./prefs.js?v=44";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=44";
-import { initSync, persist, removeBook } from "./sync.js?v=44";
-import { onAuth } from "./session.js?v=44";
-import { currentRoute } from "./router.js?v=44";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=44";
-import { loginView, loadingView } from "./view-common.js?v=44";
-import { libraryView, activityView } from "./view-library.js?v=44";
-import { settingsView, catalogView } from "./view-settings.js?v=44";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=44";
-import { yearView } from "./view-year.js?v=44";
-import { patchView, resetPatch } from "./patch.js?v=44";
-import { formView, bindForm } from "./view-form.js?v=44";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=44";
+import * as store from "./store.js?v=45";
+import { state } from "./state.js?v=45";
+import { setRenderer, render } from "./bus.js?v=45";
+import { initPrefs, saveFolded } from "./prefs.js?v=45";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=45";
+import { initSync, persist, removeBook } from "./sync.js?v=45";
+import { onAuth } from "./session.js?v=45";
+import { currentRoute } from "./router.js?v=45";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=45";
+import { loginView, loadingView } from "./view-common.js?v=45";
+import { libraryView, activityView } from "./view-library.js?v=45";
+import { settingsView, catalogView } from "./view-settings.js?v=45";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=45";
+import { yearView } from "./view-year.js?v=45";
+import { patchView, resetPatch } from "./patch.js?v=45";
+import { formView, bindForm } from "./view-form.js?v=45";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=45";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=44";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=45";
 
 var view = document.getElementById("view");
 
@@ -141,6 +141,16 @@ view.addEventListener("click", function (e) {
         saveFolded(); render();
       }
       break;
+    case "edit-note": {
+      // 독서 메모: 미리보기 펼치기 → 본문을 다시 눌러 편집 (별도 연필 아이콘 없음).
+      if (!b) break;
+      const editor = view.querySelector('.note-editor');
+      if (!editor) break;
+      editor.open = true;
+      const noteInput = editor.querySelector('#d-note');
+      if (noteInput) noteInput.focus({preventScroll:true});
+      break;
+    }
     case "memo":
       if (b) {
         var k = b.id + ":" + el.dataset.i;

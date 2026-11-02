@@ -40,7 +40,27 @@ try {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(base);
   const view = page.locator("#view");
-  async function editNote(text) { await page.locator("#d-note").waitFor({state:"attached"}); if (!(await page.locator("#d-note").isVisible())) await page.locator(".note-editor > summary").click(); await page.fill("#d-note",text); }
+  async function editNote(text) {
+    await page.locator('#d-note').waitFor({state:'attached'});
+    if (!(await page.locator('#d-note').isVisible())) {
+      const preview = page.locator('.note-panel .memo-preview');
+      if (await preview.count()) {
+        if (!(await preview.evaluate(el => el.open))) await preview.locator('summary').click();
+        await preview.locator('.memo-edit-tap').click();
+      } else await page.locator('.note-editor > summary').click();
+    }
+    await page.fill('#d-note',text);
+  }
+  async function editChapterMemo(index=0, context=page) {
+    const row=context.locator('.chapters > li.ch.leaf').nth(index);
+    await row.waitFor();
+    const action=row.locator('button.memo-btn[data-act="memo"]');
+    if (await action.count()) { await action.click(); return; }
+    const preview=row.locator('.ch-memo .memo-preview');
+    if (!(await preview.evaluate(el => el.open))) await preview.locator('summary').click();
+    await preview.locator('button.memo-edit-tap').click();
+  }
+
 
   await step('로그인 화면: 작은 모바일과 확대 화면에서 가로 넘침 없음', async () => {
     await page.locator('[data-act="login"]').waitFor();
@@ -195,7 +215,7 @@ try {
     await page.waitForURL(/#book-/);
     // 이스케이프가 빠지면 이 글자가 그대로 나오지 않아 시간 초과로 실패합니다.
     await view.locator("h1", { hasText: "제목 <img src=x" }).waitFor({ timeout: 5000 });
-    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await editChapterMemo();
     await page.fill('textarea[data-act="memotext"]', XSS);
     await page.locator("h1").click();
     await page.goto(base + "#library");
@@ -254,9 +274,9 @@ try {
     await other.goto(page.url());
     await other.locator('#d-note').waitFor({state:'attached'});
     await page.evaluate(() => { window.__writeDelay = 300; });
-    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await editChapterMemo();
     await page.locator('textarea[data-act="memotext"]').first().fill('첫 탭의 메모');
-    await other.locator('.memo-btn[data-act="memo"]').nth(1).click();
+    await editChapterMemo(1,other);
     await other.locator('textarea[data-act="memotext"]').fill('둘째 탭의 메모');
     await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     await other.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
@@ -373,7 +393,7 @@ try {
   });
 
   await step('메모 입력창에 저장 상태 문구가 없고, 보관 실패는 상단에 알림', async () => {
-    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await editChapterMemo();
     const ta = page.locator('textarea[data-act="memotext"]').first();
     await ta.fill('보관 확인');
     assert.equal(await page.locator('[data-memo-saved]').count(), 0);
@@ -415,9 +435,9 @@ try {
     assert.ok(result.copies.includes('이 기기의 목차'));
   });
 
-  await step('모바일 메모: 읽기와 연필 수정 분리·글자 수·자동 늘어남', async () => {
+  await step('모바일 메모: 펼쳐 읽은 본문을 다시 눌러 편집·글자 수·자동 늘어남', async () => {
     await page.setViewportSize({width:390,height:844});
-    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await editChapterMemo();
     const ta = page.locator('textarea[data-act="memotext"]').first();
     const h0 = (await ta.boundingBox()).height;
     await ta.fill('짧은 메모');
@@ -427,19 +447,20 @@ try {
     await ta.fill('짧은 메모');
     await page.locator('button.memo-done').click();
     assert.equal(await page.locator('textarea[data-act="memotext"]').count(), 0);
+    assert.equal(await page.locator('.ch.leaf .memo-btn.has').count(),0,'기록된 메모에는 연필 버튼을 표시하지 않음');
     await page.locator('.chapters .memo-tap').first().click();
-    assert.equal(await page.locator('textarea[data-act="memotext"]').count(),0,'짧은 메모도 읽기만 열림');
-    await page.locator('.memo-btn.has').first().click();
+    assert.equal(await page.locator('textarea[data-act="memotext"]').count(),0,'첫 탭은 읽기만 펼침');
+    await page.locator('.chapters .memo-edit-tap').first().click();
     assert.equal(await page.locator('textarea[data-act="memotext"]').first().inputValue(), '짧은 메모');
     await page.locator('button.memo-done').click();
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   });
 
   await step('메모를 모두 지우면 되돌리기로 복구', async () => {
-    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await editChapterMemo();
     const ta = page.locator('textarea[data-act="memotext"]').first();
     await ta.fill('지울 메모'); await page.locator('button.memo-done').click();
-    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await editChapterMemo();
     await page.locator('textarea[data-act="memotext"]').first().fill('');
     await page.locator('button.memo-done').click();
     await page.locator('#toast', { hasText: '메모를 지웠습니다' }).waitFor();
@@ -476,7 +497,7 @@ try {
 
   await step('긴 메모 미리보기·펼치기·접기와 원문 보존', async () => {
     const long = '🙂 긴 메모의 앞부분입니다. '.repeat(15) + '\n마지막 문장 <img src=x onerror="window.__xss=1">';
-    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await editChapterMemo();
     await page.locator('textarea[data-act="memotext"]').first().fill(long);
     await page.locator('button.memo-btn.save').first().click();
     await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
@@ -489,7 +510,7 @@ try {
     assert.equal(await page.locator('textarea[data-act="memotext"]').count(), 0, '펼쳐 읽기는 편집을 열지 않음');
     assert.equal(await page.locator('.ch.leaf .chk').first().getAttribute('aria-checked'), checked, '메모를 펼쳐도 진도 불변');
     await preview.locator('summary').click();
-    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await editChapterMemo();
     assert.equal(await page.locator('textarea[data-act="memotext"]').first().inputValue(), long);
     await page.locator('button.memo-done').click();
     await page.locator('details.memos > summary').click();
@@ -500,9 +521,9 @@ try {
     await editNote( long);
     await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     await page.reload();
-    await page.locator('.note-editor').waitFor();
+    await page.locator('.note-editor').waitFor({state:'attached'});
     assert.equal(await page.locator('#d-note').isVisible(), false);
-    await page.locator('.note-editor > summary').click();
+    await editNote(long);
     assert.equal(await page.locator('#d-note').inputValue(), long);
     await page.locator('.note-editor > summary').click();
     assert.equal(await page.locator('#d-note').isVisible(), false);
@@ -588,18 +609,18 @@ try {
     await page.goto(page.url().replace(/#.*/, '#library'));
     await view.locator('a.book').first().click();
     await page.waitForURL(/#book-/);
-    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await editChapterMemo();
     await page.locator('textarea[data-act="memotext"]').first().fill('삭제할 메모');
     await page.locator('button.memo-done').click();
     await page.locator('.memo-tap', { hasText: '삭제할 메모' }).waitFor();
-    await page.locator('.ch.leaf',{hasText:'삭제할 메모'}).locator('.memo-btn.has').click();
+    await editChapterMemo();
     await page.click('button.memo-del');
     assert.equal(await page.locator('textarea[data-act="memotext"]').count(), 0);
     assert.equal(await page.locator('.memo-tap', { hasText: '삭제할 메모' }).count(), 0);
     await page.locator('#toast', { hasText: '메모를 삭제했습니다' }).waitFor();
     await page.click('[data-undo]');
     await page.locator('.memo-tap', { hasText: '삭제할 메모' }).waitFor();
-    await page.locator('.ch.leaf',{hasText:'삭제할 메모'}).locator('.memo-btn.has').click();
+    await editChapterMemo();
     await page.click('button.memo-del');
     await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     const left = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('e2e-books'))).some(b => b.chapters.some(c => c.memo === '삭제할 메모')));
@@ -669,10 +690,10 @@ try {
     assert.equal(await page.locator('.chapters > li.leaf .chk[aria-checked="true"]').count(), before, '다시 누르면 취소');
     assert.equal(await page.locator('#toast').isVisible(), false);
     // 메모 삭제 되돌리기 알림창은 좁은 화면에서도 한 줄 막대
-    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await editChapterMemo();
     await page.locator('textarea[data-act="memotext"]').first().fill('알림창 확인');
     await page.locator('button.memo-done').click();
-    await page.locator('.ch.leaf',{hasText:'알림창 확인'}).locator('.memo-btn.has').click();
+    await editChapterMemo();
     await page.click('button.memo-del');
     const box = await page.locator('#toast').boundingBox();
     assert.ok(box.height < 72 && box.width > 330 && box.x >= 0 && box.x + box.width <= 390, '알림창 ' + JSON.stringify(box));
@@ -783,7 +804,7 @@ try {
   });
 
   await step('메모 삭제의 6초 되돌리기가 지나도 휴지통에서 복구', async () => {
-    await page.locator('.memo-btn[data-act="memo"]').first().click();
+    await editChapterMemo();
     await page.locator('textarea[data-act="memotext"]').fill('휴지통에서 찾을 메모 🙂 <태그>');
     await page.click('button.memo-del');
     await page.waitForTimeout(6100);

@@ -97,7 +97,7 @@ try{
     await page.locator('input[data-act="search"]').waitFor(); // Search stays available for one book.
     await page.goto(url+'#book-design');await page.locator('.chapters').waitFor();
     assert.ok((await page.locator('.tgl').boundingBox()).height>=44,'remaining filter target');
-    assert.ok((await page.locator('.memo-btn').first().boundingBox()).height>=44,'memo target');
+    assert.ok((await page.locator('.ch.leaf .memo-tap').first().boundingBox()).height>=44,'memo preview touch target');
     const title='LongChapterTitle'.repeat(13);
     await page.evaluate(title=>{const docs=JSON.parse(localStorage.getItem('e2e-books'));docs.design.chapters[0].t=title;localStorage.setItem('e2e-books',JSON.stringify(docs));},title);
     await page.reload();await page.locator('details.memos>summary').click();await fits('long memo heading');
@@ -110,7 +110,8 @@ try{
     await page.evaluate(()=>document.documentElement.style.fontSize='');
     await page.goto(url+'#book-design');await page.locator('.chapters').waitFor();
     await page.evaluate(()=>{const original=Element.prototype.scrollIntoView;Element.prototype.scrollIntoView=function(options){window.__scrollBehavior=options?.behavior;return original.call(this,options);};});
-    await page.locator('.memo-btn[data-act="memo"]').first().click();await page.waitForTimeout(450);
+    await page.locator('.ch.leaf .ch-memo .memo-preview').first().locator('summary').click();
+     await page.locator('.ch.leaf .ch-memo .memo-edit-tap').first().click();await page.waitForTimeout(450);
     assert.equal(await page.evaluate(()=>window.__scrollBehavior),'auto','reduced motion is respected');
     await page.locator('textarea[data-act="memotext"]').fill('키보드로 기록한 메모');
     await page.locator('.memo-done').click();
