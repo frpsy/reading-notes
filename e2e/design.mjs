@@ -63,7 +63,11 @@ try{
        assert.equal(brandStyle.filter,'none','header brand must not be blurred');
        assert.equal(brandStyle.shadow,'none','header brand must not use shadow');
        assert.ok(!/Noto Serif|Nanum Myeongjo/i.test(brandStyle.font),'small brand uses crisp sans font');
-       if(name==='webkit'&&width<=600)assert.ok(brand.y>=28,'iOS WebKit brand respects minimum upper spacing');
+       if(name==='webkit'&&width<=600){
+        const paddingTop=await page.evaluate(()=>parseFloat(getComputedStyle(document.body).paddingTop));
+        assert.ok(brand.y>=paddingTop-1,'WebKit brand must remain below its effective top padding');
+        // Linux WebKit does not emulate iOS Safari chrome or Dynamic Island. Real iPhone verification remains required.
+       }
        if(label==='library')assert.equal(await page.locator('#sync[data-state="saved"]').isVisible(),false,'normal save status must not appear as top button');
 
        if(label==='library'){
