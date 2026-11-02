@@ -446,6 +446,8 @@ button,a,input,select,textarea,summary{touch-action:manipulation}
   *,*::before,*::after{scroll-behavior:auto!important;transition:none!important}
 }
 #sync[hidden]{display:none}
+/* 화면 재렌더가 hidden 속성을 바꿔도 정상 저장 표시는 절대로 나타나지 않습니다. */
+#sync[data-state="saved"],#sync[data-quiet="true"]{display:none}
 .tools .btn{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left;line-height:1.5;padding:10px 14px}
 @media(max-width:600px){
   a.book .book-main{display:contents}
