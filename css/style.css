@@ -579,3 +579,24 @@ mark{background:var(--accent-soft);color:var(--ink);border-radius:2px;font-weigh
   .preview-body strong{overflow-wrap:anywhere}
 }
 @media (forced-colors:active){.bar i,.chk[aria-checked="true"]{background:Highlight}.chk svg{stroke:HighlightText}.tab[aria-pressed="true"]{outline:2px solid Highlight}}
+
+/* 서재에는 독서만, 설정·통계·책 찾기는 별도 화면으로 분리합니다. */
+.settings-nav{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 10px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:.875rem;font-weight:600}
+.settings-nav[hidden]{display:none}
+.settings-nav[aria-current="page"]{color:var(--accent)}
+.lib-actions{display:flex;align-items:center;gap:8px}
+.lib-actions .btn{border-radius:var(--radius-control);min-height:44px}
+.settings-section{margin-top:30px}
+.settings-section>.sec{margin-bottom:10px;color:var(--muted);font-size:.875rem}
+.settings-item{display:flex;align-items:center;justify-content:space-between;min-height:56px;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:.9375rem}
+.settings-link{color:var(--ink);text-decoration:none}
+.settings-link span:last-child{color:var(--muted);font-size:1.25rem}
+.settings-detail{font-size:.875rem;color:var(--muted);overflow-wrap:anywhere}
+.activity-page{margin-top:24px}
+.activity-page .strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 12px}
+.activity-page .activity{margin-top:28px}
+@media(max-width:430px){
+  .lib-head{align-items:flex-start}
+  .lib-actions{gap:6px}
+  .lib-actions .btn{padding:0 11px;font-size:.8125rem}
+}
