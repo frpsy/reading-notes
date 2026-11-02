@@ -91,6 +91,10 @@ a.s span{color:var(--accent)}
 .chip.warn{background:var(--warn-soft);color:var(--warn)}
 .empty{padding:40px 8px;color:var(--muted);max-width:520px}
 .empty h2{font:700 1.25rem/1.4 var(--serif);color:var(--ink);margin:0 0 10px}
+.search-empty{padding:28px 4px}
+.search-empty p{margin:8px 0 18px;font-size:.875rem}
+.search-empty h2{font:600 1rem/1.5 var(--sans)}
+.search-status{font-size:.8125rem;color:var(--muted);margin:14px 4px 0}
 .empty ol{padding-left:20px;margin:12px 0 20px}
 .notice{margin-top:var(--space-section);font-size:.8125rem;color:var(--warn)}
 .back{margin-bottom:14px;color:var(--muted);text-decoration:none;font-size:0.875rem}
@@ -116,6 +120,14 @@ a.s span{color:var(--accent)}
 @media (min-width:560px){
   .dates{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+.form .toc-hint{margin:-8px 0 0}
+.toc-help{font-size:.875rem;color:var(--muted);min-width:0}
+.toc-help>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;gap:8px;color:var(--accent);list-style:none}
+.toc-help>summary::-webkit-details-marker{display:none}
+.toc-help>summary::before{content:"+";font-size:1.125rem}
+.toc-help[open]>summary::before{content:"−"}
+.toc-help p{margin:4px 0 0;line-height:1.8;overflow-wrap:anywhere}
+input[aria-invalid="true"],textarea[aria-invalid="true"]{border-color:var(--danger);outline-color:var(--danger)}
 .hint{font-size:.875rem;color:var(--muted);margin:10px 0 0}
 .fld{display:flex;flex-direction:column;gap:6px;min-width:0}
 .fld>span{font-size:.875rem;color:var(--muted)}
@@ -160,7 +172,7 @@ input,textarea{scroll-margin-block:96px}
 .pv-list{list-style:none;margin:0;padding:0;font-size:0.8125rem}
 .pv-list li{padding:2px 0 2px calc(var(--lv,0) * 16px);overflow-wrap:anywhere}
 .err{color:var(--danger);margin:0;font-size:0.875rem}
- .form-actions{padding-block:12px;display:flex;gap:8px;flex-wrap:wrap}
+.form-actions{border-top:1px solid var(--line);padding-block:16px;display:flex;gap:8px;flex-wrap:wrap}
 .confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:0.875rem}
 @media (prefers-reduced-motion:reduce){
   .bar i{transition:none}

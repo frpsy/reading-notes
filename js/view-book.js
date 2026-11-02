@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=42";
-import { esc, fmt, ago } from "./util.js?v=42";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=42";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=42";
+import { state } from "./state.js?v=43";
+import { esc, fmt, ago } from "./util.js?v=43";
+import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=43";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=43";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -164,7 +164,7 @@ export function bookView(id) {
     '<div class="confirm"><span>이 책을 삭제합니다. 이 기기의 휴지통에서 30일 동안 복구할 수 있습니다.</span><button type="button" class="btn danger sm" data-act="delyes">삭제</button><button type="button" class="btn sm" data-act="delno">취소</button></div>' :
     '<button type="button" class="btn danger sm" data-act="del">책 삭제</button>';
   var rating = '<option value="0">평점 없음</option>' + [1, 2, 3, 4, 5].map(function (n) { return '<option value="' + n + '"' + ((b.rating || 0) === n ? ' selected' : '') + '>' + n + ' / 5</option>' }).join('');
-  var progress = '<section class="reading-progress" aria-label="진척 현황"><div class="prog"><span class="big">' + pct + '%</span><span class="of">' + m.D + ' / ' + m.L + ' 챕터</span>' + alt + '</div><div class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + pct + '%"></i></div></section>';
+  var progress = '<section class="reading-progress" aria-label="진척 현황"><div class="prog"><span class="big">' + pct + '%</span><span class="of">' + m.D + ' / ' + m.L + ' 챕터</span>' + alt + '</div><div role="progressbar" aria-label="읽은 챕터" aria-valuemin="0" aria-valuemax="' + m.L + '" aria-valuenow="' + m.D + '" aria-valuetext="' + m.L + '개 중 ' + m.D + '개 완료, ' + pct + '%" class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + pct + '%"></i></div></section>';
   var insights = '<details class="panel book-insights" data-disclosure="insights-' + esc(b.id) + '"><summary><span>통계와 날짜</span><span class="disclosure-hint">읽는 속도 · 예상 완독일 · 그래프</span></summary><div class="insights-body">' + goalHtml(b, m) + statsHtml +
     '<section class="insight-chart" aria-label="누적 그래프"><h3>누적 완료 챕터</h3>' + chartSvg(b, m) + '</section>' +
     '<section class="insight-dates" aria-label="날짜"><h3>날짜 설정</h3><div class="dates">' +

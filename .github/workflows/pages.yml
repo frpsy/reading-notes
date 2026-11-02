@@ -36,9 +36,9 @@ jobs:
         env:
           DESIGN_SCREENSHOT_DIR: design-screenshots
         run: |
-          git fetch --depth=1 origin cd032df7c4bd45e3c9f57309b128d2dd3a55591a
+          git fetch --depth=1 origin b781bc15dcb23fa3aa0cdc4b99b719c7da80f829
           mkdir -p ../design-baseline
-          git archive cd032df7c4bd45e3c9f57309b128d2dd3a55591a | tar -x -C ../design-baseline
+          git archive b781bc15dcb23fa3aa0cdc4b99b719c7da80f829 | tar -x -C ../design-baseline
           DESIGN_ROOT=../design-baseline DESIGN_BASELINE=1 node e2e/design.mjs
           node e2e/design.mjs
 
