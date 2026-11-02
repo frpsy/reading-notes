@@ -28,8 +28,9 @@ export function setSync(s, msg = '') {
   // 정상 저장은 상단 버튼을 숨깁니다. 상태값은 유지해 테스트·동기화 로직을 보존합니다.
   // 빠른 저장에서는 버튼이 깜박이지 않게 하고, 0.8초 넘는 저장만 노출합니다.
   el.hidden = s === 'saved' || (s === 'saving' && wasSaved);
+  el.dataset.quiet = el.hidden ? 'true' : 'false';
   if (s === 'saving' && wasSaved) savingTextTimer = setTimeout(function () {
-    if (el.dataset.state === 'saving') { el.textContent = TEXT.saving; el.hidden = false; }
+    if (el.dataset.state === 'saving') { el.textContent = TEXT.saving; el.hidden = false; el.dataset.quiet = 'false'; }
   }, 800);
   else el.textContent = TEXT[s];
   const detail = document.getElementById('sync-detail');
