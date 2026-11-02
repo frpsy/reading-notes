@@ -540,6 +540,22 @@ try {
     assert.equal(await view.locator('img').count(), 0);
   });
 
+  await step('펼친 메모의 앞쪽 빈 줄 제거·원문 보존·본문 밀착', async () => {
+    await editChapterMemo();
+    const original = '첫 문장\n다음 문장';
+    await page.locator('textarea[data-act="memotext"]').first().fill(original);
+    await page.locator('button.memo-done').first().click();
+    const preview = page.locator('.ch-memo .memo-preview').first();
+    await preview.locator('summary').click();
+    const display = preview.locator('.memo-edit-tap');
+    assert.equal(await display.innerText(),'첫 문장\n다음 문장','읽기 화면의 문단 유지');
+    const bounds = await Promise.all([preview.locator('summary').boundingBox(),display.boundingBox()]);
+    assert.ok(bounds[1].y-bounds[0].y-bounds[0].height <= 8,'접기 라벨과 본문 사이 빈 공간 방지');
+    await display.click();
+    assert.equal(await page.locator('textarea[data-act="memotext"]').first().inputValue(),original,'편집 시 내부 줄바꿈 원문 보존');
+    await page.locator('button.memo-done').first().click();
+  });
+
   await step('같은 제목의 책을 추가하면 기존 책을 알려 주고 한 번 더 확인', async () => {
     await page.goto(page.url().replace(/#.*/, '#library'));
     const title = (await view.locator('a.book .book-title').first().innerText()).replace(/\s*예시$/, '').trim();

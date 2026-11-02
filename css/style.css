@@ -739,3 +739,9 @@ html{background:var(--bg)}
 .note-editor.has-note:not([open])>summary{display:none}
 .note-editor.has-note[open]>summary{justify-content:flex-end;min-height:44px;color:var(--accent);font-size:.875rem;font-weight:600}
 .note-panel:has(.note-editor[open])>.memo-preview{display:none}
+
+/* 펼친 메모: 접기 라벨과 본문을 붙여 표시. 원문의 줄바꿈은 본문 안에서만 보존. */
+.ch-memo{white-space:normal}
+.ch-memo .memo-preview[open]>summary{min-height:32px;line-height:1.4;padding:0 18px 0 0}
+.ch-memo .memo-preview[open]>.memo-edit-tap,
+.note-panel .memo-preview[open]>.memo-edit-tap{margin-top:0;padding-top:2px;line-height:1.65}
