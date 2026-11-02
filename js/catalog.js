@@ -30,5 +30,8 @@ export function addFromCatalog(id) {
     id: id, title: x.c.title, author: x.c.author, totalPages: x.c.totalPages,
     chapters: parseToc(x.c.toc), createdAt: Date.now(),
   });
-  state.books.set(id, b); persist(b); render();
+  state.books.set(id, b); persist(b);
+  // 책 찾기 화면에서 담으면 서재로 돌아가 추가된 책을 확인합니다.
+  if (location.hash === "#catalog") location.hash = "library";
+  render();
 }
