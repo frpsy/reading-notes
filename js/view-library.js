@@ -1,4 +1,4 @@
-// 서재 화면: 책 목록, 상태 필터, 검색, 최근 12주 기록.
+// 서재: 핵심 독서 기능. 독서 활동 통계는 별도 화면에 표시합니다.
 import { state } from "./state.js?v=43";
 import { esc, fmt, ago } from "./util.js?v=43";
 import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=43";
@@ -57,13 +57,8 @@ function activityHtml(list) {
 
 export function libraryView() {
   var all = Array.from(state.books.values()).map(function (b) { return { b: b, m: calcMetrics(b) } });
-  var t = dnum(todayStr()), yr = String(new Date().getFullYear());
-  var cnt = { all: all.length, reading: 0, todo: 0, done: 0 }, doneYear = 0, week = 0;
-  all.forEach(function (x) {
-    cnt[x.m.status]++;
-    if (x.m.status === 'done' && x.m.endStr && x.m.endStr.slice(0, 4) === yr) doneYear++;
-    x.m.doneDates.forEach(function (d) { var n = dnum(d); if (n != null && n >= t - 6 && n <= t) week++ });
-  });
+  var cnt = { all: all.length, reading: 0, todo: 0, done: 0 };
+  all.forEach(function (x) { cnt[x.m.status]++; });
   var head = '<div class="lib-head"><h1 class="page">내 서재</h1><div class="lib-actions"><a class="btn" href="#catalog">책 찾기</a><a class="btn primary" href="#add">책 추가</a></div></div>';
   if (!all.length) {
     return head + '<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>책을 직접 추가하거나 준비된 책을 찾아보세요.</p><a class="btn" href="#catalog">책 찾기</a></div>';
