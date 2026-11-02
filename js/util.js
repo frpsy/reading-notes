@@ -1,5 +1,5 @@
 // 여러 화면에서 쓰는 작은 도우미입니다.
-import { escapeHtml, fmtDate, agoText } from "./core.js?v=43";
+import { escapeHtml, fmtDate, agoText } from "./core.js?v=44";
 
 export function esc(s) { return escapeHtml(s); }
 export function fmt(s) { return fmtDate(s); }
