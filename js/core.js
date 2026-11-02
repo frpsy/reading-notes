@@ -105,14 +105,18 @@ export function descLeaves(ch, i) {
 export function leafPages(book, leafIdx) {
   const ch = book.chapters;
   const w = [];
+  // 각 위치 바로 다음의 알려진 시작 쪽수를 한 번의 역방향 순회로 구합니다.
+  // 묶음 항목의 쪽수도 다음 경계로 사용해 기존 계산 결과를 유지합니다.
+  const nextPages = new Array(ch.length);
+  let next = null;
+  for (let j = ch.length - 1; j >= 0; j--) {
+    nextPages[j] = next;
+    if (ch[j].p != null) next = ch[j].p;
+  }
   for (const i of leafIdx) {
     if (ch[i].p == null) return null;
-    let nxt = null;
-    for (let j = i + 1; j < ch.length; j++) if (ch[j].p != null) { nxt = ch[j].p; break; }
-    if (nxt == null) {
-      if (book.totalPages) nxt = book.totalPages + 1;
-      else return null;
-    }
+    const nxt = nextPages[i] ?? (book.totalPages ? book.totalPages + 1 : null);
+    if (nxt == null) return null;
     const n = nxt - ch[i].p;
     if (n <= 0) return null;
     w.push(n);
