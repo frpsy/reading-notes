@@ -1,8 +1,8 @@
 // 주요 독서 화면과 분리된 설정·책 찾기 화면입니다.
-import { state } from "./state.js?v=45";
-import { esc } from "./util.js?v=45";
-import { catalogHtml } from "./catalog.js?v=45";
-import { themeLabel } from "./prefs.js?v=45";
+import { state } from "./state.js?v=46";
+import { esc } from "./util.js?v=46";
+import { catalogHtml } from "./catalog.js?v=46";
+import { themeLabel } from "./prefs.js?v=46";
 
 export function settingsView() {
   const account = state.userEmail ? '<p class="settings-detail">' + esc(state.userEmail) + '</p>' : '';
