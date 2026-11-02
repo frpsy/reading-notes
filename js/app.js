@@ -141,6 +141,16 @@ view.addEventListener("click", function (e) {
         saveFolded(); render();
       }
       break;
+    case "edit-note": {
+      // 독서 메모: 미리보기 펼치기 → 본문을 다시 눌러 편집 (별도 연필 아이콘 없음).
+      if (!b) break;
+      const editor = view.querySelector('.note-editor');
+      if (!editor) break;
+      editor.open = true;
+      const noteInput = editor.querySelector('#d-note');
+      if (noteInput) noteInput.focus({preventScroll:true});
+      break;
+    }
     case "memo":
       if (b) {
         var k = b.id + ":" + el.dataset.i;
