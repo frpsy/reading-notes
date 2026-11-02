@@ -4,6 +4,9 @@ import { todayStr } from "./core.js?v=43";
 export function currentRoute() {
   var h = location.hash.replace(/^#/, ""), m;
   if (h === "records") return { name: "records" };
+  if (h === "settings") return { name: "settings" };
+  if (h === "catalog") return { name: "catalog" };
+  if (h === "activity") return { name: "activity" };
   if (h === "add") return { name: "form", id: null };
   if ((m = /^edit-(.+)$/.exec(h))) return { name: "form", id: m[1] };
   if ((m = /^book-(.+)$/.exec(h))) return { name: "book", id: m[1] };
