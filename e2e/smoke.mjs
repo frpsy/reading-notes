@@ -53,6 +53,7 @@ try {
   }
   async function editChapterMemo(index=0, context=page) {
     const row=context.locator('.chapters > li.ch.leaf').nth(index);
+    await row.waitFor();
     const action=row.locator('button.memo-btn[data-act="memo"]');
     if (await action.count()) { await action.click(); return; }
     const preview=row.locator('.ch-memo .memo-preview');
@@ -520,7 +521,7 @@ try {
     await editNote( long);
     await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     await page.reload();
-    await page.locator('.note-editor').waitFor();
+    await page.locator('.note-editor').waitFor({state:'attached'});
     assert.equal(await page.locator('#d-note').isVisible(), false);
     await editNote(long);
     assert.equal(await page.locator('#d-note').inputValue(), long);
