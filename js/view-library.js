@@ -88,7 +88,7 @@ export function libraryView() {
   }).join('') + '</ul>' : '';
   var resultStatus = state.ui.q ? '<p class="search-status" role="status">책 ' + list.length + '권 · 메모 ' + memoHits.length + '개</p>' : '';
   var reminder = !state.ui.q && state.ui.filter === 'all' ? reminderHtml(all, activityByDate(all.map(function (x) { return x.b; }))) : '';
-  return head + reminder + search + tabs + resultStatus + rows + memoHtml;
+  return head + search + tabs + resultStatus + rows + memoHtml + reminder;
 }
 
 export function activityView() {
