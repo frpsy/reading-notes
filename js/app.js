@@ -1,23 +1,23 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=45";
-import { state } from "./state.js?v=45";
-import { setRenderer, render } from "./bus.js?v=45";
-import { initPrefs, saveFolded } from "./prefs.js?v=45";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=45";
-import { initSync, persist, removeBook } from "./sync.js?v=45";
-import { onAuth } from "./session.js?v=45";
-import { currentRoute } from "./router.js?v=45";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=45";
-import { loginView, loadingView } from "./view-common.js?v=45";
-import { libraryView, activityView } from "./view-library.js?v=45";
-import { settingsView, catalogView } from "./view-settings.js?v=45";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=45";
-import { yearView } from "./view-year.js?v=45";
-import { patchView, resetPatch } from "./patch.js?v=45";
-import { formView, bindForm } from "./view-form.js?v=45";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=45";
+import * as store from "./store.js?v=46";
+import { state } from "./state.js?v=46";
+import { setRenderer, render } from "./bus.js?v=46";
+import { initPrefs, saveFolded } from "./prefs.js?v=46";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=46";
+import { initSync, persist, removeBook } from "./sync.js?v=46";
+import { onAuth } from "./session.js?v=46";
+import { currentRoute } from "./router.js?v=46";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=46";
+import { loginView, loadingView } from "./view-common.js?v=46";
+import { libraryView, activityView } from "./view-library.js?v=46";
+import { settingsView, catalogView } from "./view-settings.js?v=46";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=46";
+import { yearView } from "./view-year.js?v=46";
+import { patchView, resetPatch } from "./patch.js?v=46";
+import { formView, bindForm } from "./view-form.js?v=46";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=46";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=45";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=46";
 
 var view = document.getElementById("view");
 
