@@ -709,6 +709,35 @@ try {
     }
   });
 
+  await step('목표 완독일 2주·4주 프리셋과 직접 입력 및 저장', async () => {
+    const stats = page.locator('.quick-insights');
+    if (!(await stats.evaluate(el => el.open))) await stats.locator('summary').click();
+    const presets = page.locator('.goal-presets > button');
+    assert.equal(await presets.count(), 2, '정확히 두 개의 프리셋');
+    assert.deepEqual(await presets.allInnerTexts(), ['2주 후','4주 후']);
+    const expected = days => page.evaluate(days => {
+      const now = new Date(), day = new Date(now.getFullYear(),now.getMonth(),now.getDate());
+      day.setDate(day.getDate() + days);
+      const pad = n => String(n).padStart(2,'0');
+      return day.getFullYear() + '-' + pad(day.getMonth()+1) + '-' + pad(day.getDate());
+    },days);
+    await presets.nth(0).click();
+    assert.equal(await page.locator('#d-goal').inputValue(), await expected(14));
+    assert.equal(await presets.nth(0).getAttribute('aria-pressed'),'true');
+    await presets.nth(1).click();
+    assert.equal(await page.locator('#d-goal').inputValue(), await expected(28));
+    assert.equal(await presets.nth(1).getAttribute('aria-pressed'),'true');
+    assert.equal(await presets.nth(0).getAttribute('aria-pressed'),'false');
+    await page.locator('#d-goal').fill('2027-01-01');
+    await page.locator('#d-goal').dispatchEvent('change');
+    assert.equal(await page.locator('#d-goal').inputValue(),'2027-01-01');
+    assert.equal(await page.locator('.goal-presets [aria-pressed="true"]').count(),0);
+    await page.waitForTimeout(900);
+    await page.reload();
+    await page.locator('.quick-insights summary').click();
+    assert.equal(await page.locator('#d-goal').inputValue(),'2027-01-01','수동 입력 목표일은 새로고침 후 유지');
+  });
+
   await step('장만 보기(전체 접기)와 전부 보기(전체 펼치기): 기기 상태 보존·개별 접기 호환', async () => {
     await page.setViewportSize({width:390,height:844});
     const all = page.locator('[data-act="foldall"]');
