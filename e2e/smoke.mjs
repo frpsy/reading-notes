@@ -441,6 +441,8 @@ try {
   await step('모바일 메모: 펼쳐 읽은 본문을 다시 눌러 편집·글자 수·자동 늘어남', async () => {
     await page.setViewportSize({width:390,height:844});
     await editChapterMemo();
+    // 메모 편집 진입 후 챕터 옵션이 남아 있으면 미리보기 탭을 가로막습니다.
+    assert.equal(await page.locator('.chapter-options[open]').count(), 0, '메모 편집 시 챕터 옵션은 닫혀야 함');
     const ta = page.locator('textarea[data-act="memotext"]').first();
     const h0 = (await ta.boundingBox()).height;
     await ta.fill('짧은 메모');
