@@ -153,6 +153,10 @@ view.addEventListener("click", function (e) {
     }
     case "memo":
       if (b) {
+        // 메모 편집 화면으로 전환하기 전에 옵션 팝오버를 닫습니다.
+        // 열린 팝오버가 다시 그린 메모를 덮어 터치와 E2E 클릭을 가로막지 않도록 합니다.
+        var chapterMenu = el.closest(".chapter-options");
+        if (chapterMenu) chapterMenu.open = false;
         var k = b.id + ":" + el.dataset.i;
         if (state.ui.openMemo.has(k)) {
           // 열려 있으면 '메모 저장': 입력한 글을 저장하고 자동으로 닫습니다.
