@@ -794,7 +794,7 @@ html{background:var(--bg)}
   .ch.leaf .chapter-options>summary{width:36px;height:36px;min-height:36px}
   .ch.leaf .chk{margin-top:3px}
   .ch.leaf .ch-memo{margin-top:2px;padding:2px 6px;background:transparent;border-left:2px solid var(--accent-soft)}
-  .ch.leaf .ch-memo .memo-preview>summary{min-height:24px;line-height:1.35}
+  .ch.leaf .ch-memo .memo-preview>summary{min-height:44px;display:flex;align-items:center;line-height:1.35}
   .ch.leaf .ch-memo .memo-excerpt{font-size:.75rem;-webkit-line-clamp:1;color:var(--muted)}
   .ch.leaf .memo-preview[open] .memo-text{font-size:.875rem}
   .ch.group{padding-top:7px;padding-bottom:7px}
