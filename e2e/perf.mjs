@@ -50,7 +50,8 @@ async function openChapterMemoEditor() {
   await row.waitFor();
   await row.locator('.chapter-options > summary').click();
   await row.locator('.chapter-options-body [data-act="memo"]').click();
-  await row.locator('textarea[data-act="memotext"]').waitFor();
+  // 편집 textarea는 챕터 li 내부가 아니라 바로 다음 li.memo-row에 렌더링됩니다.
+  await page.locator('.chapters > li.memo-row textarea[data-act="memotext"]').first().waitFor();
 }
 
 
