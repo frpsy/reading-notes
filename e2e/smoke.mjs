@@ -54,9 +54,12 @@ try {
   async function editChapterMemo(index=0, context=page) {
     const row=context.locator('.chapters > li.ch.leaf').nth(index);
     await row.waitFor();
-    const action=row.locator('button.memo-btn[data-act="memo"]');
-    if (await action.count()) { await action.click(); return; }
     const preview=row.locator('.ch-memo .memo-preview');
+    if (!(await preview.count())) {
+      await row.locator('.chapter-options > summary').click();
+      await row.locator('.chapter-options-body [data-act="memo"]').click();
+      return;
+    }
     if (!(await preview.evaluate(el => el.open))) await preview.locator('summary').click();
     await preview.locator('button.memo-edit-tap').click();
   }
@@ -242,7 +245,7 @@ try {
     await page.locator("details.memos > summary").click();
     await page.locator("details.memos li", { hasText: "<img src=x" }).waitFor();
     await page.locator('textarea[data-act="memotext"]').fill("다시 쓴 메모");
-    await page.locator('button.memo-btn.save', { hasText: "메모 저장" }).click(); // 저장하면 자동으로 닫힘
+    await page.locator('button.memo-done').click(); // 저장하면 자동으로 닫힘
     assert.equal(await page.locator('textarea[data-act="memotext"]').count(), 0);
     if (!(await page.locator("details.memos[open]").count())) await page.locator("details.memos > summary").click(); // 다시 그리면 접힘
     await page.locator("details.memos[open] li", { hasText: "다시 쓴 메모" }).waitFor();
@@ -499,7 +502,7 @@ try {
     const long = '🙂 긴 메모의 앞부분입니다. '.repeat(15) + '\n마지막 문장 <img src=x onerror="window.__xss=1">';
     await editChapterMemo();
     await page.locator('textarea[data-act="memotext"]').first().fill(long);
-    await page.locator('button.memo-btn.save').first().click();
+    await page.locator('button.memo-done').first().click();
     await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     const preview = page.locator('.chapters .ch-memo .memo-preview').first();
     assert.ok((await preview.locator('.memo-excerpt').boundingBox()).height < 80, '목록 메모는 2줄 미리보기');
