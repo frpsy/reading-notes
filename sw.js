@@ -2,7 +2,7 @@
 // 같은 출처 파일은 항상 네트워크를 먼저 확인하고(새 배포가 바로 반영됨), 연결이 없을 때만 보관본을 씁니다.
 // 기록 데이터는 여기서 다루지 않습니다(Firestore 가 기기 저장을 따로 합니다).
 const CACHE_PREFIX = "chaekgalpi-reading-";
-const CACHE = CACHE_PREFIX + "v2";
+const CACHE = CACHE_PREFIX + "v3";
 const FB = "https://www.gstatic.com/firebasejs/10.12.2"; // js/store.js 의 FB 와 같아야 합니다
 const SHELL = [
   "./", "index.html", "manifest.webmanifest",
