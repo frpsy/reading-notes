@@ -751,7 +751,7 @@ html{background:var(--bg)}
 @media (max-width:600px){
   .chapters{border-radius:12px}
   .ch.leaf,.ch.group{
-    grid-template-columns:28px minmax(0,1fr) 36px;
+    grid-template-columns:32px minmax(0,1fr) 36px;
     column-gap:10px;
     padding-top:6px;
     padding-bottom:6px;
@@ -760,8 +760,8 @@ html{background:var(--bg)}
   .ch.leaf .ch-title{font-size:.9375rem;line-height:1.4;letter-spacing:-.015em;font-weight:500}
   .ch.group .ch-title{font-size:.8125rem;line-height:1.4}
   .ch-hit{min-height:0;padding:3px 0}
-  .chk{width:28px;height:28px;margin-top:3px;border-radius:7px}
-  .chk::after{inset:-8px}
+  .chk{width:32px;height:32px;margin-top:3px;border-radius:7px}
+  .chk::after{inset:-6px}
   .ch-main{gap:0}
   .ch-meta{min-height:0;gap:0 8px;line-height:1.3;font-size:.75rem}
   .ch-meta .pg,.ch-meta .count,.ch-date{font-size:.71875rem}
