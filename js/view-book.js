@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=49";
-import { esc, fmt, ago } from "./util.js?v=49";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=49";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=49";
+import { state } from "./state.js?v=50";
+import { esc, fmt, ago } from "./util.js?v=50";
+import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=50";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=50";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -177,12 +177,15 @@ export function bookView(id) {
   var quickDates = ['시작 ' + (m.start ? m.start.slice(5).replace('-', '.') : '미정')];
   if (m.last) quickDates.push('최근 ' + m.last.slice(5).replace('-', '.'));
   if (m.days) quickDates.push(m.days + '일');
+  var goalIn2Weeks = dstr(dnum(todayStr()) + 14);
+  var goalIn4Weeks = dstr(dnum(todayStr()) + 28);
   var insights = '<details class="panel book-insights quick-insights" data-disclosure="insights-' + esc(b.id) + '"><summary><span class="insights-quick"><strong>통계·날짜</strong><span class="insights-quick-meta">' + esc(quickDates.join(' · ')) + '</span></span><span class="insights-toggle" aria-hidden="true"></span></summary><div class="insights-body">' + goalHtml(b, m) + statsHtml +
     '<section class="insight-chart" aria-label="누적 그래프"><h3>누적 완료 챕터</h3>' + chartSvg(b, m) + '</section>' +
     '<section class="insight-dates" aria-label="날짜"><h3>날짜 설정</h3><div class="dates">' +
       '<label class="fld"><span>읽기 시작일</span><input type="date" id="d-start" data-act="start" value="' + esc(b.startDate || '') + '"></label>' +
       '<label class="fld"><span>종료일</span><input type="date" id="d-end" data-act="end" value="' + esc(b.endDate || '') + '"></label>' +
-      '<label class="fld"><span>목표 완독일</span><input type="date" id="d-goal" data-act="goal" value="' + esc(b.goalDate || '') + '"></label></div>' +
+      '<div class="goal-date-field"><label class="fld"><span>목표 완독일</span><input type="date" id="d-goal" data-act="goal" value="' + esc(b.goalDate || '') + '"></label>' +
+      '<div class="goal-presets" role="group" aria-label="목표 완독일 빠른 설정"><button type="button" data-act="goal-preset" data-weeks="2" aria-pressed="' + (b.goalDate === goalIn2Weeks) + '">2주 후</button><button type="button" data-act="goal-preset" data-weeks="4" aria-pressed="' + (b.goalDate === goalIn4Weeks) + '">4주 후</button></div></div></div>' +
     '<p class="hint">모든 챕터를 완료하면 종료일이 자동으로 채워집니다. 날짜는 직접 고칠 수 있습니다.</p></section></div></details>';
   return '<a class="back" href="#library">← 서재</a>' +
     '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip">잠시 쉬는 중</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' +

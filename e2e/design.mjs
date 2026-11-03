@@ -97,6 +97,9 @@ try{
         if(width===390){
           await compact.locator('summary').click();
           assert.ok(await compact.locator('.insight-dates').isVisible(),'detail dates visible after expansion');
+          const presets=page.locator('.goal-presets > button');
+          assert.equal(await presets.count(),2,'only two date presets');
+          for(const btn of await presets.all()) assert.ok((await btn.boundingBox()).height>=44,'date preset touch height');
           await compact.locator('summary').click();
         }
        }
