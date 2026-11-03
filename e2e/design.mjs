@@ -69,6 +69,25 @@ try{
         // Linux WebKit does not emulate iOS Safari chrome or Dynamic Island. Real iPhone verification remains required.
        }
        if(label==='library')assert.equal(await page.locator('#sync[data-state="saved"]').isVisible(),false,'normal save status must not appear as top button');
+       if(label==='detail'){
+        const compact=page.locator('.quick-insights');
+        assert.equal(await compact.count(),1,'one compact statistics disclosure');
+        assert.ok((await compact.locator('summary').innerText()).includes('시작'),'summary includes start date');
+        assert.ok((await compact.locator('summary').boundingBox()).height>=44,'statistics touch target');
+        const summary=await compact.boundingBox(),chapters=await page.locator('.chapters').boundingBox();
+        assert.ok(summary.y+summary.height<chapters.y,'statistics precedes chapters');
+        assert.equal(await page.locator('.ch-title .next-pill').count(),0,'next label not in chapter title');
+        assert.equal(await page.locator('.ch.next .ch-meta .next-pill').count(),1,'next label beside page');
+        const done=page.locator('.ch.leaf.done').first();
+        const check=await done.locator('.chk').boundingBox(),title=await done.locator('.ch-title').boundingBox();
+        assert.ok(Math.abs(check.y-title.y)<13,'checkbox aligned with title');
+        assert.ok((await done.locator('.ch-memo .memo-tap').boundingBox()).height>=44,'note touch target');
+        if(width===390){
+          await compact.locator('summary').click();
+          assert.ok(await compact.locator('.insight-dates').isVisible(),'detail dates visible after expansion');
+          await compact.locator('summary').click();
+        }
+       }
 
        if(label==='library'){
         const a=await page.locator('.lib-head h1').boundingBox(), b=await page.locator('.lib-actions').boundingBox();

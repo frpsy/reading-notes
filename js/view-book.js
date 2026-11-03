@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=47";
-import { esc, fmt, ago } from "./util.js?v=47";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=47";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=47";
+import { state } from "./state.js?v=48";
+import { esc, fmt, ago } from "./util.js?v=48";
+import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=48";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=48";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -94,8 +94,8 @@ function chaptersHtml(b, m) {
       var key = b.id + ':' + i, open = ui.openMemo.has(key);
       // 빈 메모는 줄을 차지하지 않음: 쓰기/수정은 우측 ⋯ 메뉴, 내용이 있을 때만 미리보기 표시.
       out += '<li id="ch-' + i + '" class="ch leaf' + (c.done ? ' done' : '') + (i === nextLeaf ? ' next' : '') + '" style="--lv:' + c.lv + '"><button type="button" class="chk" role="checkbox" aria-checked="' + (c.done ? 'true' : 'false') + '" data-act="toggle" data-i="' + i + '" aria-label="' + esc(c.t) + ' 완료 표시">' + (c.done ? CHECK : '') + '</button>' +
-        '<div class="ch-main"><button type="button" class="ch-title ch-hit" data-act="toggle" data-i="' + i + '" tabindex="-1" aria-hidden="true">' + esc(c.t) + (i === nextLeaf ? ' <span class="chip reading">다음</span>' : '') + '</button>' +
-        (page || c.done ? '<span class="ch-meta">' + page + (c.done ? '<span class="ch-date">' + esc(c.done.slice(5).replace('-', '.')) + ' 읽음</span>' : '') + '</span>' : '') +
+        '<div class="ch-main"><button type="button" class="ch-title ch-hit" data-act="toggle" data-i="' + i + '" tabindex="-1" aria-hidden="true">' + esc(c.t) + '</button>' +
+        (page || c.done || i === nextLeaf ? '<span class="ch-meta">' + page + (c.done ? '<span class="ch-date">' + esc(c.done.slice(5).replace('-', '.')) + ' 읽음</span>' : '') + (i === nextLeaf ? '<span class="chip reading next-pill">다음</span>' : '') + '</span>' : '') +
         (c.memo && !open ? '<div class="ch-memo">' + memoPreview(c.memo, i, 'chapter') + '</div>' : '') + '</div>' +
         '<div class="ch-opt"><details class="chapter-options" data-disclosure="chapter-' + esc(b.id) + '-' + i + '"><summary aria-label="' + esc(c.t) + ' 메모 및 추가 작업">' + DOTS + '</summary><div class="chapter-options-body">' +
           '<button type="button" class="opt-btn" data-act="memo" data-i="' + i + '">' + (open ? '메모 저장' : c.memo ? '메모 수정' : '메모 쓰기') + '</button>' +
@@ -170,7 +170,10 @@ export function bookView(id) {
     '<button type="button" class="btn danger sm" data-act="del">책 삭제</button>';
   var rating = '<option value="0">평점 없음</option>' + [1, 2, 3, 4, 5].map(function (n) { return '<option value="' + n + '"' + ((b.rating || 0) === n ? ' selected' : '') + '>' + n + ' / 5</option>' }).join('');
   var progress = '<section class="reading-progress" aria-label="진척 현황"><div class="prog"><span class="big">' + pct + '%</span><span class="of">' + m.D + ' / ' + m.L + ' 챕터</span>' + alt + '</div><div role="progressbar" aria-label="읽은 챕터" aria-valuemin="0" aria-valuemax="' + m.L + '" aria-valuenow="' + m.D + '" aria-valuetext="' + m.L + '개 중 ' + m.D + '개 완료, ' + pct + '%" class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + pct + '%"></i></div></section>';
-  var insights = '<details class="panel book-insights" data-disclosure="insights-' + esc(b.id) + '"><summary><span>통계와 날짜</span><span class="disclosure-hint">읽는 속도 · 예상 완독일 · 그래프</span></summary><div class="insights-body">' + goalHtml(b, m) + statsHtml +
+  var quickDates = ['시작 ' + (m.start ? m.start.slice(5).replace('-', '.') : '미정')];
+  if (m.last) quickDates.push('최근 ' + m.last.slice(5).replace('-', '.'));
+  if (m.days) quickDates.push(m.days + '일');
+  var insights = '<details class="panel book-insights quick-insights" data-disclosure="insights-' + esc(b.id) + '"><summary><span class="insights-quick"><strong>통계·날짜</strong><span class="insights-quick-meta">' + esc(quickDates.join(' · ')) + '</span></span><span class="insights-toggle" aria-hidden="true"></span></summary><div class="insights-body">' + goalHtml(b, m) + statsHtml +
     '<section class="insight-chart" aria-label="누적 그래프"><h3>누적 완료 챕터</h3>' + chartSvg(b, m) + '</section>' +
     '<section class="insight-dates" aria-label="날짜"><h3>날짜 설정</h3><div class="dates">' +
       '<label class="fld"><span>읽기 시작일</span><input type="date" id="d-start" data-act="start" value="' + esc(b.startDate || '') + '"></label>' +
@@ -180,8 +183,8 @@ export function bookView(id) {
   return '<a class="back" href="#library">← 서재</a>' +
     '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip">잠시 쉬는 중</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' +
     '<details class="book-menu" data-disclosure="menu-' + esc(b.id) + '"><summary aria-label="책 설정">⋯</summary><div class="book-menu-items"><a href="#edit-' + esc(b.id) + '">정보·목차 수정</a>' + del + '</div></details></div>' +
-    nextPanel(b, m) + doneBanner(b, m) + progress +
+    nextPanel(b, m) + doneBanner(b, m) + progress + insights +
     '<div class="sec-h"><h2 class="sec">챕터</h2><button type="button" class="tgl" data-act="remaining" aria-pressed="' + state.ui.onlyRemaining + '">남은 챕터만 보기</button></div>' +
     chaptersHtml(b, m) + '<div id="memos-box">' + memosHtml(b, false) + '</div>' +
-    '<div class="sec-h"><h2 class="sec">독서 메모</h2></div><div class="panel note-panel" style="margin-top:0"><div class="dates"><label class="fld"><span>평점</span><select id="d-rating" data-act="rating">' + rating + '</select></label></div>' + noteEditor(b.note) + '</div>' + insights;
+    '<div class="sec-h"><h2 class="sec">독서 메모</h2></div><div class="panel note-panel" style="margin-top:0"><div class="dates"><label class="fld"><span>평점</span><select id="d-rating" data-act="rating">' + rating + '</select></label></div>' + noteEditor(b.note) + '</div>';
 }
