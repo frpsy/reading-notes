@@ -82,6 +82,18 @@ try{
         const check=await done.locator('.chk').boundingBox(),title=await done.locator('.ch-title').boundingBox();
         assert.ok(Math.abs(check.y-title.y)<13,'checkbox aligned with title');
         assert.ok((await done.locator('.ch-memo .memo-tap').boundingBox()).height>=44,'note touch target');
+        if(width<=430){
+          const menuSummary=done.locator('.chapter-options > summary');
+          await menuSummary.click();
+          const panel=done.locator('.chapter-options-body'), date=panel.locator('input[type="date"]');
+          const pop=await panel.boundingBox(), field=await date.boundingBox();
+          assert.ok(pop&&field,'completed chapter date editor is visible');
+          assert.ok(pop.width<=Math.min(240,width-24)+2,'mobile date popup fits screen');
+          assert.ok(pop.height<155,'date menu has compact vertical spacing');
+          assert.ok(field.height>=44,'date input keeps a usable touch target');
+          assert.ok(field.x>=pop.x-1&&field.x+field.width<=pop.x+pop.width+1,'date field stays inside popup');
+          await menuSummary.click();
+        }
         if(width===390){
           await compact.locator('summary').click();
           assert.ok(await compact.locator('.insight-dates').isVisible(),'detail dates visible after expansion');

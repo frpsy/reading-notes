@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=48";
-import { esc, fmt, ago } from "./util.js?v=48";
-import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=48";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=48";
+import { state } from "./state.js?v=49";
+import { esc, fmt, ago } from "./util.js?v=49";
+import { metrics as calcMetrics, dnum, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=49";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=49";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -109,7 +109,7 @@ function chaptersHtml(b, m) {
     }
   }
   if (!out) out = '<li class="ch"><span></span><div class="ch-main muted">남은 챕터가 없습니다.</div></li>';
-  return '<ul class="chapters">' + out + '</ul>';
+  return '<ul id="chapters-list" class="chapters">' + out + '</ul>';
 }
 
 function memoItems(list) {
@@ -169,6 +169,10 @@ export function bookView(id) {
     '<div class="confirm"><span>이 책을 삭제합니다. 이 기기의 휴지통에서 30일 동안 복구할 수 있습니다.</span><button type="button" class="btn danger sm" data-act="delyes">삭제</button><button type="button" class="btn sm" data-act="delno">취소</button></div>' :
     '<button type="button" class="btn danger sm" data-act="del">책 삭제</button>';
   var rating = '<option value="0">평점 없음</option>' + [1, 2, 3, 4, 5].map(function (n) { return '<option value="' + n + '"' + ((b.rating || 0) === n ? ' selected' : '') + '>' + n + ' / 5</option>' }).join('');
+  // 접기 상태는 책별로 기기에만 보관합니다. 그룹이 없는 책은 제어 버튼을 표시하지 않습니다.
+  var groupIndices = b.chapters.map(function (_, i) { return isGroup(b.chapters, i) ? i : -1; }).filter(function (i) { return i >= 0; });
+  var allFolded = groupIndices.length > 0 && groupIndices.every(function (i) { return state.ui.folded.has(b.id + ':' + i); });
+  var foldAll = groupIndices.length ? '<button type="button" class="tgl fold-all" data-act="foldall" aria-controls="chapters-list" aria-expanded="' + (!allFolded) + '">' + (allFolded ? '전체 펼치기' : '전체 접기') + '</button>' : '';
   var progress = '<section class="reading-progress" aria-label="진척 현황"><div class="prog"><span class="big">' + pct + '%</span><span class="of">' + m.D + ' / ' + m.L + ' 챕터</span>' + alt + '</div><div role="progressbar" aria-label="읽은 챕터" aria-valuemin="0" aria-valuemax="' + m.L + '" aria-valuenow="' + m.D + '" aria-valuetext="' + m.L + '개 중 ' + m.D + '개 완료, ' + pct + '%" class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + pct + '%"></i></div></section>';
   var quickDates = ['시작 ' + (m.start ? m.start.slice(5).replace('-', '.') : '미정')];
   if (m.last) quickDates.push('최근 ' + m.last.slice(5).replace('-', '.'));
@@ -184,7 +188,7 @@ export function bookView(id) {
     '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip">잠시 쉬는 중</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' +
     '<details class="book-menu" data-disclosure="menu-' + esc(b.id) + '"><summary aria-label="책 설정">⋯</summary><div class="book-menu-items"><a href="#edit-' + esc(b.id) + '">정보·목차 수정</a>' + del + '</div></details></div>' +
     nextPanel(b, m) + doneBanner(b, m) + progress + insights +
-    '<div class="sec-h"><h2 class="sec">챕터</h2><button type="button" class="tgl" data-act="remaining" aria-pressed="' + state.ui.onlyRemaining + '">남은 챕터만 보기</button></div>' +
+    '<div class="sec-h chapter-heading"><h2 class="sec">챕터</h2><div class="chapter-actions"><button type="button" class="tgl" data-act="remaining" aria-pressed="' + state.ui.onlyRemaining + '">남은 챕터만 보기</button>' + foldAll + '</div></div>' +
     chaptersHtml(b, m) + '<div id="memos-box">' + memosHtml(b, false) + '</div>' +
     '<div class="sec-h"><h2 class="sec">독서 메모</h2></div><div class="panel note-panel" style="margin-top:0"><div class="dates"><label class="fld"><span>평점</span><select id="d-rating" data-act="rating">' + rating + '</select></label></div>' + noteEditor(b.note) + '</div>';
 }

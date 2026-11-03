@@ -1,23 +1,23 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=48";
-import { state } from "./state.js?v=48";
-import { setRenderer, render } from "./bus.js?v=48";
-import { initPrefs, saveFolded } from "./prefs.js?v=48";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=48";
-import { initSync, persist, removeBook } from "./sync.js?v=48";
-import { onAuth } from "./session.js?v=48";
-import { currentRoute } from "./router.js?v=48";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=48";
-import { loginView, loadingView } from "./view-common.js?v=48";
-import { libraryView, activityView } from "./view-library.js?v=48";
-import { settingsView, catalogView } from "./view-settings.js?v=48";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=48";
-import { yearView } from "./view-year.js?v=48";
-import { patchView, resetPatch } from "./patch.js?v=48";
-import { formView, bindForm } from "./view-form.js?v=48";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=48";
+import * as store from "./store.js?v=49";
+import { state } from "./state.js?v=49";
+import { setRenderer, render } from "./bus.js?v=49";
+import { initPrefs, saveFolded } from "./prefs.js?v=49";
+import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=49";
+import { initSync, persist, removeBook } from "./sync.js?v=49";
+import { onAuth } from "./session.js?v=49";
+import { currentRoute } from "./router.js?v=49";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=49";
+import { loginView, loadingView } from "./view-common.js?v=49";
+import { libraryView, activityView } from "./view-library.js?v=49";
+import { settingsView, catalogView } from "./view-settings.js?v=49";
+import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=49";
+import { yearView } from "./view-year.js?v=49";
+import { patchView, resetPatch } from "./patch.js?v=49";
+import { formView, bindForm } from "./view-form.js?v=49";
+import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError } from "./core.js?v=49";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=48";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=49";
 
 var view = document.getElementById("view");
 
@@ -132,6 +132,15 @@ view.addEventListener("click", function (e) {
       if (b) {
         var ti = +el.dataset.i, tc = b.chapters[ti];
         mutate(b, function () { toggle(b, ti); });
+      }
+      break;
+    case "foldall":
+      if (b) {
+        var keys = b.chapters.map(function (_, i) { return isGroup(b.chapters, i) ? b.id + ':' + i : null; }).filter(Boolean);
+        if (!keys.length) break;
+        var expandAll = keys.every(function (key) { return state.ui.folded.has(key); });
+        keys.forEach(function (key) { if (expandAll) state.ui.folded.delete(key); else state.ui.folded.add(key); });
+        saveFolded(); render();
       }
       break;
     case "fold":

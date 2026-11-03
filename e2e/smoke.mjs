@@ -709,6 +709,31 @@ try {
     }
   });
 
+  await step('장만 보기(전체 접기)와 전부 보기(전체 펼치기): 기기 상태 보존·개별 접기 호환', async () => {
+    await page.setViewportSize({width:390,height:844});
+    const all = page.locator('[data-act="foldall"]');
+    assert.equal(await all.count(),1,'그룹이 있는 책에는 전체 접기 버튼이 하나');
+    await all.click();
+    assert.equal(await all.innerText(),'전체 펼치기');
+    assert.equal(await page.locator('.chapters > li.leaf').count(),0,'접으면 장 제목만 표시');
+    assert.equal(await page.locator('.chapters > li.group').count(),4,'상위 장은 표시');
+    await page.reload();
+    await page.locator('.chapters > li.group').first().waitFor();
+    assert.equal(await page.locator('.chapters > li.leaf').count(),0,'접기 상태는 새로고침 후에도 유지');
+    await all.click();
+    assert.equal(await all.innerText(),'전체 접기');
+    assert.equal(await page.locator('.chapters > li.leaf').count(),20,'펼치면 모든 하위 챕터 표시');
+    await page.locator('.chapters > li.group .fold-btn').first().click();
+    assert.ok((await page.locator('.chapters > li.leaf').count())<20,'개별 접기 유지');
+    await all.click();
+    assert.equal(await page.locator('.chapters > li.leaf').count(),0,'부분적으로 접혀 있어도 전체 접기');
+    await all.click();
+    assert.equal(await page.locator('.chapters > li.leaf').count(),20,'개별 접기 상태까지 모두 해제');
+    await page.locator('[data-act="remaining"]').click();
+    assert.equal(await page.locator('[data-act="foldall"]').count(),1,'남은 챕터 필터에서도 접기 제어 유지');
+    await page.locator('[data-act="remaining"]').click();
+  });
+
   await step('체크·읽음 표시·취소 때 알림창이 뜨지 않고, 줄의 빈 곳을 눌러도 체크됨', async () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(page.url().replace(/#.*/, '#library'));
