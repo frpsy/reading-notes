@@ -344,3 +344,22 @@ test("중복 책 확인: 제목(공백·문장부호 무시)과 저자", async (
   assert.equal(findDuplicate(books, "인생 역사", "", "b"), null, "자기 자신 제외");
   assert.equal(findDuplicate(books, "", ""), null);
 });
+
+
+test("아주 작은 습관의 힘·도파민네이션: 공식 한국어판 목차와 쪽수", () => {
+  const list = JSON.parse(fs.readFileSync(new URL("../catalog/index.json", import.meta.url), "utf8"));
+  for (const [file, title, author, pages, groups, chapterCount] of [
+    ["atomic-habits-ko.txt", "아주 작은 습관의 힘", "제임스 클리어", 360, 6, 20],
+    ["dopamine-nation-ko.txt", "도파민네이션", "애나 렘키", 316, 3, 9],
+  ]) {
+    assert.equal(list.filter((x) => x.file === file).length, 1, "목록에 한 번만 등록: " + file);
+    const book = parseCatalogText(fs.readFileSync(new URL("../catalog/" + file, import.meta.url), "utf8"));
+    const chapters = parseToc(book.toc);
+    assert.equal(book.title, title);
+    assert.equal(book.author, author);
+    assert.equal(book.totalPages, pages);
+    assert.equal(chapters.filter((x) => /^\\d+부 /.test(x.t) && isGroup(chapters, chapters.indexOf(x))).length, groups);
+    assert.equal(chapters.filter((x) => /^\\d+장 /.test(x.t)).length, chapterCount);
+    assert.ok(chapters.every((x) => x.p == null), "시작 페이지를 추측하지 않음: " + file);
+  }
+});
