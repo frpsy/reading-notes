@@ -358,8 +358,8 @@ test("아주 작은 습관의 힘·도파민네이션: 공식 한국어판 목�
     assert.equal(book.title, title);
     assert.equal(book.author, author);
     assert.equal(book.totalPages, pages);
-    assert.equal(chapters.filter((x) => /^\\d+부 /.test(x.t) && isGroup(chapters, chapters.indexOf(x))).length, groups);
-    assert.equal(chapters.filter((x) => /^\\d+장 /.test(x.t)).length, chapterCount);
+    assert.equal(chapters.filter((x) => /^\d+부 /.test(x.t) && isGroup(chapters, chapters.indexOf(x))).length, groups);
+    assert.equal(chapters.filter((x) => /^\d+장 /.test(x.t)).length, chapterCount);
     assert.ok(chapters.every((x) => x.p == null), "시작 페이지를 추측하지 않음: " + file);
   }
 });
