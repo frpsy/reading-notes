@@ -92,17 +92,16 @@ function chaptersHtml(b, m) {
     } else {
       if (ui.onlyRemaining && c.done) continue;
       var key = b.id + ':' + i, open = ui.openMemo.has(key);
-      var opts = c.done || (nextLeaf >= 0 && i > nextLeaf);
-      // 정보 줄: 쪽수 · 읽은 날 · 메모 버튼(작은 글자 버튼). 날짜 수정·여기까지 읽음은 '⋯' 팝업에 둡니다.
+      // 빈 메모는 줄을 차지하지 않음: 쓰기/수정은 우측 ⋯ 메뉴, 내용이 있을 때만 미리보기 표시.
       out += '<li id="ch-' + i + '" class="ch leaf' + (c.done ? ' done' : '') + (i === nextLeaf ? ' next' : '') + '" style="--lv:' + c.lv + '"><button type="button" class="chk" role="checkbox" aria-checked="' + (c.done ? 'true' : 'false') + '" data-act="toggle" data-i="' + i + '" aria-label="' + esc(c.t) + ' 완료 표시">' + (c.done ? CHECK : '') + '</button>' +
         '<div class="ch-main"><button type="button" class="ch-title ch-hit" data-act="toggle" data-i="' + i + '" tabindex="-1" aria-hidden="true">' + esc(c.t) + (i === nextLeaf ? ' <span class="chip reading">다음</span>' : '') + '</button>' +
-        '<span class="ch-meta">' + page + (c.done ? '<span class="ch-date">' + esc(c.done.slice(5).replace('-', '.')) + ' 읽음</span>' : '') +
-        (open || !c.memo ? '<button type="button" class="memo-btn' + (open ? ' save' : '') + '" data-act="memo" data-i="' + i + '" aria-expanded="' + open + '" aria-label="' + esc(c.t) + (open ? ' 메모 저장' : ' 메모 쓰기') + '">' + (open ? '메모 저장' : '메모') + '</button>' : '') + '</span>' +
+        (page || c.done ? '<span class="ch-meta">' + page + (c.done ? '<span class="ch-date">' + esc(c.done.slice(5).replace('-', '.')) + ' 읽음</span>' : '') + '</span>' : '') +
         (c.memo && !open ? '<div class="ch-memo">' + memoPreview(c.memo, i, 'chapter') + '</div>' : '') + '</div>' +
-        '<div class="ch-opt">' + (opts ? '<details class="chapter-options" data-disclosure="chapter-' + esc(b.id) + '-' + i + '"><summary aria-label="' + esc(c.t) + ' 추가 작업">' + DOTS + '</summary><div class="chapter-options-body">' +
+        '<div class="ch-opt"><details class="chapter-options" data-disclosure="chapter-' + esc(b.id) + '-' + i + '"><summary aria-label="' + esc(c.t) + ' 메모 및 추가 작업">' + DOTS + '</summary><div class="chapter-options-body">' +
+          '<button type="button" class="opt-btn" data-act="memo" data-i="' + i + '">' + (open ? '메모 저장' : c.memo ? '메모 수정' : '메모 쓰기') + '</button>' +
           (c.done ? '<label class="opt-fld"><span>읽은 날</span><input type="date" data-act="chdate" data-i="' + i + '" value="' + esc(c.done) + '" aria-label="' + esc(c.t) + ' 완료일"></label>' : '') +
           (!c.done && nextLeaf >= 0 && i > nextLeaf ? '<button type="button" class="opt-btn" data-act="upto" data-i="' + i + '">여기까지 읽음</button>' : '') +
-          '</div></details>' : '') + '</div></li>';
+          '</div></details></div></li>';
       if (open) out += '<li class="memo-row" style="--lv:' + c.lv + '"><textarea maxlength="2000" data-act="memotext" data-i="' + i + '" aria-label="' + esc(c.t) + ' 메모" placeholder="이 챕터에서 남기고 싶은 말" rows="4">' + esc(c.memo) + '</textarea>' +
         '<div class="memo-foot"><span class="memo-meta"><span class="memo-count" data-memo-count>' + Array.from(c.memo || '').length + '/2000</span></span>' +
         '<span class="memo-btns"><button type="button" class="memo-del" data-act="memodel" data-i="' + i + '" aria-label="' + esc(c.t) + ' 메모 삭제">삭제</button>' +
