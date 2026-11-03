@@ -441,6 +441,8 @@ try {
   await step('모바일 메모: 펼쳐 읽은 본문을 다시 눌러 편집·글자 수·자동 늘어남', async () => {
     await page.setViewportSize({width:390,height:844});
     await editChapterMemo();
+    // 메모 편집 진입 후 챕터 옵션이 남아 있으면 미리보기 탭을 가로막습니다.
+    assert.equal(await page.locator('.chapter-options[open]').count(), 0, '메모 편집 시 챕터 옵션은 닫혀야 함');
     const ta = page.locator('textarea[data-act="memotext"]').first();
     const h0 = (await ta.boundingBox()).height;
     await ta.fill('짧은 메모');
@@ -620,8 +622,23 @@ try {
     assert.equal(await li.locator('.chk').getAttribute('aria-checked'), 'true');
     await li.locator('.ch-hit').click();
     assert.equal(await li.locator('.chk').getAttribute('aria-checked'), 'false');
-    const box = await page.locator('.ch.leaf .chk').first().boundingBox();
-    assert.ok(box.width >= 32, '체크 버튼 32px 이상');
+    // 회귀 방지: CSS 후반의 모바일 미디어쿼리가 체크 버튼을 다시 축소하지 못하도록
+    // 각 화면 너비에서 실제 계산된 렌더링 크기를 검증합니다.
+    const originalViewport = page.viewportSize();
+    try {
+      for (const width of [320, 375, 390, 430, 600, 601, 768]) {
+        await page.setViewportSize({ width, height: 844 });
+        for (const selector of ['.ch.leaf .chk', '.ch.group .chk']) {
+          const checks = page.locator(selector);
+          if (!(await checks.count())) continue;
+          const box = await checks.first().boundingBox();
+          assert.ok(box && box.width >= 32 && box.height >= 32,
+            `${width}px ${selector}: 체크 버튼의 실제 크기는 최소 32×32px이어야 합니다 (현재 ${box?.width}×${box?.height}px)`);
+        }
+      }
+    } finally {
+      await page.setViewportSize(originalViewport);
+    }
   });
 
   await step('메모 삭제 버튼: 내용 삭제 후 닫힘, 되돌리기로 복구', async () => {

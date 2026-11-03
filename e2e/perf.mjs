@@ -44,6 +44,17 @@ const page = await ctx.newPage();
 const rows = [];
 const median = (a) => a.slice().sort((x, y) => x - y)[Math.floor(a.length / 2)];
 
+// UI와 동일한 동선으로 메모 편집기에 진입합니다.
+async function openChapterMemoEditor() {
+  const row = page.locator('.chapters > li.ch.leaf').first();
+  await row.waitFor();
+  await row.locator('.chapter-options > summary').click();
+  await row.locator('.chapter-options-body [data-act="memo"]').click();
+  // 편집 textarea는 챕터 li 내부가 아니라 바로 다음 li.memo-row에 렌더링됩니다.
+  await page.locator('.chapters > li.memo-row textarea[data-act="memotext"]').first().waitFor();
+}
+
+
 let t0 = Date.now();
 await page.goto(base);
 await page.locator("a.book").first().waitFor({ timeout: 60000 });
@@ -62,7 +73,7 @@ t0 = Date.now();
 await page.goto(base + "#book-big");
 await page.locator(".chapters .ch").first().waitFor();
 rows.push(["큰 책(3,000챕터) 화면 표시", Date.now() - t0, "ms"]);
-await page.locator('.memo-btn[data-act="memo"]').first().click();
+await openChapterMemoEditor();
 const ta = page.locator('textarea[data-act="memotext"]').first();
 await ta.waitFor();
 const keyMs = await page.evaluate(async () => {
@@ -94,7 +105,7 @@ rows.push(["큰 책 전송 대기 기록 크기(UTF-16 글자 수)", pendingByte
 
 // 일반 책(50챕터) 메모 입력
 await page.goto(base + "#book-perf0");
-await page.locator('.memo-btn[data-act="memo"]').first().click();
+await openChapterMemoEditor();
 await page.locator('textarea[data-act="memotext"]').first().waitFor();
 const smallMs = await page.evaluate(() => {
   const el = document.querySelector('textarea[data-act="memotext"]'), out = [];
