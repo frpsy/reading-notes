@@ -130,18 +130,32 @@ try {
     assert.equal(await page.locator('#settings-link').isVisible(), true);
   });
 
-  await step("준비된 책 담기", async () => {
+  await step("준비된 책 담기: 독서 예정에 추가하고 독서 시작은 하지 않음", async () => {
     await page.goto(base + '#catalog');
     await page.locator('[data-act="catadd"]').first().click();
-    await view.locator("a.book").first().waitFor();
+    await page.waitForURL(/#library$/);
+    const added = view.locator('a.book').first();
+    await added.waitFor();
+    assert.equal(await page.locator('[data-act="filter"][data-v="todo"]').getAttribute('aria-pressed'), 'true', '독서 예정 목록이 바로 보임');
+    assert.equal(await added.locator('.chip.todo').innerText(), '독서 예정');
+    assert.equal(await added.locator('.book-next').count(), 0, '시작 전에는 이어 읽기 안내 없음');
+    const key = (await added.getAttribute('href')).slice('#book-'.length);
+    await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
+    const saved = await page.evaluate(id => JSON.parse(localStorage.getItem('e2e-books'))[id], key);
+    assert.equal(saved.startDate, null, '책 담기로 시작일을 기록하지 않음');
+    assert.equal(saved.endDate, null);
+    assert.equal(saved.goalDate, null);
+    assert.ok(saved.chapters.every(c => c.done == null), '챕터 모두 미완료');
   });
 
   await step("챕터 체크 → 알림창 없이 반영, 다시 누르면 취소", async () => {
     await view.locator("a.book").first().click();
     await page.waitForURL(/#book-/);
+    assert.equal(await page.locator('.head .chip.todo').innerText(), '독서 예정', '책을 열기만 하면 독서 시작하지 않음');
     const prog = view.locator(".prog .of");
     const before = await prog.textContent();
     await page.click('[data-act="nextdone"]');
+    assert.equal(await page.locator('.head .chip.reading').innerText(), '읽는 중', '첫 챕터 완료 시에만 읽는 중');
     assert.notEqual(await prog.textContent(), before);
     assert.equal(await page.locator('#toast').isVisible(), false, '체크할 때 알림창이 뜨지 않음');
     await page.locator('.ch.leaf .chk[aria-checked="true"]').last().click(); // 다시 누르면 취소
@@ -953,6 +967,18 @@ try {
     await page.waitForURL(/#book-/);
     await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     assert.equal(await page.locator('.chapters > li.leaf').count(), 2);
+  });
+
+  await step('직접 책 추가도 시작일을 비워 독서 예정으로 등록', async () => {
+    await page.goto(base + '#add');
+    assert.equal(await page.locator('#f-start').inputValue(), '', '새 책의 시작일은 기본 공란');
+    await page.locator('#f-title').fill('예정으로 담는 새 책');
+    await page.locator('#f-toc').fill('제1장 시작\\n제2장 다음');
+    await page.locator('#f-submit').click();
+    await page.waitForURL(/#book-/);
+    assert.equal(await page.locator('.head .chip.todo').innerText(), '독서 예정');
+    await page.locator('.quick-insights > summary').click();
+    assert.equal(await page.locator('#d-start').inputValue(), '', '독서 시작일 공란 유지');
   });
 
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
