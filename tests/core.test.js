@@ -202,6 +202,15 @@ test("catalog 파일이 모두 읽힘", () => {
   }
 });
 
+test("책을 담기만 하면 독서 예정, 첫 챕터를 읽어야 읽는 중", () => {
+  const b = C.normalizeBook({title:"새 책", chapters:C.parseToc("1장\n2장")});
+  assert.equal(b.startDate,null);
+  assert.equal(C.metrics(b, "2026-11-04").status,"todo");
+  C.toggleChapter(b,0,"2026-11-04");
+  assert.equal(b.startDate,"2026-11-04");
+  assert.equal(C.metrics(b, "2026-11-04").status,"reading");
+});
+
 test("이어 읽기: 다음 읽을 단위", () => {
   const b = book();
   assert.equal(nextLeafIndex(b), 1);

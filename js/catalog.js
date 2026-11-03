@@ -1,9 +1,9 @@
 // 준비된 책(catalog/): Claude가 repo에 추가하면 여기서 서재에 담습니다.
-import { state } from "./state.js?v=50";
-import { render } from "./bus.js?v=50";
-import { persist } from "./sync.js?v=50";
-import { esc, hue } from "./util.js?v=50";
-import { parseToc, parseCatalogText, normalizeBook } from "./core.js?v=50";
+import { state } from "./state.js?v=51";
+import { render } from "./bus.js?v=51";
+import { persist } from "./sync.js?v=51";
+import { esc, hue } from "./util.js?v=51";
+import { parseToc, parseCatalogText, normalizeBook } from "./core.js?v=51";
 
 export function loadCatalog() {
   fetch("catalog/index.json").then(function (r) { return r.json(); }).then(function (list) {
@@ -28,10 +28,16 @@ export function addFromCatalog(id) {
   if (!x || state.books.has(id)) return;
   var b = normalizeBook({
     id: id, title: x.c.title, author: x.c.author, totalPages: x.c.totalPages,
+    // 단순히 담는 동작은 읽기 시작이 아닙니다. 시작일·완료일은 첫 챕터 체크 시 기록합니다.
+    startDate: null, endDate: null, goalDate: null,
     chapters: parseToc(x.c.toc), createdAt: Date.now(),
   });
-  state.books.set(id, b); persist(b);
-  // 책 찾기 화면에서 담으면 서재로 돌아가 추가된 책을 확인합니다.
+  // 기기 보관이 실패하면 추가 완료로 표시하지 않습니다.
+  if (!persist(b)) return;
+  state.books.set(id, b);
+  // 이전에 '읽는 중' 필터/검색을 사용했어도 새로 담은 책이 바로 보여야 합니다.
+  state.ui.filter = 'todo'; state.ui.q = '';
+  // 책 찾기 화면에서 담으면 서재의 독서 예정 목록으로 이동합니다.
   if (location.hash === "#catalog") location.hash = "library";
   render();
 }

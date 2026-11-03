@@ -1,11 +1,12 @@
 // 서재: 핵심 독서 기능. 독서 활동 통계는 별도 화면에 표시합니다.
-import { state } from "./state.js?v=50";
-import { esc, fmt, ago } from "./util.js?v=50";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=50";
-import { coverHtml, chipHtml } from "./view-common.js?v=50";
+import { state } from "./state.js?v=51";
+import { esc, fmt, ago } from "./util.js?v=51";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=51";
+import { coverHtml, chipHtml } from "./view-common.js?v=51";
 
 function nextLine(b, m) {
-  if (m.status === 'done') return '';
+  // 독서 예정인 책은 '다음' 안내를 표시해 시작한 것처럼 보이지 않게 합니다.
+  if (m.status !== 'reading') return '';
   var i = nextLeafIndex(b);
   return i < 0 ? '' : '<span class="book-next">다음 · ' + esc(b.chapters[i].t) + '</span>';
 }
@@ -63,7 +64,7 @@ export function libraryView() {
   if (!all.length) {
     return head + '<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>책을 직접 추가하거나 준비된 책을 찾아보세요.</p><a class="btn" href="#catalog">책 찾기</a></div>';
   }
-  var tabs = '<div class="tabs" role="group" aria-label="상태 필터">' + [['all', '전체'], ['reading', '읽는 중'], ['todo', '읽을 예정'], ['done', '완독']].map(function (x) {
+  var tabs = '<div class="tabs" role="group" aria-label="상태 필터">' + [['all', '전체'], ['reading', '읽는 중'], ['todo', '독서 예정'], ['done', '완독']].map(function (x) {
     return '<button type="button" class="tab" data-act="filter" data-v="' + x[0] + '" aria-pressed="' + (state.ui.filter === x[0]) + '">' + x[1] + '<em>' + cnt[x[0]] + '</em></button>';
   }).join('') + '</div>';
   var order = { reading: 0, todo: 1, done: 2 };
@@ -78,7 +79,7 @@ export function libraryView() {
   var rows = list.length ? (state.ui.filter === 'all' && !state.ui.q ? ['reading', 'todo', 'done'].map(function (status) {
     var books = list.filter(function (x) { return x.m.status === status; });
     if (!books.length) return '';
-    var labels = { reading: '읽는 중', todo: '읽을 예정', done: '완독한 책' };
+    var labels = { reading: '읽는 중', todo: '독서 예정', done: '완독한 책' };
     return '<section class="library-shelf" aria-label="' + labels[status] + '"><h2 class="shelf-title">' + labels[status] + '<span>' + books.length + '</span></h2><div class="books">' + books.map(function (x) { return bookRow(x.b, x.m); }).join('') + '</div></section>';
   }).join('') : '<div class="books">' + list.map(function (x) { return bookRow(x.b, x.m); }).join('') + '</div>') : '<div class="empty search-empty"><h2>' + (state.ui.q ? '검색 결과가 없습니다.' : '해당하는 책이 없습니다.') + '</h2><p>다른 검색어를 입력하거나 전체 서재를 확인해 보세요.</p><button class="btn" type="button" data-act="reset-search">전체 서재 보기</button></div>';
   var search = all.length > 0 ? '<input type="search" class="search" data-act="search" value="' + esc(state.ui.q) + '" placeholder="제목·저자·메모 검색" aria-label="제목·저자·메모 검색" autocomplete="off">' : '';
