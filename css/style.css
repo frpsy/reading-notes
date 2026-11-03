@@ -799,3 +799,38 @@ html{background:var(--bg)}
   .ch.leaf .memo-preview[open] .memo-text{font-size:.875rem}
   .ch.group{padding-top:7px;padding-bottom:7px}
 }
+
+/* 책 상세 목차: 체크 정렬·읽은 항목 밀도·그룹 구분·메모·다음 표시. */
+.ch.group{background:color-mix(in srgb,var(--surface-2) 48%,var(--surface));box-shadow:inset 2px 0 0 var(--line)}
+.ch.group .ch-title{color:var(--ink);font-weight:650}
+.ch.leaf .ch-meta .next-pill{font:600 .6875rem/1 var(--sans);padding:4px 7px;vertical-align:baseline}
+.ch.leaf .ch-memo .memo-preview>summary::after{top:50%;transform:translateY(-50%);line-height:1}
+@media(max-width:600px){
+ .ch.leaf,.ch.group{align-items:start}
+ .ch.leaf .chk{align-self:start;margin-top:6px}
+ .ch.group .chk{align-self:start;margin-top:1px}
+ .ch.leaf.done{padding-top:4px;padding-bottom:4px}
+ .ch.leaf.done .ch-meta{margin-top:0;line-height:1.2}
+ .ch.leaf .ch-memo{margin-top:1px;padding:0 6px}
+ .ch.leaf .ch-memo .memo-preview>summary{min-height:44px;padding-right:20px;line-height:1.3}
+ .ch.leaf .ch-memo .memo-excerpt{line-height:1.35}
+ .ch.group{padding-top:7px;padding-bottom:7px}
+}
+/* 통계·날짜: 짧은 서두 요약 + 펼침 상세. */
+.book-insights.quick-insights{margin:10px 0 0;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:none}
+.quick-insights>summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:6px 0;list-style:none;cursor:pointer;font:500 .8125rem/1.45 var(--sans)}
+.quick-insights>summary::-webkit-details-marker{display:none}
+.quick-insights .insights-quick{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 10px;min-width:0;flex:1}
+.quick-insights .insights-quick strong{white-space:nowrap;font-size:.8125rem;color:var(--ink);font-weight:650}
+.quick-insights .insights-quick-meta{color:var(--muted);font-size:.75rem;overflow-wrap:anywhere}
+.quick-insights .insights-toggle{flex:none;width:18px;height:18px;display:grid;place-items:center;color:var(--muted)}
+.quick-insights .insights-toggle::after{content:"⌄";font-size:1rem;line-height:1}
+.quick-insights[open] .insights-toggle::after{content:"⌃"}
+.quick-insights .insights-body{padding:0 0 14px;border-top:1px solid var(--line)}
+.quick-insights+.sec-h{margin-top:20px}
+@media(max-width:600px){
+ .book-insights.quick-insights{margin-top:8px;padding:0 10px}
+ .quick-insights>summary{gap:6px}
+ .quick-insights .insights-quick{gap:2px 8px}
+ .quick-insights+.sec-h{margin-top:18px}
+}
