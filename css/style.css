@@ -782,3 +782,20 @@ html{background:var(--bg)}
   .ch-memo .memo-preview[open] .memo-text{font-size:.875rem;line-height:1.6}
   .ch.group .ch-meta{min-height:0}
 }
+
+
+/* 모바일 목차 2차: 빈 메모 줄 제거에 맞춰 한 항목을 한 줄 중심으로 정렬. */
+@media(max-width:600px){
+  .ch.leaf{padding-top:5px;padding-bottom:5px;align-items:center}
+  .ch.leaf .ch-hit{padding:4px 0;line-height:1.42}
+  .ch.leaf .ch-main{justify-content:center;min-height:34px}
+  .ch.leaf .ch-meta{margin-top:1px;line-height:1.25}
+  .ch.leaf .ch-opt{align-self:start}
+  .ch.leaf .chapter-options>summary{width:36px;height:36px;min-height:36px}
+  .ch.leaf .chk{margin-top:3px}
+  .ch.leaf .ch-memo{margin-top:2px;padding:2px 6px;background:transparent;border-left:2px solid var(--accent-soft)}
+  .ch.leaf .ch-memo .memo-preview>summary{min-height:24px;line-height:1.35}
+  .ch.leaf .ch-memo .memo-excerpt{font-size:.75rem;-webkit-line-clamp:1;color:var(--muted)}
+  .ch.leaf .memo-preview[open] .memo-text{font-size:.875rem}
+  .ch.group{padding-top:7px;padding-bottom:7px}
+}
