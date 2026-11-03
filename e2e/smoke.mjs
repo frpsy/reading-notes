@@ -973,7 +973,7 @@ try {
     await page.goto(base + '#add');
     assert.equal(await page.locator('#f-start').inputValue(), '', '새 책의 시작일은 기본 공란');
     await page.locator('#f-title').fill('예정으로 담는 새 책');
-    await page.locator('#f-toc').fill('제1장 시작\\n제2장 다음');
+    await page.locator('#f-toc').fill('제1장 시작\n제2장 다음');
     await page.locator('#f-submit').click();
     await page.waitForURL(/#book-/);
     assert.equal(await page.locator('.head .chip.todo').innerText(), '독서 예정');
