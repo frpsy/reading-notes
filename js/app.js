@@ -1,24 +1,24 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=56";
-import { state } from "./state.js?v=56";
-import { setRenderer, render } from "./bus.js?v=56";
-import { initPrefs, saveFolded } from "./prefs.js?v=56";
-import { initUndo, mutate, hideToast } from "./undo.js?v=56";
-import { initSync, removeBook } from "./sync.js?v=56";
-import { onAuth } from "./session.js?v=56";
-import { currentRoute } from "./router.js?v=56";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=56";
-import { loginView, loadingView } from "./view-common.js?v=56";
-import { libraryView, activityView } from "./view-library.js?v=56";
-import { settingsView, catalogView } from "./view-settings.js?v=56";
-import { bookView, fillMemos } from "./view-book.js?v=56";
-import { yearView } from "./view-year.js?v=56";
-import { patchView, resetPatch } from "./patch.js?v=56";
-import { formView, bindForm } from "./view-form.js?v=56";
-import { nextLeafIndex, completeThrough, toggleChapter as toggle, friendlyError } from "./core.js?v=56";
+import * as store from "./store.js?v=57";
+import { state } from "./state.js?v=57";
+import { setRenderer, render } from "./bus.js?v=57";
+import { initPrefs, saveFolded } from "./prefs.js?v=57";
+import { initUndo, mutate, hideToast } from "./undo.js?v=57";
+import { initSync, removeBook } from "./sync.js?v=57";
+import { onAuth } from "./session.js?v=57";
+import { currentRoute } from "./router.js?v=57";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=57";
+import { loginView, loadingView } from "./view-common.js?v=57";
+import { libraryView, activityView } from "./view-library.js?v=57";
+import { settingsView, catalogView } from "./view-settings.js?v=57";
+import { bookView, fillMemos } from "./view-book.js?v=57";
+import { yearView } from "./view-year.js?v=57";
+import { patchView, resetPatch } from "./patch.js?v=57";
+import { formView, bindForm } from "./view-form.js?v=57";
+import { nextLeafIndex, completeThrough, toggleChapter as toggle, friendlyError } from "./core.js?v=57";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=56";
-import { toggleMemoEditor, deleteMemo, foldAll, toggleFold, setGoalPreset, rememberNote, saveTypedText, applyFieldChange } from "./actions.js?v=56";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=57";
+import { toggleMemoEditor, deleteMemo, foldAll, toggleFold, setGoalPreset, rememberNote, saveTypedText, applyFieldChange } from "./actions.js?v=57";
 
 var view = document.getElementById("view");
 

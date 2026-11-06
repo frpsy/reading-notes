@@ -1,13 +1,13 @@
 // 책 화면의 사용자 동작(메모·접기·목표일·입력 저장). app.js 는 이벤트를 받아 여기로 넘기기만 합니다.
 // DOM 은 root(#view)를 인자로 받아 읽으며, 상태는 state 로만 바꿉니다.
-import { state } from "./state.js?v=56";
-import { render } from "./bus.js?v=56";
-import { saveFolded } from "./prefs.js?v=56";
-import { persist } from "./sync.js?v=56";
-import { offerUndo } from "./undo.js?v=56";
-import { preserve } from "./records.js?v=56";
-import { refreshMemos } from "./view-book.js?v=56";
-import { metrics as calcMetrics, isGroup, autoDates, dnum, dstr, todayStr } from "./core.js?v=56";
+import { state } from "./state.js?v=57";
+import { render } from "./bus.js?v=57";
+import { saveFolded } from "./prefs.js?v=57";
+import { persist } from "./sync.js?v=57";
+import { offerUndo } from "./undo.js?v=57";
+import { preserve } from "./records.js?v=57";
+import { refreshMemos } from "./view-book.js?v=57";
+import { metrics as calcMetrics, isGroup, autoDates, dnum, dstr, todayStr } from "./core.js?v=57";
 
 const memoSelector = (i) => 'textarea[data-act="memotext"][data-i="' + i + '"]';
 

@@ -1,16 +1,16 @@
 // 서재: 핵심 독서 기능. 독서 활동 통계는 별도 화면에 표시합니다.
-import { state } from "./state.js?v=56";
-import { esc, fmt, ago } from "./util.js?v=56";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=56";
-import { coverHtml, chipHtml } from "./view-common.js?v=56";
+import { state } from "./state.js?v=57";
+import { esc, fmt, ago } from "./util.js?v=57";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=57";
+import { coverHtml, chipHtml } from "./view-common.js?v=57";
 
 function nextLine(b, m) {
   // 독서 예정인 책은 '다음' 안내를 표시해 시작한 것처럼 보이지 않게 합니다.
   if (m.status !== 'reading') return '';
   var i = nextLeafIndex(b);
-  return i < 0 ? '' : '<span class="book-next">다음 · ' + esc(b.chapters[i].t) + '</span>';
+  return i < 0 ? '' : '<span class="book-next"><b>다음</b> ' + esc(b.chapters[i].t) + '</span>';
 }
-function bookRow(b, m) {
+function bookRow(b, m, hideChip) {
   var sub;
   if (m.status === 'done') sub = fmt(m.start) + ' – ' + fmt(m.endStr);
   else if (m.status === 'reading') sub = '';
@@ -18,14 +18,15 @@ function bookRow(b, m) {
   var by = b.author ? esc(b.author) + (sub ? ' · ' : '') : '';
   var meta = m.D + '/' + m.L + ' 챕터';
   if (m.last) meta += ' · 마지막 기록 ' + ago(m.last);
-  if (m.pagePct != null) meta += ' · 분량 기준 ' + Math.round(m.pagePct * 100) + '%';
+  // 큰 퍼센트와 같은 값이면 반복하지 않고, 다를 때만 분량 기준을 보여 줍니다.
+  if (m.pagePct != null && Math.round(m.pagePct * 100) !== Math.round(m.pct * 100)) meta += ' · 분량 기준 ' + Math.round(m.pagePct * 100) + '%';
   var stale = m.status === 'reading' && m.last && (dnum(todayStr()) - dnum(m.last)) >= 7;
   return '<a class="book" href="#book-' + esc(b.id) + '">' + coverHtml(b) +
     '<span class="book-main"><span class="book-title">' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</span>' +
     '<span class="book-sub">' + by + sub + '</span>' +
     '<span class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + Math.round(m.pct * 100) + '%"></i></span>' +
     '<span class="book-meta">' + meta.split(' · ').map(function (part) { return '<span>' + esc(part) + '</span>'; }).join(' · ') + '</span>' + nextLine(b, m) + '</span>' +
-    '<span class="book-side"><b class="pct">' + Math.round(m.pct * 100) + '%</b>' + chipHtml(m) + (stale ? '<span class="chip">잠시 쉬는 중</span>' : '') + '</span></a>';
+    '<span class="book-side"><b class="pct">' + Math.round(m.pct * 100) + '%</b>' + (hideChip && m.status === 'reading' ? '' : chipHtml(m)) + (stale ? '<span class="chip">잠시 쉬는 중</span>' : '') + '</span></a>';
 }
 
 // 오늘 아직 읽지 않았을 때만 보이는 안내. 이어 읽을 책은 가장 최근에 기록한 읽는 중 책
@@ -65,7 +66,7 @@ export function libraryView() {
     return head + '<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>책을 직접 추가하거나 준비된 책을 찾아보세요.</p><a class="btn" href="#catalog">책 찾기</a></div>';
   }
   var tabs = '<div class="tabs" role="group" aria-label="상태 필터">' + [['all', '전체'], ['reading', '읽는 중'], ['todo', '독서 예정'], ['done', '완독']].map(function (x) {
-    return '<button type="button" class="tab" data-act="filter" data-v="' + x[0] + '" aria-pressed="' + (state.ui.filter === x[0]) + '">' + x[1] + '<em>' + cnt[x[0]] + '</em></button>';
+    return '<button type="button" class="tab' + (cnt[x[0]] === 0 ? ' zero' : '') + '" data-act="filter" data-v="' + x[0] + '" aria-pressed="' + (state.ui.filter === x[0]) + '">' + x[1] + '<em>' + cnt[x[0]] + '</em></button>';
   }).join('') + '</div>';
   var order = { reading: 0, todo: 1, done: 2 };
   var filtered = all.filter(function (x) { return state.ui.filter === 'all' || x.m.status === state.ui.filter; });
@@ -80,8 +81,8 @@ export function libraryView() {
     var books = list.filter(function (x) { return x.m.status === status; });
     if (!books.length) return '';
     var labels = { reading: '읽는 중', todo: '독서 예정', done: '완독한 책' };
-    return '<section class="library-shelf" aria-label="' + labels[status] + '"><h2 class="shelf-title">' + labels[status] + '<span>' + books.length + '</span></h2><div class="books">' + books.map(function (x) { return bookRow(x.b, x.m); }).join('') + '</div></section>';
-  }).join('') : '<div class="books">' + list.map(function (x) { return bookRow(x.b, x.m); }).join('') + '</div>') : '<div class="empty search-empty"><h2>' + (state.ui.q ? '검색 결과가 없습니다.' : '해당하는 책이 없습니다.') + '</h2><p>다른 검색어를 입력하거나 전체 서재를 확인해 보세요.</p><button class="btn" type="button" data-act="reset-search">전체 서재 보기</button></div>';
+    return '<section class="library-shelf" aria-label="' + labels[status] + '"><h2 class="shelf-title">' + labels[status] + '<span>' + books.length + '</span></h2><div class="books">' + books.map(function (x) { return bookRow(x.b, x.m, true); }).join('') + '</div></section>';
+  }).join('') : '<div class="books">' + list.map(function (x) { return bookRow(x.b, x.m, state.ui.filter === 'reading' && !state.ui.q); }).join('') + '</div>') : '<div class="empty search-empty"><h2>' + (state.ui.q ? '검색 결과가 없습니다.' : '해당하는 책이 없습니다.') + '</h2><p>다른 검색어를 입력하거나 전체 서재를 확인해 보세요.</p><button class="btn" type="button" data-act="reset-search">전체 서재 보기</button></div>';
   var search = all.length > 0 ? '<input type="search" class="search" data-act="search" value="' + esc(state.ui.q) + '" placeholder="제목·저자·메모 검색" aria-label="제목·저자·메모 검색" autocomplete="off">' : '';
   var memoHits = state.ui.q ? searchMemos(filtered.map(function (x) { return x.b }), state.ui.q) : [];
   var memoHtml = memoHits.length ? '<div class="sec-h"><h2 class="sec">메모에서 찾음</h2></div><ul class="memo-hits">' + memoHits.map(function (h) {
