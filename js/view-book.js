@@ -1,38 +1,38 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=53";
-import { esc, fmt, ago } from "./util.js?v=53";
-import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=53";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=53";
+import { state } from "./state.js?v=54";
+import { esc, fmt, ago } from "./util.js?v=54";
+import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=54";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=54";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
-  var i = nextLeafIndex(b);
+  const i = nextLeafIndex(b);
   if (i < 0) return '';
-  var c = b.chapters[i];
+  const c = b.chapters[i];
   return '<section class="panel next" aria-label="이어 읽기"><div class="next-main"><span class="next-lbl">이어 읽기</span>' +
     '<span class="next-title">' + esc(c.t) + '</span>' + (c.p != null ? '<span class="pg">p.' + c.p + '</span>' : '') + '</div>' +
     '<div class="next-act"><a class="btn" href="#ch-' + i + '" data-act="jump" data-id="' + esc(b.id) + '" data-i="' + i + '" aria-label="목차에서 ' + esc(c.t) + ' 위치 보기">위치</a><button type="button" class="btn primary" data-act="nextdone">읽음 표시</button></div></section>';
 }
 function doneBanner(b, m) {
   if (m.status !== 'done') return '';
-  var s = (m.days ? m.days + '일 동안 ' : '') + m.L + '챕터';
+  let s = (m.days ? m.days + '일 동안 ' : '') + m.L + '챕터';
   if (m.rate) s += ' · ' + paceText(m.rate);
   return '<section class="panel done-banner" aria-label="완독"><b>완독했습니다</b><span>' + esc(s) + '</span></section>';
 }
 function goalHtml(b, m) {
-  var g = goalInfo(b, m);
+  const g = goalInfo(b, m);
   if (!g) return "";
-  var cmp = g.cmp ? ' <span class="chip ' + g.cmp.tone + '">' + esc(g.cmp.text) + "</span>" : "";
+  const cmp = g.cmp ? ' <span class="chip ' + g.cmp.tone + '">' + esc(g.cmp.text) + "</span>" : "";
   return '<p class="goal">' + esc(g.text) + cmp + "</p>";
 }
 
 // 세로 표시선 라벨이 축 숫자나 오른쪽 끝에 겹치지 않도록 정렬을 고릅니다
 function anchorAt(x, W, ml) { return x > W - 50 ? "end" : (x < ml + 24 ? "start" : "middle"); }
 function chartSvg(b, m) {
-  var g = chartGeometry(b, m);
+  const g = chartGeometry(b, m);
   if (!g) return '<p class="empty-note">챕터를 완료하면 누적 그래프가 그려집니다.</p>';
-  var W = g.W, H = g.H, ml = g.ml, mr = g.mr, mt = g.mt, mb = g.mb;
-  var s = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="누적 완료 챕터 ' + g.D + "개, 전체 " + g.L + '개">';
+  const W = g.W, H = g.H, ml = g.ml, mr = g.mr, mt = g.mt, mb = g.mb;
+  let s = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="누적 완료 챕터 ' + g.D + "개, 전체 " + g.L + '개">';
   g.ticks.forEach(function (t) {
     s += '<line class="ch-grid" x1="' + ml + '" x2="' + (W - mr) + '" y1="' + t.y.toFixed(1) + '" y2="' + t.y.toFixed(1) + '"/>';
     s += '<text class="ch-lbl" x="' + (ml - 6) + '" y="' + (t.y + 4).toFixed(1) + '" text-anchor="end">' + t.v + "</text>";
@@ -55,17 +55,17 @@ function chartSvg(b, m) {
 // 긴 메모는 앞 160자를 미리 보여주고 원문은 펼쳐 읽습니다.
 function longMemo(text) { return Array.from(text || '').length > 160 || (text || '').split(/\r?\n/).length > 3; }
 function memoExcerpt(text) {
-  var chars = Array.from(text || '');
+  const chars = Array.from(text || '');
   return chars.slice(0, 160).join('').replace(/\s+/g, ' ').trim() + (chars.length > 160 ? '…' : '');
 }
 function memoPreview(text, index, scope = 'collection') {
   // 읽기 화면의 시작/끝 빈 줄만 숨깁니다. 편집용 원문과 저장 데이터는 그대로 둡니다.
-  var visible = String(text || '').replace(/^(?:[ \t]*\r?\n)+/, '').replace(/(?:\r?\n[ \t]*)+$/, '');
+  const visible = String(text || '').replace(/^(?:[ \t]*\r?\n)+/, '').replace(/(?:\r?\n[ \t]*)+$/, '');
   if (!longMemo(visible) && scope === 'collection') return '<p class="memo-text">' + esc(visible) + '</p>';
-  var excerpt = memoExcerpt(visible);
-  var editable = scope === 'chapter' || scope === 'note';
-  var act = scope === 'chapter' ? ' data-act="memo" data-i="' + index + '"' : ' data-act="edit-note"';
-  var body = editable
+  const excerpt = memoExcerpt(visible);
+  const editable = scope === 'chapter' || scope === 'note';
+  const act = scope === 'chapter' ? ' data-act="memo" data-i="' + index + '"' : ' data-act="edit-note"';
+  const body = editable
     ? '<button type="button" class="memo-text memo-edit-tap"' + act + ' aria-label="펼친 메모 수정">' + esc(visible) + '</button>'
     : '<p class="memo-text">' + esc(visible) + '</p>';
   return '<details class="memo-preview" data-disclosure="preview-' + scope + '-' + index + '" data-memo-index="' + index + '"><summary class="memo-tap"><span class="memo-excerpt">' + esc(excerpt) + '</span><span class="memo-expand">전체 보기</span><span class="memo-collapse">접기</span></summary>' + body + '</details>';
@@ -75,23 +75,23 @@ function noteEditor(note) {
 }
 
 function chaptersHtml(b, m) {
-  var ui = state.ui;
-  var ch = b.chapters, nextLeaf = m.status === 'done' ? -1 : m.leafIdx.find(function (i) { return !ch[i].done });
-  var out = '', skipLv = null;
-  for (var i = 0; i < ch.length; i++) {
-    var c = ch[i], page = c.p != null ? '<span class="pg">p.' + c.p + '</span>' : '';
+  const ui = state.ui;
+  const ch = b.chapters, nextLeaf = m.status === 'done' ? -1 : m.leafIdx.find(function (i) { return !ch[i].done });
+  let out = '', skipLv = null;
+  for (let i = 0; i < ch.length; i++) {
+    const c = ch[i], page = c.p != null ? '<span class="pg">p.' + c.p + '</span>' : '';
     if (skipLv !== null) { if (c.lv > skipLv) continue; skipLv = null }
     if (isGroup(ch, i)) {
-      var idx = descLeaves(ch, i), dn = idx.filter(function (j) { return ch[j].done }).length, tot = idx.length;
+      const idx = descLeaves(ch, i), dn = idx.filter(function (j) { return ch[j].done }).length, tot = idx.length;
       if (ui.onlyRemaining && dn === tot) continue;
-      var st = dn === tot ? 'true' : dn === 0 ? 'false' : 'mixed', folded = ui.folded.has(b.id + ':' + i);
+      const st = dn === tot ? 'true' : dn === 0 ? 'false' : 'mixed', folded = ui.folded.has(b.id + ':' + i);
       out += '<li class="ch group" style="--lv:' + c.lv + '"><button type="button" class="chk" role="checkbox" aria-checked="' + st + '" data-act="toggle" data-i="' + i + '" aria-label="' + esc(c.t) + ' 전체 완료 표시">' + (st === 'true' ? CHECK : st === 'mixed' ? DASH : '') + '</button>' +
         '<div class="ch-main"><span class="ch-title">' + esc(c.t) + '</span><span class="ch-meta">' + page + '<span class="count">' + dn + '/' + tot + '</span></span></div>' +
         '<div class="ch-opt"><button type="button" class="fold-btn" data-act="fold" data-i="' + i + '" aria-expanded="' + (!folded) + '" aria-label="' + esc(c.t) + (folded ? ' 펼치기' : ' 접기') + '">' + CHEVRON + '</button></div></li>';
       if (folded) skipLv = c.lv;
     } else {
       if (ui.onlyRemaining && c.done) continue;
-      var key = b.id + ':' + i, open = ui.openMemo.has(key);
+      const key = b.id + ':' + i, open = ui.openMemo.has(key);
       // 빈 메모는 줄을 차지하지 않음: 쓰기/수정은 우측 ⋯ 메뉴, 내용이 있을 때만 미리보기 표시.
       out += '<li id="ch-' + i + '" class="ch leaf' + (c.done ? ' done' : '') + (i === nextLeaf ? ' next' : '') + '" style="--lv:' + c.lv + '"><button type="button" class="chk" role="checkbox" aria-checked="' + (c.done ? 'true' : 'false') + '" data-act="toggle" data-i="' + i + '" aria-label="' + esc(c.t) + ' 완료 표시">' + (c.done ? CHECK : '') + '</button>' +
         '<div class="ch-main"><button type="button" class="ch-title ch-hit" data-act="toggle" data-i="' + i + '" tabindex="-1" aria-hidden="true">' + esc(c.t) + '</button>' +
@@ -119,7 +119,7 @@ function memoItems(list) {
 }
 // 접혀 있을 때는 목록을 만들지 않고(큰 책에서 입력이 느려지지 않도록) 펼칠 때 채웁니다.
 function memosHtml(b, open) {
-  var list = memosOf(b);
+  const list = memosOf(b);
   if (!list.length) return '';
   // data-disclosure: 다시 그려도 펼침 상태를 유지합니다(펼친 채로 복원되면 toggle 에서 목록을 채움).
   return '<details class="panel memos" data-disclosure="memos-' + esc(b.id) + '"' + (open ? ' open' : ' data-lazy') + '><summary>챕터 메모 모아보기 <em>' + list.length + '</em></summary><ul>' + (open ? memoItems(list) : '') + '</ul></details>';
@@ -131,30 +131,27 @@ export function fillMemos(d, b) {
 }
 
 // 메모를 고친 뒤 모아보기 칸만 바꿉니다(전체를 다시 그리면 누르려던 버튼이 사라질 수 있음).
-var memoTimer = null;
+let memoTimer = null;
 export function refreshMemos(b) {
-  var box = document.getElementById('memos-box'); if (!box) return;
-  var d = box.querySelector('details');
+  const box = document.getElementById('memos-box'); if (!box) return;
+  const d = box.querySelector('details');
   if (!d || !d.open) { box.innerHTML = memosHtml(b, false); return; }
   // 펼쳐 둔 상태에서는 입력이 잠시 멈춘 뒤 한 번만 다시 그립니다.
   clearTimeout(memoTimer);
   memoTimer = setTimeout(function () {
-    var cur = document.getElementById('memos-box'); if (cur !== box) return;
-    var expanded = Array.from(box.querySelectorAll('.memo-preview[open]')).map(function (el) { return el.dataset.memoIndex; });
-    var stillOpen = box.querySelector('details') && box.querySelector('details').open;
+    const cur = document.getElementById('memos-box'); if (cur !== box) return;
+    const expanded = Array.from(box.querySelectorAll('.memo-preview[open]')).map(function (el) { return el.dataset.memoIndex; });
+    const stillOpen = box.querySelector('details') && box.querySelector('details').open;
     box.innerHTML = memosHtml(b, !!stillOpen);
     box.querySelectorAll('.memo-preview').forEach(function (el) { el.open = expanded.includes(el.dataset.memoIndex); });
   }, 250);
 }
 
-export function bookView(id) {
-  var b = state.books.get(id);
-  if (!b) return notFound();
-  var m = calcMetrics(b), pct = Math.round(m.pct * 100);
-  var stale = m.status === 'reading' && m.last && (dnum(todayStr()) - dnum(m.last)) >= 7;
-  var stats = [];
+// 책 상세 화면의 조각들. bookView 가 순서대로 이어 붙입니다.
+function statsHtml(m) {
+  const stats = [];
   stats.push(['읽은 기간', m.days ? m.days + '일' : '—', m.start ? '시작 ' + fmt(m.start) : '시작일 미정']);
-  var pace = '—', paceSub = '챕터를 완료하면 계산돼요';
+  let pace = '—', paceSub = '챕터를 완료하면 계산돼요';
   if (m.rate) {
     pace = paceText(m.rate);
     paceSub = m.status === 'done' ? '시작일부터 종료일까지 평균' : '시작일부터 오늘까지 평균';
@@ -163,23 +160,39 @@ export function bookView(id) {
   if (m.status === 'done') stats.push(['종료일', fmt(m.endStr), '완독']);
   else stats.push(['예상 완독일', m.etaStr ? fmt(m.etaStr) : '—', m.etaIn != null ? '약 ' + m.etaIn + '일 후 · ' + paceText(m.rate) + ' 속도 기준' : '3챕터·3일 이상 기록하면 계산돼요']);
   stats.push(['마지막 기록', m.last ? ago(m.last) : '—', m.last ? fmt(m.last) : '아직 없음']);
-  var statsHtml = '<dl class="stats">' + stats.map(function (s) { return '<div class="stat"><dt>' + s[0] + '</dt><dd>' + esc(s[1]) + '</dd><small>' + esc(s[2]) + '</small></div>' }).join('') + '</dl>';
-  var alt = m.pagePct != null ? '<span class="alt">분량 기준 ' + Math.round(m.pagePct * 100) + '% (' + m.pagesRead + '/' + m.pagesTotal + '쪽)</span>' : '';
-  var del = state.ui.confirmDel === b.id ?
+  return '<dl class="stats">' + stats.map(function (s) { return '<div class="stat"><dt>' + s[0] + '</dt><dd>' + esc(s[1]) + '</dd><small>' + esc(s[2]) + '</small></div>' }).join('') + '</dl>';
+}
+
+function deleteControl(b) {
+  return state.ui.confirmDel === b.id ?
     '<div class="confirm"><span>이 책을 삭제합니다. 이 기기의 휴지통에서 30일 동안 복구할 수 있습니다.</span><button type="button" class="btn danger sm" data-act="delyes">삭제</button><button type="button" class="btn sm" data-act="delno">취소</button></div>' :
     '<button type="button" class="btn danger sm" data-act="del">책 삭제</button>';
-  var rating = '<option value="0">평점 없음</option>' + [1, 2, 3, 4, 5].map(function (n) { return '<option value="' + n + '"' + ((b.rating || 0) === n ? ' selected' : '') + '>' + n + ' / 5</option>' }).join('');
-  // 접기 상태는 책별로 기기에만 보관합니다. 그룹이 없는 책은 제어 버튼을 표시하지 않습니다.
-  var groupIndices = b.chapters.map(function (_, i) { return isGroup(b.chapters, i) ? i : -1; }).filter(function (i) { return i >= 0; });
-  var allFolded = groupIndices.length > 0 && groupIndices.every(function (i) { return state.ui.folded.has(b.id + ':' + i); });
-  var foldAll = groupIndices.length ? '<button type="button" class="tgl fold-all" data-act="foldall" aria-controls="chapters-list" aria-expanded="' + (!allFolded) + '">' + (allFolded ? '전체 펼치기' : '전체 접기') + '</button>' : '';
-  var progress = '<section class="reading-progress" aria-label="진척 현황"><div class="prog"><span class="big">' + pct + '%</span><span class="of">' + m.D + ' / ' + m.L + ' 챕터</span>' + alt + '</div><div role="progressbar" aria-label="읽은 챕터" aria-valuemin="0" aria-valuemax="' + m.L + '" aria-valuenow="' + m.D + '" aria-valuetext="' + m.L + '개 중 ' + m.D + '개 완료, ' + pct + '%" class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + pct + '%"></i></div></section>';
-  var quickDates = ['시작 ' + (m.start ? m.start.slice(5).replace('-', '.') : '미정')];
+}
+
+function ratingOptions(b) {
+  return '<option value="0">평점 없음</option>' + [1, 2, 3, 4, 5].map(function (n) { return '<option value="' + n + '"' + ((b.rating || 0) === n ? ' selected' : '') + '>' + n + ' / 5</option>' }).join('');
+}
+
+// 접기 상태는 책별로 기기에만 보관합니다. 그룹이 없는 책은 제어 버튼을 표시하지 않습니다.
+function foldAllButton(b) {
+  const groupIndices = b.chapters.map(function (_, i) { return isGroup(b.chapters, i) ? i : -1; }).filter(function (i) { return i >= 0; });
+  const allFolded = groupIndices.length > 0 && groupIndices.every(function (i) { return state.ui.folded.has(b.id + ':' + i); });
+  return groupIndices.length ? '<button type="button" class="tgl fold-all" data-act="foldall" aria-controls="chapters-list" aria-expanded="' + (!allFolded) + '">' + (allFolded ? '전체 펼치기' : '전체 접기') + '</button>' : '';
+}
+
+function progressHtml(m) {
+  const pct = Math.round(m.pct * 100);
+  const alt = m.pagePct != null ? '<span class="alt">분량 기준 ' + Math.round(m.pagePct * 100) + '% (' + m.pagesRead + '/' + m.pagesTotal + '쪽)</span>' : '';
+  return '<section class="reading-progress" aria-label="진척 현황"><div class="prog"><span class="big">' + pct + '%</span><span class="of">' + m.D + ' / ' + m.L + ' 챕터</span>' + alt + '</div><div role="progressbar" aria-label="읽은 챕터" aria-valuemin="0" aria-valuemax="' + m.L + '" aria-valuenow="' + m.D + '" aria-valuetext="' + m.L + '개 중 ' + m.D + '개 완료, ' + pct + '%" class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + pct + '%"></i></div></section>';
+}
+
+function insightsHtml(b, m) {
+  const quickDates = ['시작 ' + (m.start ? m.start.slice(5).replace('-', '.') : '미정')];
   if (m.last) quickDates.push('최근 ' + m.last.slice(5).replace('-', '.'));
   if (m.days) quickDates.push(m.days + '일');
-  var goalIn2Weeks = dstr(dnum(todayStr()) + 14);
-  var goalIn4Weeks = dstr(dnum(todayStr()) + 28);
-  var insights = '<details class="panel book-insights quick-insights" data-disclosure="insights-' + esc(b.id) + '"><summary><span class="insights-quick"><strong>통계·날짜</strong><span class="insights-quick-meta">' + esc(quickDates.join(' · ')) + '</span></span><span class="insights-toggle" aria-hidden="true"></span></summary><div class="insights-body">' + goalHtml(b, m) + statsHtml +
+  const goalIn2Weeks = dstr(dnum(todayStr()) + 14);
+  const goalIn4Weeks = dstr(dnum(todayStr()) + 28);
+  return '<details class="panel book-insights quick-insights" data-disclosure="insights-' + esc(b.id) + '"><summary><span class="insights-quick"><strong>통계·날짜</strong><span class="insights-quick-meta">' + esc(quickDates.join(' · ')) + '</span></span><span class="insights-toggle" aria-hidden="true"></span></summary><div class="insights-body">' + goalHtml(b, m) + statsHtml(m) +
     '<section class="insight-chart" aria-label="누적 그래프"><h3>누적 완료 챕터</h3>' + chartSvg(b, m) + '</section>' +
     '<section class="insight-dates" aria-label="날짜"><h3>날짜 설정</h3><div class="dates">' +
       '<label class="fld"><span>읽기 시작일</span><input type="date" id="d-start" data-act="start" value="' + esc(b.startDate || '') + '"></label>' +
@@ -187,11 +200,27 @@ export function bookView(id) {
       '<div class="goal-date-field"><label class="fld"><span>목표 완독일</span><input type="date" id="d-goal" data-act="goal" value="' + esc(b.goalDate || '') + '"></label>' +
       '<div class="goal-presets" role="group" aria-label="목표 완독일 빠른 설정"><button type="button" data-act="goal-preset" data-weeks="2" aria-pressed="' + (b.goalDate === goalIn2Weeks) + '">2주 후</button><button type="button" data-act="goal-preset" data-weeks="4" aria-pressed="' + (b.goalDate === goalIn4Weeks) + '">4주 후</button></div></div></div>' +
     '<p class="hint">모든 챕터를 완료하면 종료일이 자동으로 채워집니다. 날짜는 직접 고칠 수 있습니다.</p></section></div></details>';
-  return '<a class="back" href="#library">← 서재</a>' +
-    '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip">잠시 쉬는 중</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' +
-    '<details class="book-menu" data-disclosure="menu-' + esc(b.id) + '"><summary aria-label="책 설정">⋯</summary><div class="book-menu-items"><a href="#edit-' + esc(b.id) + '">정보·목차 수정</a>' + del + '</div></details></div>' +
-    nextPanel(b, m) + doneBanner(b, m) + progress + insights +
-    '<div class="sec-h chapter-heading"><h2 class="sec">챕터</h2><div class="chapter-actions"><button type="button" class="tgl" data-act="remaining" aria-pressed="' + state.ui.onlyRemaining + '">남은 챕터만 보기</button>' + foldAll + '</div></div>' +
-    chaptersHtml(b, m) + '<div id="memos-box">' + memosHtml(b, false) + '</div>' +
-    '<div class="sec-h"><h2 class="sec">독서 메모</h2></div><div class="panel note-panel" style="margin-top:0"><div class="dates"><label class="fld"><span>평점</span><select id="d-rating" data-act="rating">' + rating + '</select></label></div>' + noteEditor(b.note) + '</div>';
+}
+
+function headHtml(b, m) {
+  const stale = m.status === 'reading' && m.last && (dnum(todayStr()) - dnum(m.last)) >= 7;
+  return '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip">잠시 쉬는 중</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' +
+    '<details class="book-menu" data-disclosure="menu-' + esc(b.id) + '"><summary aria-label="책 설정">⋯</summary><div class="book-menu-items"><a href="#edit-' + esc(b.id) + '">정보·목차 수정</a>' + deleteControl(b) + '</div></details></div>';
+}
+
+function chapterHeading(b) {
+  return '<div class="sec-h chapter-heading"><h2 class="sec">챕터</h2><div class="chapter-actions"><button type="button" class="tgl" data-act="remaining" aria-pressed="' + state.ui.onlyRemaining + '">남은 챕터만 보기</button>' + foldAllButton(b) + '</div></div>';
+}
+
+function noteSection(b) {
+  return '<div class="sec-h"><h2 class="sec">독서 메모</h2></div><div class="panel note-panel" style="margin-top:0"><div class="dates"><label class="fld"><span>평점</span><select id="d-rating" data-act="rating">' + ratingOptions(b) + '</select></label></div>' + noteEditor(b.note) + '</div>';
+}
+
+export function bookView(id) {
+  const b = state.books.get(id);
+  if (!b) return notFound();
+  const m = calcMetrics(b);
+  return '<a class="back" href="#library">← 서재</a>' + headHtml(b, m) +
+    nextPanel(b, m) + doneBanner(b, m) + progressHtml(m) + insightsHtml(b, m) +
+    chapterHeading(b) + chaptersHtml(b, m) + '<div id="memos-box">' + memosHtml(b, false) + '</div>' + noteSection(b);
 }
