@@ -82,6 +82,25 @@ try{
         const check=await done.locator('.chk').boundingBox(),title=await done.locator('.ch-title').boundingBox();
         assert.ok(Math.abs(check.y-title.y)<13,'checkbox aligned with title');
         assert.ok((await done.locator('.ch-memo .memo-tap').boundingBox()).height>=44,'note touch target');
+        // 터치 영역: 눈에 보이는 크기는 작아도 누를 수 있는 범위(가상 요소 포함)는 44px 이상이어야 합니다.
+        const hit=async(sel,label)=>{
+          const box=await page.locator(sel).first().boundingBox();
+          assert.ok(box,label+' visible');
+          const area=await page.evaluate(([s])=>{
+            const el=document.querySelector(s);el.scrollIntoView({block:'center'});const r=el.getBoundingClientRect();
+            const cx=r.left+r.width/2,cy=r.top+r.height/2;
+            const reach=(dx,dy)=>{let n=0;for(let d=0;d<=60;d++){const t=document.elementFromPoint(cx+dx*d,cy+dy*d);if(t&&(t===el||el.contains(t)))n=d;else break;}return n;};
+            return {w:reach(-1,0)+reach(1,0),h:reach(0,-1)+reach(0,1)};
+          },[sel]);
+          assert.ok(area.w>=43&&area.h>=43,label+' touch area '+JSON.stringify(area));
+        };
+        await hit('.top .brand','brand');
+        await hit('.back','back link');
+        await hit('.panel.next .btn','next buttons');
+        await hit('.ch-opt .chapter-options > summary','chapter options');
+        await hit('.memos > summary','memo collection');
+        await hit('.note-editor > summary','note editor');
+        assert.equal(await page.locator('.head .by').evaluate(el=>{const c=el.cloneNode(true);c.querySelectorAll('.by-author').forEach(n=>n.remove());return /[·]/.test(c.textContent);}),false,'status and pages are separated by gaps, not dots that can wrap');
         if(width<=430){
           const menuSummary=done.locator('.chapter-options > summary');
           await menuSummary.click();

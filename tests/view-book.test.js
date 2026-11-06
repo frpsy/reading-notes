@@ -61,3 +61,11 @@ test('책 상세: 완독한 책은 완독 배너와 종료일, 없는 책은 안
   assert.ok(!/data-act="foldall"/.test(html));
   assert.ok(bookView('없는-책').length > 0);
 });
+
+test('책 상세 머리말: 저자·상태·쪽수는 점 없이 칸으로 나뉘어 줄바꿈 때 점이 남지 않음', () => {
+  reset(book());
+  const by = /<div class="by">(.*?)<\/div>/.exec(bookView('b1'))[1];
+  assert.ok(by.includes('<span class="by-author">저자</span>'));
+  assert.ok(by.includes('<span class="by-pages">300쪽</span>'));
+  assert.ok(!by.includes('·'));
+});
