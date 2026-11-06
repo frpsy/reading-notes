@@ -917,3 +917,18 @@ html{background:var(--bg)}
 .fs-note{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px}
 .fs-note .btn{flex:none}
 .fs-ctl .btn:disabled,.fs-note .btn:disabled{opacity:1;color:var(--muted);border-color:var(--line);background:var(--surface-2);cursor:default}
+
+/* 서재 카드 다듬기: 정보 중복 줄이고 위계·깊이를 분명히 합니다. */
+.book-next b{font-weight:700;margin-right:4px}
+.book-next{font-weight:500}
+.tab.zero{opacity:1;color:var(--muted)}
+.tab.zero em{color:var(--muted)}
+.tab.zero:not([aria-pressed="true"]){color:color-mix(in srgb,var(--muted) 70%,var(--bg))}
+.settings-nav{min-width:44px;padding:0 14px;margin-right:-8px;background:var(--surface-2);border-radius:999px;color:var(--ink)}
+@media(max-width:600px){
+  .top{margin-bottom:12px;padding-bottom:0}
+  .lib-head{margin-bottom:16px}
+  a.book{box-shadow:0 1px 2px rgb(0 0 0 / .05),0 4px 14px rgb(0 0 0 / .04)}
+  a.book .book-next{font-size:.875rem;line-height:1.5;padding-top:8px;margin-top:2px;border-top:1px solid var(--line);color:var(--accent)}
+}
+@media(prefers-color-scheme:dark){a.book{box-shadow:none}}
