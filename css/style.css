@@ -1,6 +1,5 @@
 /* 책갈피: 토큰 → 기본 요소 → 서재 → 상세·기록 → 입력 → 반응형.
    같은 선택자/미디어의 덮어쓴 선언을 제거하고 실제 적용 순서를 유지합니다. */
-@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&display=swap");
 :root{--bg:#F7F6F2;--surface:#FFFFFF;--surface-2:#EDEFE8;--line:#D8DDD3;--ink:#15201F;--muted:#465859;--accent:#28594B;--accent-ink:#FFFFFF;--accent-soft:#E1ECE4;--ok:#1B7A53;--ok-soft:#D2EADD;--warn:#8F5400;--warn-soft:#F4E3C2;--danger:#B3261E;--serif:"Noto Serif KR","Nanum Myeongjo",serif;--radius-control:12px;--radius-panel:16px;--space-section:28px;--duration:160ms;color-scheme:light}
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){--bg:#101617;--surface:#182021;--surface-2:#202A2C;--line:#2C393B;--ink:#E5EBEB;--muted:#AAB9BB;--accent:#9BD1B7;--accent-ink:#102B20;--accent-soft:#213D31;--ok:#5CC796;--ok-soft:#173B2C;--warn:#E3B05A;--warn-soft:#3A2D14;--danger:#F08A82;color-scheme:dark}

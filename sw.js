@@ -44,8 +44,11 @@ self.addEventListener("activate", (e) => {
 async function networkFirst(req) {
   const c = await caches.open(CACHE);
   const key = req.mode === "navigate" ? keyOf(self.registration.scope) : keyOf(req.url);
+  // 주소에 ?v=번호 가 붙은 화면 파일은 배포마다 주소가 바뀌므로 매번 서버에 확인하지 않고 브라우저 보관본을 씁니다.
+  // 그 밖(index.html, 목차 목록 등 주소가 같은 파일)은 계속 서버에 확인합니다.
+  const versioned = req.mode !== "navigate" && new URL(req.url).searchParams.has("v");
   try {
-    const r = await fetch(req, { cache: "no-cache" });
+    const r = await fetch(req, versioned ? undefined : { cache: "no-cache" });
     if (r.ok) await c.put(key, r.clone());
     return r;
   } catch (err) {
