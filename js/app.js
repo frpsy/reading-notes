@@ -1,24 +1,24 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=52";
-import { state } from "./state.js?v=52";
-import { setRenderer, render } from "./bus.js?v=52";
-import { initPrefs, saveFolded } from "./prefs.js?v=52";
-import { initUndo, mutate, hideToast } from "./undo.js?v=52";
-import { initSync, removeBook } from "./sync.js?v=52";
-import { onAuth } from "./session.js?v=52";
-import { currentRoute } from "./router.js?v=52";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=52";
-import { loginView, loadingView } from "./view-common.js?v=52";
-import { libraryView, activityView } from "./view-library.js?v=52";
-import { settingsView, catalogView } from "./view-settings.js?v=52";
-import { bookView, fillMemos } from "./view-book.js?v=52";
-import { yearView } from "./view-year.js?v=52";
-import { patchView, resetPatch } from "./patch.js?v=52";
-import { formView, bindForm } from "./view-form.js?v=52";
-import { nextLeafIndex, completeThrough, toggleChapter as toggle, friendlyError } from "./core.js?v=52";
+import * as store from "./store.js?v=53";
+import { state } from "./state.js?v=53";
+import { setRenderer, render } from "./bus.js?v=53";
+import { initPrefs, saveFolded } from "./prefs.js?v=53";
+import { initUndo, mutate, hideToast } from "./undo.js?v=53";
+import { initSync, removeBook } from "./sync.js?v=53";
+import { onAuth } from "./session.js?v=53";
+import { currentRoute } from "./router.js?v=53";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=53";
+import { loginView, loadingView } from "./view-common.js?v=53";
+import { libraryView, activityView } from "./view-library.js?v=53";
+import { settingsView, catalogView } from "./view-settings.js?v=53";
+import { bookView, fillMemos } from "./view-book.js?v=53";
+import { yearView } from "./view-year.js?v=53";
+import { patchView, resetPatch } from "./patch.js?v=53";
+import { formView, bindForm } from "./view-form.js?v=53";
+import { nextLeafIndex, completeThrough, toggleChapter as toggle, friendlyError } from "./core.js?v=53";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=52";
-import { toggleMemoEditor, deleteMemo, foldAll, toggleFold, setGoalPreset, rememberNote, saveTypedText, applyFieldChange } from "./actions.js?v=52";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=53";
+import { toggleMemoEditor, deleteMemo, foldAll, toggleFold, setGoalPreset, rememberNote, saveTypedText, applyFieldChange } from "./actions.js?v=53";
 
 var view = document.getElementById("view");
 
@@ -43,7 +43,7 @@ function draw() {
   else if (r.name === "activity") html = activityView();
   else if (r.name === "year") html = yearView(r.year);
   else html = formView(r.id);
-  if (state.phase === "app" && state.ready && r.name === "book") patchView(view, html, "book:" + r.id);
+  if (state.phase === "app" && state.ready && (r.name === "book" || r.name === "library")) patchView(view, html, r.name === "book" ? "book:" + r.id : "library");
   else { resetPatch(); view.innerHTML = html; }
   view.querySelectorAll('details[data-disclosure]').forEach(function (el) { if (disclosures.has(el.dataset.disclosure)) el.open = disclosures.get(el.dataset.disclosure); });
   if (state.phase === "app" && state.ready && r.name === "form" && (!r.id || state.books.has(r.id))) bindForm(r.id);
