@@ -536,3 +536,16 @@ export function findDuplicate(books, title, author, exceptId) {
   }
   return null;
 }
+
+/* ---------- 글자 크기 설정 ---------- */
+// 화면 전체 글자 배율(%). 90~130, 5% 단위, 기본 100. 잘못된 값은 기본으로 돌립니다.
+export const FONT_SCALE = { min: 90, max: 130, step: 5, def: 100 };
+export function clampFontScale(v) {
+  if (v === null || v === undefined || v === "" || typeof v === "boolean") return FONT_SCALE.def;
+  const n = Number(v);
+  if (!Number.isFinite(n)) return FONT_SCALE.def;
+  const snapped = Math.round(n / FONT_SCALE.step) * FONT_SCALE.step;
+  return Math.min(FONT_SCALE.max, Math.max(FONT_SCALE.min, snapped));
+}
+export function stepFontScale(cur, dir) { return clampFontScale(clampFontScale(cur) + (dir < 0 ? -1 : 1) * FONT_SCALE.step); }
+

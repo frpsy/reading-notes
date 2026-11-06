@@ -372,3 +372,19 @@ test("아주 작은 습관의 힘·도파민네이션: 공식 한국어판 목�
     assert.ok(chapters.every((x) => x.p == null), "시작 페이지를 추측하지 않음: " + file);
   }
 });
+
+test("글자 크기: 범위·단위·잘못된 값 처리", () => {
+  assert.equal(C.clampFontScale(undefined), 100);
+  assert.equal(C.clampFontScale(null), 100);
+  assert.equal(C.clampFontScale(""), 100);
+  assert.equal(C.clampFontScale("abc"), 100);
+  assert.equal(C.clampFontScale(true), 100);
+  assert.equal(C.clampFontScale("110"), 110);
+  assert.equal(C.clampFontScale(112), 110);
+  assert.equal(C.clampFontScale(50), 90);
+  assert.equal(C.clampFontScale(500), 130);
+  assert.equal(C.stepFontScale(100, 1), 105);
+  assert.equal(C.stepFontScale(100, -1), 95);
+  assert.equal(C.stepFontScale(130, 1), 130);
+  assert.equal(C.stepFontScale(90, -1), 90);
+});

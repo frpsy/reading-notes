@@ -4,3 +4,4 @@ test-results/
 node_modules
 firebase-debug.log
 firestore-debug.log
+design-screenshots/

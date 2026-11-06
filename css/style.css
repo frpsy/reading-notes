@@ -907,6 +907,13 @@ html{background:var(--bg)}
   .settings-section>.sec{font-size:.875rem}
   .pv-list,.pv-list li,.pv-list b{font-size:.875rem}
   /* 입력칸: iPhone 자동 확대 방지 */
-  input.search,input[type="date"],.opt-fld input[type=date],.fld input,select,textarea{font-size:1rem}
+  input.search,input[type="date"],.opt-fld input[type=date],.chapter-options-body .opt-fld input[type=date],.fld input,.memo-row textarea,#f-toc,select,textarea{font-size:max(16px,1rem)}
 }
 
+/* 설정 > 글자 크기 */
+.fs-ctl{display:flex;align-items:center;gap:6px;flex:none}
+.fs-ctl .btn{width:44px;min-width:44px;padding:0;font-size:1.25rem;line-height:1}
+.fs-val{min-width:3.6em;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+.fs-note{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px}
+.fs-note .btn{flex:none}
+.fs-ctl .btn:disabled,.fs-note .btn:disabled{opacity:1;color:var(--muted);border-color:var(--line);background:var(--surface-2);cursor:default}

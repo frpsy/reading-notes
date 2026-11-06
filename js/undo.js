@@ -1,9 +1,9 @@
 // 알림창: 챕터 체크·취소에는 띄우지 않습니다(진도 체크는 알림창 없이 바로 반영, 취소는 다시 누르기).
 // 메모 삭제처럼 되돌릴 수 없는 동작에만 '되돌리기'를 잠시 보여 줍니다.
-import { state } from "./state.js?v=55";
-import { render } from "./bus.js?v=55";
-import { persist } from "./sync.js?v=55";
-import { esc } from "./util.js?v=55";
+import { state } from "./state.js?v=56";
+import { render } from "./bus.js?v=56";
+import { persist } from "./sync.js?v=56";
+import { esc } from "./util.js?v=56";
 
 export function hideToast() {
   clearTimeout(state.toastTimer); state.undo = null;
