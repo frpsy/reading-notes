@@ -68,6 +68,21 @@ for (const ch of "성능측정") {
 rows.push(["서재 검색 입력 1글자(중앙값)", median(search), "ms"]);
 await page.locator('input[data-act="search"]').fill("");
 
+// 빠른 연속 입력(한글 조합·빠른 타자): 같은 틱에 4글자가 들어올 때 다시 그리는 횟수와 화면이 안정되기까지의 시간
+const burst = await page.evaluate(async () => {
+  const q = () => document.querySelector('input[data-act="search"]'), list = document.getElementById("view");
+  let draws = 0; const mo = new MutationObserver((recs) => { draws += recs.length; }); mo.observe(list, { childList: true });
+  const s = performance.now();
+  for (const ch of "성능측정") { const el = q(); el.value += ch; el.dispatchEvent(new Event("input", { bubbles: true })); } // 다시 그리면 검색창이 교체되므로 매번 새로 찾습니다
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const ms = performance.now() - s; mo.disconnect();
+  q().value = ""; q().dispatchEvent(new Event("input", { bubbles: true }));
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  return { ms, draws };
+});
+rows.push(["서재 검색 4글자 연속 입력 후 안정까지", Math.round(burst.ms), "ms"]);
+rows.push(["  ㄴ 목록 다시 그린 횟수", burst.draws, "회"]);
+
 // 큰 책 화면 열기와 메모 입력 지연
 t0 = Date.now();
 await page.goto(base + "#book-big");
