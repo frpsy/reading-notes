@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=54";
-import { esc, fmt, ago } from "./util.js?v=54";
-import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=54";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=54";
+import { state } from "./state.js?v=55";
+import { esc, fmt, ago } from "./util.js?v=55";
+import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=55";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=55";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -204,7 +204,7 @@ function insightsHtml(b, m) {
 
 function headHtml(b, m) {
   const stale = m.status === 'reading' && m.last && (dnum(todayStr()) - dnum(m.last)) >= 7;
-  return '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? esc(b.author) + ' · ' : '') + chipHtml(m) + (stale ? ' <span class="chip">잠시 쉬는 중</span>' : '') + (b.totalPages ? ' · ' + b.totalPages + '쪽' : '') + '</div></div>' +
+  return '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? '<span class="by-author">' + esc(b.author) + '</span>' : '') + chipHtml(m) + (stale ? '<span class="chip">잠시 쉬는 중</span>' : '') + (b.totalPages ? '<span class="by-pages">' + b.totalPages + '쪽</span>' : '') + '</div></div>' +
     '<details class="book-menu" data-disclosure="menu-' + esc(b.id) + '"><summary aria-label="책 설정">⋯</summary><div class="book-menu-items"><a href="#edit-' + esc(b.id) + '">정보·목차 수정</a>' + deleteControl(b) + '</div></details></div>';
 }
 
