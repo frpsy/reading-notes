@@ -873,3 +873,40 @@ html{background:var(--bg)}
 .brand::after{content:"";position:absolute;inset:-12px -8px}
 .ch-opt .chapter-options>summary::after{content:"";position:absolute;inset:-4px}
 .ch-opt .fold-btn::after{content:"";position:absolute;inset:0 -4px}
+
+/* iPhone 글자 크기 체계(모바일 600px 이하). 화면마다 제각각이던 값을 아래 단계로 맞춥니다.
+   제목 17px · 본문 16px · 보조 14px · 메타(쪽수·날짜·라벨) 13px · 뱃지·숫자 칩 12px(이보다 작게는 쓰지 않음)
+   입력칸은 16px 미만이면 iPhone Safari 가 포커스할 때 화면을 확대하므로 16px 로 둡니다. */
+@media(max-width:600px){
+  /* 챕터 목록: 체크할 대상인 제목을 가장 크게, 묶음과 일반 항목은 같은 크기(굵기·배경으로 구분) */
+  .ch.leaf .ch-title,.ch.group .ch-title{font-size:1.0625rem;line-height:1.4;letter-spacing:-.01em}
+  .ch.group .ch-title{font-weight:700;color:var(--ink)}
+  .ch-meta{font-size:.8125rem;line-height:1.35}
+  .ch-meta .pg,.ch-meta .count,.ch-date{font-family:var(--sans);font-size:.8125rem;font-variant-numeric:tabular-nums}
+  .ch.leaf .ch-meta .next-pill{font-size:.75rem;padding:5px 8px}
+  .ch.leaf .ch-memo .memo-excerpt,.ch-memo .memo-excerpt{font-size:.8125rem;line-height:1.45}
+  .chapter-options-body .opt-fld>span,.opt-fld{font-size:.8125rem}
+  .tgl,.chapter-actions .tgl{font-size:.8125rem}
+  /* 한국어는 단어 중간에서 끊기지 않고 띄어쓰기에서 줄바꿈(너무 긴 단어만 예외) */
+  .ch-title,.next-title,.book-title,.head h1,.memo-hit-h{word-break:keep-all}
+  /* 뱃지·숫자 칩 */
+  .chip{font-size:.75rem}
+  .tab{font-size:.8125rem}
+  .tab em{font-size:.75rem}
+  .mo-n,.mo-l{font-size:.75rem}
+  .sync{font-size:.8125rem}
+  /* 보조·메타 */
+  .next-lbl{font-size:.8125rem}
+  .quick-insights .insights-quick strong{font-size:.9375rem}
+  .quick-insights .insights-quick-meta{font-size:.8125rem}
+  .memo-h span,.memo-meta{font-size:.8125rem}
+  .memo-hit-h{font-size:.9375rem}
+  .memo-hit-t{font-size:.875rem}
+  .book-sub,a.book .book-sub,.remind-go,.book-next,a.book .book-next{font-size:.875rem}
+  .btn,.btn.sm,.lib-actions .btn,.lib-head .btn,.goal-presets button{font-size:.875rem}
+  .settings-section>.sec{font-size:.875rem}
+  .pv-list,.pv-list li,.pv-list b{font-size:.875rem}
+  /* 입력칸: iPhone 자동 확대 방지 */
+  input.search,input[type="date"],.opt-fld input[type=date],.fld input,select,textarea{font-size:1rem}
+}
+
