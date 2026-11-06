@@ -68,6 +68,24 @@ try{
         assert.ok(brand.y>=paddingTop-1,'WebKit brand must remain below its effective top padding');
         // Linux WebKit does not emulate iOS Safari chrome or Dynamic Island. Real iPhone verification remains required.
        }
+       // iPhone 글자 크기: 입력칸은 16px 이상(미만이면 Safari 가 포커스 때 화면 확대), 보이는 글자는 12px 이상.
+       if(width<=430){
+         const small=await page.evaluate(()=>{
+           const out=[];
+           for(const e of document.querySelectorAll('input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea')){
+             if(e.getBoundingClientRect().width&&parseFloat(getComputedStyle(e).fontSize)<16)out.push('control '+(e.id||e.dataset.act||e.tagName)+' '+getComputedStyle(e).fontSize);
+           }
+           const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;
+           while(n=w.nextNode()){
+             const t=n.textContent.trim(),el=n.parentElement;if(!t||el.closest('script,style,svg'))continue;
+             const r=el.getBoundingClientRect(),st=getComputedStyle(el);
+             if(!r.width||!r.height||st.visibility==='hidden')continue;
+             if(parseFloat(st.fontSize)<12)out.push('text '+el.tagName.toLowerCase()+'.'+String(el.className).split(' ')[0]+' '+st.fontSize+' "'+t.slice(0,12)+'"');
+           }
+           return out;
+         });
+         assert.deepEqual(small,[],`${name} ${theme} ${width} ${label}: text/controls below iPhone minimum`);
+       }
        if(label==='library')assert.equal(await page.locator('#sync[data-state="saved"]').isVisible(),false,'normal save status must not appear as top button');
        if(label==='detail'){
         const compact=page.locator('.quick-insights');
@@ -81,6 +99,14 @@ try{
         const done=page.locator('.ch.leaf.done').first();
         const check=await done.locator('.chk').boundingBox(),title=await done.locator('.ch-title').boundingBox();
         assert.ok(Math.abs(check.y-title.y)<13,'checkbox aligned with title');
+        if(width<=430){
+          // 묶음 제목과 일반 챕터 제목은 같은 크기(굵기·배경으로만 구분), 메타 글자는 13px 이상.
+          const sizes=await page.evaluate(()=>{const f=s=>{const e=document.querySelector(s);return e?parseFloat(getComputedStyle(e).fontSize):null;};return {leaf:f('.ch.leaf .ch-title'),group:f('.ch.group .ch-title'),pg:f('.ch-meta .pg'),date:f('.ch-date')};});
+          if(sizes.group!==null)assert.equal(sizes.group,sizes.leaf,'group and leaf chapter titles share one size');
+          assert.ok(sizes.leaf>=16.5,'chapter title is the largest list text: '+sizes.leaf);
+          assert.ok(sizes.pg===null||sizes.pg>=13,'page meta >= 13px');
+          assert.ok(sizes.date===null||sizes.date>=13,'date meta >= 13px');
+        }
         assert.ok((await done.locator('.ch-memo .memo-tap').boundingBox()).height>=44,'note touch target');
         // 터치 영역: 눈에 보이는 크기는 작아도 누를 수 있는 범위(가상 요소 포함)는 44px 이상이어야 합니다.
         const hit=async(sel,label)=>{
