@@ -1,23 +1,24 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=51";
-import { state } from "./state.js?v=51";
-import { setRenderer, render } from "./bus.js?v=51";
-import { initPrefs, saveFolded } from "./prefs.js?v=51";
-import { initUndo, mutate, hideToast, offerUndo } from "./undo.js?v=51";
-import { initSync, persist, removeBook } from "./sync.js?v=51";
-import { onAuth } from "./session.js?v=51";
-import { currentRoute } from "./router.js?v=51";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=51";
-import { loginView, loadingView } from "./view-common.js?v=51";
-import { libraryView, activityView } from "./view-library.js?v=51";
-import { settingsView, catalogView } from "./view-settings.js?v=51";
-import { bookView, refreshMemos, fillMemos } from "./view-book.js?v=51";
-import { yearView } from "./view-year.js?v=51";
-import { patchView, resetPatch } from "./patch.js?v=51";
-import { formView, bindForm } from "./view-form.js?v=51";
-import { metrics as calcMetrics, nextLeafIndex, isGroup, completeThrough, toggleChapter as toggle, autoDates, friendlyError, dnum, dstr, todayStr } from "./core.js?v=51";
+import * as store from "./store.js?v=52";
+import { state } from "./state.js?v=52";
+import { setRenderer, render } from "./bus.js?v=52";
+import { initPrefs, saveFolded } from "./prefs.js?v=52";
+import { initUndo, mutate, hideToast } from "./undo.js?v=52";
+import { initSync, removeBook } from "./sync.js?v=52";
+import { onAuth } from "./session.js?v=52";
+import { currentRoute } from "./router.js?v=52";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=52";
+import { loginView, loadingView } from "./view-common.js?v=52";
+import { libraryView, activityView } from "./view-library.js?v=52";
+import { settingsView, catalogView } from "./view-settings.js?v=52";
+import { bookView, fillMemos } from "./view-book.js?v=52";
+import { yearView } from "./view-year.js?v=52";
+import { patchView, resetPatch } from "./patch.js?v=52";
+import { formView, bindForm } from "./view-form.js?v=52";
+import { nextLeafIndex, completeThrough, toggleChapter as toggle, friendlyError } from "./core.js?v=52";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=51";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=52";
+import { toggleMemoEditor, deleteMemo, foldAll, toggleFold, setGoalPreset, rememberNote, saveTypedText, applyFieldChange } from "./actions.js?v=52";
 
 var view = document.getElementById("view");
 
@@ -126,10 +127,7 @@ view.addEventListener("click", function (e) {
       if (b) { var ui2 = +el.dataset.i; mutate(b, function () { completeThrough(b, ui2); }); }
       break;
     case "goal-preset":
-      if (b && (el.dataset.weeks === "2" || el.dataset.weeks === "4")) {
-        b.goalDate = dstr(dnum(todayStr()) + Number(el.dataset.weeks) * 7);
-        persist(b); render();
-      }
+      if (b) setGoalPreset(b, el.dataset.weeks === "2" ? 2 : el.dataset.weeks === "4" ? 4 : 0);
       break;
     case "nextdone":
       if (b) { var ni = nextLeafIndex(b); if (ni >= 0) mutate(b, function () { toggle(b, ni); }); }
@@ -140,22 +138,8 @@ view.addEventListener("click", function (e) {
         mutate(b, function () { toggle(b, ti); });
       }
       break;
-    case "foldall":
-      if (b) {
-        var keys = b.chapters.map(function (_, i) { return isGroup(b.chapters, i) ? b.id + ':' + i : null; }).filter(Boolean);
-        if (!keys.length) break;
-        var expandAll = keys.every(function (key) { return state.ui.folded.has(key); });
-        keys.forEach(function (key) { if (expandAll) state.ui.folded.delete(key); else state.ui.folded.add(key); });
-        saveFolded(); render();
-      }
-      break;
-    case "fold":
-      if (b) {
-        var fk2 = b.id + ":" + el.dataset.i;
-        if (state.ui.folded.has(fk2)) state.ui.folded.delete(fk2); else state.ui.folded.add(fk2);
-        saveFolded(); render();
-      }
-      break;
+    case "foldall": if (b) foldAll(b); break;
+    case "fold": if (b) toggleFold(b, +el.dataset.i); break;
     case "edit-note": {
       // 독서 메모: 미리보기 펼치기 → 본문을 다시 눌러 편집 (별도 연필 아이콘 없음).
       if (!b) break;
@@ -172,32 +156,7 @@ view.addEventListener("click", function (e) {
         // 열린 팝오버가 다시 그린 메모를 덮어 터치와 E2E 클릭을 가로막지 않도록 합니다.
         var chapterMenu = el.closest(".chapter-options");
         if (chapterMenu) chapterMenu.open = false;
-        var k = b.id + ":" + el.dataset.i;
-        if (state.ui.openMemo.has(k)) {
-          // 열려 있으면 '메모 저장': 입력한 글을 저장하고 자동으로 닫습니다.
-          var ta0 = view.querySelector('textarea[data-act="memotext"][data-i="' + el.dataset.i + '"]'), ch0 = b.chapters[+el.dataset.i];
-          if (ta0 && (ch0.memo || "") !== ta0.value.trim()) { ch0.memo = ta0.value.trim(); persist(b); }
-          state.ui.openMemo.delete(k);
-          var orig = state.ui.memoOrig.get(k) || ""; state.ui.memoOrig.delete(k);
-          if (orig && !ch0.memo) {
-            // 메모를 모두 지우면 바로 저장되므로, 잠시 되돌릴 기회를 줍니다.
-            var mi = +el.dataset.i, bid = b.id;
-            offerUndo("메모를 지웠습니다", function () {
-              var bb = state.books.get(bid); if (!bb || !bb.chapters[mi] || bb.chapters[mi].memo) return;
-              bb.chapters[mi].memo = orig; persist(bb); render();
-            });
-          }
-        } else { state.ui.openMemo.add(k); state.ui.memoOrig.set(k, b.chapters[+el.dataset.i].memo || ""); }
-        render();
-        if (state.ui.openMemo.has(k)) {
-          var ta = view.querySelector('textarea[data-act="memotext"][data-i="' + el.dataset.i + '"]');
-          if (ta) {
-            growMemo(ta, true); ta.focus();
-            ta.setSelectionRange(ta.value.length, ta.value.length);
-            // 키보드가 올라온 뒤에도 입력란이 보이도록 화면 가운데로
-            setTimeout(function () { if (document.activeElement === ta) ta.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }, 300);
-          }
-        }
+        toggleMemoEditor(b, +el.dataset.i, view);
       }
       break;
     case "jump":
@@ -207,25 +166,8 @@ view.addEventListener("click", function (e) {
       if (location.hash !== "#book-" + el.dataset.id) location.hash = "book-" + el.dataset.id; else applyJump();
       break;
     case "memodel":
-      // 메모 내용을 지우고 입력창을 닫습니다. 실수는 아래 '되돌리기'로 복구합니다.
-      if (b) {
-        var di = +el.dataset.i, dk = b.id + ":" + di, dch = b.chapters[di];
-        var dta = view.querySelector('textarea[data-act="memotext"][data-i="' + di + '"]');
-        var before = (dta ? dta.value.trim() : "") || dch.memo || state.ui.memoOrig.get(dk) || "";
-        if (before && !preserve(b, "memo", di, before)) break;
-        var previousMemo = dch.memo;
-        dch.memo = "";
-        if (!persist(b)) { dch.memo = previousMemo; state.localFailed.delete(b.id); break; }
-        state.ui.openMemo.delete(dk); state.ui.memoOrig.delete(dk);
-        if (before) {
-          var dbid = b.id;
-          offerUndo("메모를 삭제했습니다", function () {
-            var bb = state.books.get(dbid); if (!bb || !bb.chapters[di] || bb.chapters[di].memo) return;
-            bb.chapters[di].memo = before; persist(bb); render();
-          });
-        }
-        render();
-      }
+      // 메모 내용을 지우고 입력창을 닫습니다. 실수는 '되돌리기'로 복구합니다.
+      if (b) deleteMemo(b, +el.dataset.i, view);
       break;
     case "reset-search":
       state.ui.q = ''; state.ui.filter = 'all'; render();
@@ -240,19 +182,8 @@ view.addEventListener("click", function (e) {
       break;
   }
 });
-// 메모 입력란은 글 길이에 맞게 늘어난다(화면 높이의 60%까지)
-function growMemo(ta, force) {
-  // 글이 넘칠 때만 늘립니다(입력마다 높이를 다시 재면 큰 책에서 느려짐). 열 때와 글이 크게 줄었을 때만 다시 잽니다.
-  var len = ta.value.length, last = +(ta.dataset.len || 0);
-  ta.dataset.len = len;
-  if (!force && len >= last && ta.scrollHeight <= ta.clientHeight) return;
-  if (!force && len < last && last - len < 200) return;
-  ta.style.height = 'auto';
-  ta.style.height = Math.min(ta.scrollHeight + 2, Math.max(96, Math.round((window.visualViewport?.height || window.innerHeight) * 0.6))) + 'px';
-}
-const noteOriginal = new WeakMap();
 view.addEventListener('focusin', function (e) {
-  if (e.target.dataset.act === 'note') noteOriginal.set(e.target,e.target.value);
+  if (e.target.dataset.act === 'note') rememberNote(e.target);
 });
 view.addEventListener("input", function (e) {
   if (e.target.dataset && e.target.dataset.act === "search") { state.ui.q = e.target.value; render(); }
@@ -260,18 +191,7 @@ view.addEventListener("input", function (e) {
   if (act !== 'note' && act !== 'memotext') return;
   var r = currentRoute(), b = r.name === 'book' ? state.books.get(r.id) : null;
   if (!b) return;
-  if (act === 'note') {
-    if (!el.value.trim() && b.note && !preserve(b,'note',-1,noteOriginal.get(el) || b.note)) { el.value = b.note; return; }
-    b.note = el.value; persist(b); return;
-  }
-  var oldMemo = b.chapters[+el.dataset.i].memo;
-  if (!el.value.trim() && oldMemo && !preserve(b,'memo',+el.dataset.i,state.ui.memoOrig.get(b.id + ':' + el.dataset.i) || oldMemo)) { el.value = oldMemo; return; }
-  b.chapters[+el.dataset.i].memo = el.value.trim(); refreshMemos(b);
-  growMemo(el);
-  // 입력창에는 저장 상태를 보여 주지 않습니다. 보관·저장에 실패하면 상단 저장 표시와 안내가 알려 줍니다.
-  persist(b);
-  var row = el.closest('.memo-row'), cnt = row && row.querySelector('[data-memo-count]');
-  if (cnt) cnt.textContent = Array.from(el.value).length + '/2000';
+  saveTypedText(b, el, act);
 });
 // 접힌 목록(메모 모아보기)은 펼칠 때 채웁니다. toggle 은 버블링되지 않아 캡처로 받습니다.
 view.addEventListener("toggle", function (e) {
@@ -287,15 +207,7 @@ view.addEventListener("change", function (e) {
   if (r.name !== "book") return;
   var b = state.books.get(r.id);
   if (!b) return;
-  switch (act) {
-    case "start": b.startDate = el.value || null; persist(b); render(); break;
-    case "end": b.endDate = calcMetrics(b).status === "done" ? (el.value || null) : null; b.endAuto = false; persist(b); render(); break;
-    case "goal": b.goalDate = el.value || null; persist(b); render(); break;
-    case "chdate": b.chapters[+el.dataset.i].done = el.value || null; autoDates(b); persist(b); render(); break;
-    case "memotext": break; // input에서 기기에 즉시 보관
-    case "rating": b.rating = parseInt(el.value, 10) || 0; persist(b); break;
-    case "note": break; // input에서 기기에 즉시 보관
-  }
+  applyFieldChange(b, act, el);
 });
 
 initPrefs();
