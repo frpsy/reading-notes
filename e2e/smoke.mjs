@@ -116,6 +116,18 @@ try {
     assert.notEqual(await page.locator('#theme').innerText(), before);
     await page.reload();
     assert.notEqual(await page.locator('#theme').innerText(), before, '테마 설정 유지');
+    await page.goto(base + '#settings');
+    await page.locator('#fs-up').click();
+    await page.locator('#fs-up').click();
+    assert.equal(await page.evaluate(() => document.documentElement.style.fontSize), '110%');
+    assert.equal(await page.locator('#fs-val').innerText(), '110%');
+    await page.reload();
+    await page.locator('#fs-val').waitFor();
+    assert.equal(await page.evaluate(() => document.documentElement.style.fontSize), '110%', '글자 크기 유지');
+    assert.equal(await page.locator('#fs-val').innerText(), '110%');
+    await page.locator('#fs-reset').click();
+    assert.equal(await page.evaluate(() => document.documentElement.style.fontSize), '');
+    assert.equal(await page.locator('#fs-reset').isDisabled(), true);
     await page.goto(base + '#library');
     assert.equal(await view.locator('[data-act="logout"]').count(), 0);
     assert.equal(await view.locator('#theme').count(), 0);
