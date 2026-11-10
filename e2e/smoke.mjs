@@ -215,7 +215,10 @@ try {
     await page.goto(base + '#library');
     await view.locator('a.book').first().waitFor();
     assert.equal(await page.locator('.library-insights').count(), 0);
-    assert.ok(await page.locator('a.book').first().evaluate(el => el.getBoundingClientRect().top < 400));
+    // 첫 화면 우선 요소가 책 목록에서 '이어서 읽기' 카드로 바뀌었습니다.
+    assert.equal(await page.locator('a.resume').count(), 1);
+    assert.ok(await page.locator('a.resume').evaluate(el => el.getBoundingClientRect().top < 400));
+    assert.ok(await page.locator('a.book').first().evaluate(el => el.getBoundingClientRect().top < window.innerHeight));
     assert.equal(await page.locator('.heat').isVisible(), false);
     if (process.env.DESIGN_SCREENSHOT_DIR) await page.screenshot({path:join(process.env.DESIGN_SCREENSHOT_DIR,'library-mobile.png')});
     await page.setViewportSize({width:320,height:844});

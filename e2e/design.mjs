@@ -86,7 +86,25 @@ try{
          });
          assert.deepEqual(small,[],`${name} ${theme} ${width} ${label}: text/controls below iPhone minimum`);
        }
-       if(label==='library')assert.equal(await page.locator('#sync[data-state="saved"]').isVisible(),false,'normal save status must not appear as top button');
+       if(label==='library'){
+        assert.equal(await page.locator('#sync[data-state="saved"]').isVisible(),false,'normal save status must not appear as top button');
+        const resume=page.locator('a.resume');
+        assert.equal(await resume.count(),1,'one recent reading card on home');
+        assert.equal(await resume.getAttribute('href'),'#book-design','resume opens existing book route');
+        assert.match(await resume.innerText(),/실용주의 프로그래머/);
+        assert.match(await resume.innerText(),/33%/);
+        const card=await resume.boundingBox(),search=await page.locator('.search').boundingBox();
+        assert.ok(card&&card.height>=44&&card.y+card.height<=900,'resume visible without menu in first viewport');
+        assert.ok(search&&card.y+card.height<=search.y+1,'resume precedes existing search');
+        const contrast=await resume.evaluate(()=>{
+          const root=getComputedStyle(document.documentElement);
+          const rgb=(name)=>{const value=root.getPropertyValue(name).trim();if(!/^#[0-9a-f]{6}$/i.test(value))throw Error('Unsupported color '+name+': '+value);return [1,3,5].map(i=>parseInt(value.slice(i,i+2),16)/255);};
+          const lum=(c)=>c.map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((s,v,i)=>s+v*[.2126,.7152,.0722][i],0);
+          const bg=lum(rgb('--accent-soft'));
+          return ['--ink','--muted','--accent'].map(k=>{const fg=lum(rgb(k));return [k,(Math.max(fg,bg)+.05)/(Math.min(fg,bg)+.05)];});
+        });
+        for(const [token,ratio] of contrast)assert.ok(ratio>=4.5,'resume '+token+' contrast >= 4.5: '+ratio);
+       }
        if(label==='detail'){
         const compact=page.locator('.quick-insights');
         assert.equal(await compact.count(),1,'one compact statistics disclosure');
@@ -172,6 +190,9 @@ try{
     }
    }
    if(!baseline){
+    await page.setViewportSize({width:390,height:844});await page.goto(url+'#library');
+    await page.locator('a.resume').click();await page.locator('.chapters').waitFor();
+    assert.equal(new URL(page.url()).hash,'#book-design','one tap opens reading detail');
     await page.setViewportSize({width:320,height:844});await page.goto(url+'#library');
     await page.locator('input[data-act="search"]').waitFor(); // Search stays available for one book.
     await page.goto(url+'#book-design');await page.locator('.chapters').waitFor();
