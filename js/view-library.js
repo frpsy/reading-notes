@@ -29,18 +29,21 @@ function bookRow(b, m, hideChip) {
     '<span class="book-side"><b class="pct">' + Math.round(m.pct * 100) + '%</b>' + (hideChip && m.status === 'reading' ? '' : chipHtml(m)) + (stale ? '<span class="chip">잠시 쉬는 중</span>' : '') + '</span></a>';
 }
 
-// 오늘 아직 읽지 않았을 때만 보이는 안내. 이어 읽을 책은 가장 최근에 기록한 읽는 중 책
-function reminderHtml(all, map) {
-  var st = streakStatus(map);
-  if (st.state === 'today' || st.state === 'none') return '';
-  var reading = all.filter(function (x) { return x.m.status === 'reading' });
+// 기존 독서 기록에서 최근 읽은 한 권을 표시합니다. 오늘 읽었어도 안내는 유지합니다.
+function resumeHtml(all) {
+  var reading = all.filter(function (x) { return x.m.status === 'reading' && nextLeafIndex(x.b) >= 0; });
   if (!reading.length) return '';
-  reading.sort(function (a, c) { return (c.m.last || '').localeCompare(a.m.last || '') });
-  var x = reading[0], i = nextLeafIndex(x.b);
-  var msg = st.state === 'risk'
-    ? '<b>오늘도 한 챕터, 나의 속도로.</b> 읽던 곳에서 이어가세요.'
-    : '<b>다시 펼치고 싶은 순간에.</b> 읽던 곳을 기억해 두었습니다.';
-  return '<a class="remind" href="#book-' + esc(x.b.id) + '"><span>' + msg + '</span><span class="remind-go">' + esc(x.b.title) + (i >= 0 ? ' · ' + esc(x.b.chapters[i].t) : '') + ' ›</span></a>';
+  reading.sort(function (a, b) {
+    var ad = a.m.last || a.m.start || '', bd = b.m.last || b.m.start || '';
+    return bd.localeCompare(ad) || (b.b.updatedAt || b.b.createdAt || 0) - (a.b.updatedAt || a.b.createdAt || 0);
+  });
+  var x = reading[0], i = nextLeafIndex(x.b), pct = Math.round(x.m.pct * 100);
+  return '<a class="remind resume" href="#book-' + esc(x.b.id) + '" aria-label="이어서 읽기: ' + esc(x.b.title) + ', 진행률 ' + pct + '%">' +
+    coverHtml(x.b) + '<span class="resume-body"><span class="resume-label">이어서 읽기</span>' +
+    '<strong class="resume-title">' + esc(x.b.title) + '</strong>' +
+    '<span class="resume-next">' + esc(x.b.chapters[i].t) + '</span>' +
+    '<span class="bar" aria-hidden="true"><i style="width:' + pct + '%"></i></span></span>' +
+    '<span class="resume-side"><b>' + pct + '%</b><span>읽기 ›</span></span></a>';
 }
 
 function activityHtml(list) {
@@ -89,8 +92,8 @@ export function libraryView() {
     return '<li><a href="#book-' + esc(h.id) + '" data-act="jump" data-id="' + esc(h.id) + '" data-i="' + h.i + '"><span class="memo-hit-h"><b>' + esc(h.title) + '</b> · ' + esc(h.t) + '</span><span class="memo-hit-t">' + highlightMemo(h.text, state.ui.q) + '</span></a></li>';
   }).join('') + '</ul>' : '';
   var resultStatus = state.ui.q ? '<p class="search-status" role="status">책 ' + list.length + '권 · 메모 ' + memoHits.length + '개</p>' : '';
-  var reminder = !state.ui.q && state.ui.filter === 'all' ? reminderHtml(all, activityByDate(all.map(function (x) { return x.b; }))) : '';
-  return head + search + tabs + resultStatus + rows + memoHtml + reminder;
+  var resume = !state.ui.q && state.ui.filter === 'all' ? resumeHtml(all) : '';
+  return head + resume + search + tabs + resultStatus + rows + memoHtml;
 }
 
 export function activityView() {
