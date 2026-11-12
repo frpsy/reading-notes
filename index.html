@@ -17,31 +17,31 @@
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
 <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
-<link rel="modulepreload" href="js/state.js?v=59">
-<link rel="modulepreload" href="js/bus.js?v=59">
-<link rel="modulepreload" href="js/util.js?v=59">
-<link rel="modulepreload" href="js/core.js?v=59">
-<link rel="modulepreload" href="js/prefs.js?v=59">
-<link rel="modulepreload" href="js/undo.js?v=59">
-<link rel="modulepreload" href="js/sync.js?v=59">
-<link rel="modulepreload" href="js/sync-core.js?v=59">
-<link rel="modulepreload" href="js/store.js?v=59">
-<link rel="modulepreload" href="js/store-core.js?v=59">
-<link rel="modulepreload" href="js/config.js?v=59">
-<link rel="modulepreload" href="js/session.js?v=59">
-<link rel="modulepreload" href="js/router.js?v=59">
-<link rel="modulepreload" href="js/catalog.js?v=59">
-<link rel="modulepreload" href="js/view-common.js?v=59">
-<link rel="modulepreload" href="js/view-library.js?v=59">
-<link rel="modulepreload" href="js/view-settings.js?v=59">
-<link rel="modulepreload" href="js/view-book.js?v=59">
-<link rel="modulepreload" href="js/view-year.js?v=59">
-<link rel="modulepreload" href="js/view-form.js?v=59">
-<link rel="modulepreload" href="js/patch.js?v=59">
-<link rel="modulepreload" href="js/actions.js?v=59">
+<link rel="modulepreload" href="js/state.js?v=60">
+<link rel="modulepreload" href="js/bus.js?v=60">
+<link rel="modulepreload" href="js/util.js?v=60">
+<link rel="modulepreload" href="js/core.js?v=60">
+<link rel="modulepreload" href="js/prefs.js?v=60">
+<link rel="modulepreload" href="js/undo.js?v=60">
+<link rel="modulepreload" href="js/sync.js?v=60">
+<link rel="modulepreload" href="js/sync-core.js?v=60">
+<link rel="modulepreload" href="js/store.js?v=60">
+<link rel="modulepreload" href="js/store-core.js?v=60">
+<link rel="modulepreload" href="js/config.js?v=60">
+<link rel="modulepreload" href="js/session.js?v=60">
+<link rel="modulepreload" href="js/router.js?v=60">
+<link rel="modulepreload" href="js/catalog.js?v=60">
+<link rel="modulepreload" href="js/view-common.js?v=60">
+<link rel="modulepreload" href="js/view-library.js?v=60">
+<link rel="modulepreload" href="js/view-settings.js?v=60">
+<link rel="modulepreload" href="js/view-book.js?v=60">
+<link rel="modulepreload" href="js/view-year.js?v=60">
+<link rel="modulepreload" href="js/view-form.js?v=60">
+<link rel="modulepreload" href="js/patch.js?v=60">
+<link rel="modulepreload" href="js/actions.js?v=60">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="css/style.css?v=53">
+<link rel="stylesheet" href="css/style.css?v=54">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&display=swap"></noscript>
 </head>
@@ -49,13 +49,13 @@
 <div class="wrap">
   <header class="top">
     <a class="brand" href="#library">책갈피</a>
-    <span class="top-r"><button class="sync" id="sync" type="button" aria-live="polite" data-state="pending">연결 중…</button><a class="settings-nav" id="settings-link" href="#settings" aria-label="설정" hidden>설정</a></span>
+    <span class="top-r"><button class="sync" id="sync" type="button" aria-live="polite" data-state="pending">연결 중…</button><a class="settings-nav" id="settings-link" href="#settings" aria-label="설정" title="설정" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></a></span>
   </header>
   <p id="sync-detail" class="err" role="status" hidden></p>
   <button id="sync-copy" class="btn" type="button" hidden>보관된 변경을 새 책으로 저장</button>
   <main id="view"></main>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-<script type="module" src="js/app.js?v=59"></script>
+<script type="module" src="js/app.js?v=60"></script>
 </body>
 </html>

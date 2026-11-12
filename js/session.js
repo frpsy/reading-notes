@@ -1,11 +1,11 @@
 // 로그인 상태와 저장소 실시간 목록을 연결합니다.
-import * as store from "./store.js?v=59";
-import { state } from "./state.js?v=59";
-import { render } from "./bus.js?v=59";
-import { setSync, hasPending, restorePending, flush, RECENT_MS } from "./sync.js?v=59";
-import { hideToast, showNotice } from "./undo.js?v=59";
-import { currentRoute } from "./router.js?v=59";
-import { normalizeBook, friendlyError } from "./core.js?v=59";
+import * as store from "./store.js?v=60";
+import { state } from "./state.js?v=60";
+import { render } from "./bus.js?v=60";
+import { setSync, hasPending, restorePending, flush, RECENT_MS } from "./sync.js?v=60";
+import { hideToast, showNotice } from "./undo.js?v=60";
+import { currentRoute } from "./router.js?v=60";
+import { normalizeBook, friendlyError } from "./core.js?v=60";
 
 function markReady() {
   if (state.ready) return;

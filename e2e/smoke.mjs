@@ -140,6 +140,10 @@ try {
     await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
     assert.equal(await page.locator('#sync').isVisible(), false);
     assert.equal(await page.locator('#settings-link').isVisible(), true);
+    assert.equal(await page.locator('#settings-link svg').count(), 1, '설정 버튼은 톱니바퀴 아이콘');
+    assert.equal(await page.locator('#settings-link').getAttribute('aria-label'), '설정');
+    assert.equal((await page.locator('#settings-link').innerText()).trim(), '');
+    const gb = await page.locator('#settings-link').boundingBox(); assert.ok(gb.width >= 44 && gb.height >= 44, '설정 버튼 터치 영역 44px 이상');
   });
 
   await step("준비된 책 담기: 독서 예정에 추가하고 독서 시작은 하지 않음", async () => {
