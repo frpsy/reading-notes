@@ -1,10 +1,10 @@
 // 휴지통은 이 기기·계정에만 보관합니다. 복구는 원본을 덮어쓰지 않는 새 책으로 만듭니다.
-import * as store from './store.js?v=58';
-import { state } from './state.js?v=58';
-import { esc, fmt } from './util.js?v=58';
-import { newId, todayStr, friendlyError } from './core.js?v=58';
-import { persist } from './sync.js?v=58';
-import { showNotice } from './undo.js?v=58';
+import * as store from './store.js?v=59';
+import { state } from './state.js?v=59';
+import { esc, fmt } from './util.js?v=59';
+import { newId, todayStr, friendlyError } from './core.js?v=59';
+import { persist } from './sync.js?v=59';
+import { showNotice } from './undo.js?v=59';
 
 export function preserve(book, kind = 'book', index = -1, text = '') {
   try { store.archiveTrash(book,kind,index,text); return true; }

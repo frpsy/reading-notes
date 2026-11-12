@@ -996,6 +996,50 @@ try {
     assert.equal(await page.locator('#d-start').inputValue(), '', '독서 시작일 공란 유지');
   });
 
+  await step('직접 추가한 책은 책 찾기에서 다시 담기지 않음(중복 방지)', async () => {
+    await page.goto(base + '#catalog');
+    const row = view.locator('div.book', { has: page.locator('[data-act="catadd"]') }).first();
+    await row.waitFor();
+    const title = (await row.locator('.book-title').innerText()).trim();
+    const addable = await view.locator('[data-act="catadd"]').count();
+    await page.goto(base + '#add');
+    await page.fill('#f-title', title);
+    await page.fill('#f-toc', '1장\n2장');
+    await page.click('#f-submit');
+    await page.waitForURL(/#book-/);
+    const id = page.url().split('#book-')[1];
+    await page.goto(base + '#catalog');
+    const owned = view.locator('div.book', { hasText: title });
+    await owned.locator('a.btn', { hasText: '서재에 있음' }).waitFor();
+    assert.equal(await owned.locator('[data-act="catadd"]').count(), 0, '이미 있는 책에는 담기 버튼이 없음');
+    assert.equal(await owned.locator('a.btn').getAttribute('href'), '#book-' + id);
+    assert.equal(await view.locator('[data-act="catadd"]').count(), addable - 1);
+    await page.goto(base + '#library'); await page.reload();
+    await view.locator('a.book').first().waitFor();
+    assert.equal(await view.locator('a.book .book-title', { hasText: title }).count(), 1, '서재에는 한 권만');
+  });
+
+  await step('책 추가 버튼을 연달아 눌러도 한 권만 추가', async () => {
+    await page.goto(base + '#library'); await page.reload();
+    await view.locator('a.book').first().waitFor();
+    const before = await view.locator('a.book').count();
+    await page.goto(base + '#add');
+    await page.fill('#f-title', '연타 확인용 책');
+    await page.fill('#f-toc', '1장');
+    await page.evaluate(() => { const f = document.getElementById('bookForm'); for (let i = 0; i < 3; i++) f.requestSubmit(); });
+    await page.waitForURL(/#book-/);
+    await page.goto(base + '#library'); await page.reload();
+    await view.locator('a.book').first().waitFor();
+    assert.equal(await view.locator('a.book').count(), before + 1);
+  });
+
+  await step('필터 탭을 누르면 누른 탭에 포커스가 남음', async () => {
+    await page.goto(base + '#library');
+    await page.locator('[data-act="filter"][data-v="todo"]').click();
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.v), 'todo');
+    await page.locator('[data-act="filter"][data-v="all"]').click();
+  });
+
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
   await ctx.close();
 } finally {

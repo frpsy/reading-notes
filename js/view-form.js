@@ -1,9 +1,9 @@
 // 책 추가·정보 수정 화면: 목차 붙여넣기, 미리보기, 준비된 책 불러오기.
-import { state } from "./state.js?v=58";
-import { esc } from "./util.js?v=58";
-import { parseToc, tocText, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver, findDuplicate } from "./core.js?v=58";
-import { persist } from "./sync.js?v=58";
-import { notFound } from "./view-common.js?v=58";
+import { state } from "./state.js?v=59";
+import { esc } from "./util.js?v=59";
+import { parseToc, tocText, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver, findDuplicate } from "./core.js?v=59";
+import { persist } from "./sync.js?v=59";
+import { notFound } from "./view-common.js?v=59";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
@@ -60,12 +60,12 @@ export function bindForm(id) {
         document.getElementById('f-title').value = c.title;
         document.getElementById('f-author').value = c.author;
         document.getElementById('f-pages').value = c.totalPages || '';
-        ta.value = c.toc; upd();
+        ta.value = c.toc; upd(); dupAck = null; resetLost();
       }).catch(function () { showErr('목록을 불러오지 못했습니다.') });
     });
   }
   var form = document.getElementById('bookForm'), err = document.getElementById('f-err');
-  var lostBox = document.getElementById('f-lost'), submitBtn = document.getElementById('f-submit'), lostAck = null, dupAck = null;
+  var lostBox = document.getElementById('f-lost'), submitBtn = document.getElementById('f-submit'), lostAck = null, dupAck = null, saved = false;
   function showErr(msg, field) {
     err.textContent = msg; err.hidden = false;
     if (field) {
@@ -85,11 +85,13 @@ export function bindForm(id) {
     }
   });
   // 목차를 다시 고치면 경고 확인을 처음부터 다시 받습니다.
-  function resetLost() { lostAck = null; lostBox.hidden = true; lostBox.textContent = ''; submitBtn.textContent = id ? '저장' : '책 추가'; submitBtn.classList.remove('danger'); }
+  function resetLost() { lostAck = null; dupAck = null; lostBox.hidden = true; lostBox.textContent = ''; submitBtn.textContent = id ? '저장' : '책 추가'; submitBtn.classList.remove('danger'); }
   ta.addEventListener('input', function () { upd(); resetLost(); }); upd();
-  document.getElementById('f-title').addEventListener('input', function () { dupAck = null; resetLost(); });
+  document.getElementById('f-title').addEventListener('input', resetLost);
+  document.getElementById('f-author').addEventListener('input', function () { if (dupAck) resetLost(); });
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
+    if (saved) return; // 저장 뒤 화면이 바뀌기 전에 한 번 더 눌러도 같은 책을 또 만들지 않습니다.
     var title = document.getElementById('f-title').value.trim();
     var items = parseToc(ta.value);
     if (!title) { showErr('제목을 입력해 주세요.', document.getElementById('f-title')); return }
@@ -138,6 +140,7 @@ export function bindForm(id) {
       return;
     }
     state.books.set(b.id, b);
+    saved = true; submitBtn.disabled = true;
     location.hash = 'book-' + b.id;
   });
 }

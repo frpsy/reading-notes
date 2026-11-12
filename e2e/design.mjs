@@ -258,6 +258,31 @@ try{
     assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'),'#101617');
     await page.locator('#theme').click();await page.emulateMedia({colorScheme:'light'});
     await page.waitForFunction(()=>document.querySelector('meta[name="theme-color"]').content==='#F7F6F2');
+    // 책이 많은 서재: 세로로 넘치는 만큼 실제로 스크롤되고 가로 넘침이 없어야 합니다.
+    await page.evaluate(()=>{
+      const docs=JSON.parse(localStorage.getItem('e2e-books'));
+      for(let i=0;i<14;i++){const b=structuredClone(docs.design);b.id='many'+i;b.title='스크롤 확인용 책 '+i;b.createdAt=100+i;if(i%3===0)b.chapters.forEach(c=>c.done=null),b.startDate=null;if(i%3===2)b.chapters.forEach(c=>c.done='2026-10-30');docs[b.id]=b;}
+      localStorage.setItem('e2e-books',JSON.stringify(docs));
+    });
+    for(const [width,height] of [[390,844],[1280,800]]){
+      await page.setViewportSize({width,height});
+      await page.goto(url+'#library');await page.reload();await page.locator('a.book').nth(15).waitFor();
+      await fits('many books '+width);
+      const size=await page.evaluate(()=>({sh:document.documentElement.scrollHeight,ih:innerHeight,html:getComputedStyle(document.documentElement).overflowY,body:getComputedStyle(document.body).overflowY,pos:getComputedStyle(document.body).position}));
+      assert.ok(size.sh>size.ih*2,`${name} ${width}: library is taller than the screen`);
+      assert.equal(size.html,'visible');assert.equal(size.body,'visible');assert.equal(size.pos,'static');
+      await page.mouse.move(width/2,height/2);await page.mouse.wheel(0,700);
+      await page.waitForFunction(()=>scrollY>=600,null,{timeout:5000});
+      await page.waitForFunction(()=>{scrollTo(0,document.documentElement.scrollHeight);return scrollY+innerHeight>=document.documentElement.scrollHeight-2;});
+      const last=await page.locator('a.book').last().boundingBox();
+      assert.ok(last.y+last.height<=height,`${name} ${width}: last book is reachable above the bottom edge`);
+      // 아래쪽 책을 열었다가 돌아오면 보던 위치로 돌아옵니다.
+      await page.locator('a.book').last().scrollIntoViewIfNeeded();
+      const y=await page.evaluate(()=>scrollY);
+      await page.locator('a.book').last().click();await page.locator('.chapters').waitFor();
+      await page.locator('a.back').click();await page.locator('a.book').first().waitFor();
+      assert.ok(Math.abs(await page.evaluate(()=>scrollY)-y)<=2,`${name} ${width}: scroll position restored`);
+    }
     console.log(`ok - ${name}: 6 widths, light/dark, four screens, long text, 200% text, touch targets, keyboard, reduced motion`);
    }
    await ctx.close();
