@@ -655,7 +655,7 @@ a.book .book-sub,a.book .book-meta{min-width:0;overflow-wrap:anywhere}
 .top{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:30px}
 .brand{font-family:var(--sans);font-weight:750;letter-spacing:-.025em;text-shadow:none;filter:none;opacity:1}
 .settings-nav{border:1px solid transparent;transition:background var(--duration),color var(--duration)}
-.settings-nav:hover,.settings-nav:focus-visible{background:var(--surface-2);color:var(--ink)}
+.settings-nav:hover,.settings-nav:focus-visible{color:var(--ink)}
 h1.page{letter-spacing:-.045em}
 .lib-head{margin-bottom:22px}
 .lib-actions .btn{font-weight:600}
@@ -924,7 +924,7 @@ html{background:var(--bg)}
 .tab.zero{opacity:1;color:var(--muted)}
 .tab.zero em{color:var(--muted)}
 .tab.zero:not([aria-pressed="true"]){color:color-mix(in srgb,var(--muted) 70%,var(--bg))}
-.settings-nav{min-width:44px;width:44px;padding:0;margin-right:-8px;background:var(--surface-2);border-radius:999px;color:var(--ink)}
+.settings-nav{min-width:44px;width:44px;padding:0;margin-right:-8px;border-radius:999px;color:var(--ink)}
 .settings-nav svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:600px){
   .top{margin-bottom:12px;padding-bottom:0}
