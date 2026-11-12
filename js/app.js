@@ -1,24 +1,24 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=62";
-import { state } from "./state.js?v=62";
-import { setRenderer, render } from "./bus.js?v=62";
-import { initPrefs, saveFolded } from "./prefs.js?v=62";
-import { initUndo, mutate, hideToast } from "./undo.js?v=62";
-import { initSync, removeBook } from "./sync.js?v=62";
-import { onAuth } from "./session.js?v=62";
-import { currentRoute } from "./router.js?v=62";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=62";
-import { loginView, loadingView } from "./view-common.js?v=62";
-import { libraryView, activityView } from "./view-library.js?v=62";
-import { settingsView, catalogView } from "./view-settings.js?v=62";
-import { bookView, fillMemos } from "./view-book.js?v=62";
-import { yearView } from "./view-year.js?v=62";
-import { patchView, resetPatch } from "./patch.js?v=62";
-import { formView, bindForm } from "./view-form.js?v=62";
-import { nextLeafIndex, completeThrough, toggleChapter as toggle, friendlyError } from "./core.js?v=62";
+import * as store from "./store.js?v=63";
+import { state } from "./state.js?v=63";
+import { setRenderer, render } from "./bus.js?v=63";
+import { initPrefs, saveFolded } from "./prefs.js?v=63";
+import { initUndo, mutate, hideToast } from "./undo.js?v=63";
+import { initSync, removeBook } from "./sync.js?v=63";
+import { onAuth } from "./session.js?v=63";
+import { currentRoute } from "./router.js?v=63";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=63";
+import { loginView, loadingView } from "./view-common.js?v=63";
+import { libraryView, activityView } from "./view-library.js?v=63";
+import { settingsView, catalogView } from "./view-settings.js?v=63";
+import { bookView, fillMemos } from "./view-book.js?v=63";
+import { yearView } from "./view-year.js?v=63";
+import { patchView, resetPatch } from "./patch.js?v=63";
+import { formView, bindForm } from "./view-form.js?v=63";
+import { nextLeafIndex, completeThrough, toggleChapter as toggle, friendlyError } from "./core.js?v=63";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=62";
-import { toggleMemoEditor, deleteMemo, foldAll, toggleFold, setGoalPreset, rememberNote, saveTypedText, applyFieldChange } from "./actions.js?v=62";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=63";
+import { toggleMemoEditor, deleteMemo, foldAll, toggleFold, setGoalPreset, rememberNote, saveTypedText, applyFieldChange } from "./actions.js?v=63";
 
 var view = document.getElementById("view");
 
@@ -87,7 +87,7 @@ function applyJump() {
   return true;
 }
 window.addEventListener("hashchange", function () {
-  state.ui.confirmDel = null; hideToast(); render();
+  state.ui.confirmDel = null; state.ui.confirmReread = null; hideToast(); render();
   if (applyJump()) return;
   var r = currentRoute(), keep = r.name === "library" || r.name === "year" || r.name === "settings" || r.name === "activity" || r.name === "catalog";
   window.scrollTo(0, keep ? (scrollPos[location.hash || "#library"] || 0) : 0);
@@ -178,6 +178,18 @@ view.addEventListener("click", function (e) {
     case "remaining": state.ui.onlyRemaining = !state.ui.onlyRemaining; render(); break;
     case "del": if (b) { state.ui.confirmDel = b.id; render(); } break;
     case "delno": state.ui.confirmDel = null; render(); break;
+    case "reread": if (b && b.chapters.length) { state.ui.confirmReread = b.id; render(); } break;
+    case "rereadno": state.ui.confirmReread = null; render(); break;
+    case "rereadyes":
+      // 지금의 완독 기록은 휴지통에 먼저 보관한 뒤 진도를 처음으로 되돌립니다.
+      if (b && preserve(b)) {
+        state.ui.confirmReread = null;
+        mutate(b, function () {
+          b.chapters.forEach(function (c) { c.done = null; });
+          b.startDate = null; b.endDate = null; b.endAuto = false; b.goalDate = null;
+        });
+      }
+      break;
     case "delyes":
       if (b && preserve(b) && removeBook(b.id)) { state.ui.confirmDel = null; location.hash = "library"; }
       break;

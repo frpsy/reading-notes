@@ -1064,6 +1064,32 @@ try {
     assert.equal(await view.locator('a.book .book-title', { hasText: '실용주의 프로그래머' }).count() <= 1, true, '같은 책은 한 권만');
   });
 
+  await step('완독한 책의 다시 읽기: 확인 후 진도 초기화, 메모 유지, 휴지통 보관', async () => {
+    await page.goto(base + '#add');
+    await page.fill('#f-title', '다시 읽기 확인용 책');
+    await page.fill('#f-toc', '1장\n2장');
+    await page.click('#f-submit');
+    await page.waitForURL(/#book-/);
+    const bid = page.url().split('#book-')[1];
+    await page.locator('.chapters .chk').first().waitFor();
+    assert.equal(await page.locator('[data-act="reread"]').count(), 0, '완독 전에는 다시 읽기 버튼이 없음');
+    await page.locator('.chapters .chk').nth(0).click();
+    await page.locator('.chapters .chk').nth(1).click();
+    await page.locator('.done-banner').waitFor();
+    await page.locator('[data-act="reread"]').click();
+    await page.locator('[data-act="rereadno"]').click();
+    assert.equal(await page.locator('.done-banner').count(), 1, '취소하면 그대로');
+    await page.locator('[data-act="reread"]').click();
+    await page.locator('[data-act="rereadyes"]').click();
+    await page.locator('.done-banner').waitFor({ state: 'detached' });
+    assert.equal(await page.locator('.chapters .chk[aria-pressed="true"], .chapters li.done').count(), 0, '챕터 완료 표시가 모두 해제됨');
+    await page.goto(base + '#library'); await page.reload();
+    await view.locator('a.book', { hasText: '다시 읽기 확인용 책' }).waitFor();
+    assert.equal(await view.locator('a.book', { hasText: '다시 읽기 확인용 책' }).count(), 1, '책은 한 권만 유지');
+    await page.goto(base + '#records');
+    await page.locator('text=다시 읽기 확인용 책').first().waitFor();
+  });
+
   await step('책 수정 중 그 책이 목록에서 빠져도 새 책이 생기지 않음', async () => {
     await page.goto(base + '#library'); await page.reload();
     await view.locator('a.book').first().waitFor();
