@@ -1002,7 +1002,7 @@ try {
     assert.equal(await page.locator('#d-start').inputValue(), '', '독서 시작일 공란 유지');
   });
 
-  await step('직접 추가한 책은 책 찾기에서 다시 담기지 않음(중복 방지)', async () => {
+  await step('직접 추가한 책은 책 찾기 목록에서 빠짐(중복 방지)', async () => {
     await page.goto(base + '#catalog');
     const row = view.locator('div.book', { has: page.locator('[data-act="catadd"]') }).first();
     await row.waitFor();
@@ -1015,10 +1015,8 @@ try {
     await page.waitForURL(/#book-/);
     const id = page.url().split('#book-')[1];
     await page.goto(base + '#catalog');
-    const owned = view.locator('div.book', { hasText: title });
-    await owned.locator('a.btn', { hasText: '서재에 있음' }).waitFor();
-    assert.equal(await owned.locator('[data-act="catadd"]').count(), 0, '이미 있는 책에는 담기 버튼이 없음');
-    assert.equal(await owned.locator('a.btn').getAttribute('href'), '#book-' + id);
+    await page.waitForTimeout(300);
+    assert.equal(await view.locator('div.book', { hasText: title }).count(), 0, '서재에 이미 있는 책은 책 찾기 목록에 나오지 않음');
     assert.equal(await view.locator('[data-act="catadd"]').count(), addable - 1);
     await page.goto(base + '#library'); await page.reload();
     await view.locator('a.book').first().waitFor();
@@ -1046,7 +1044,7 @@ try {
     await page.locator('[data-act="filter"][data-v="all"]').click();
   });
 
-  await step('읽는 중인 책과 제목·저자 표기만 다른 준비된 책은 책 찾기에서 다시 담기지 않음', async () => {
+  await step('읽는 중인 책과 제목·저자 표기만 다른 준비된 책은 책 찾기 목록에서 빠짐', async () => {
     await page.goto(base + '#add');
     await page.fill('#f-title', '실용주의 프로그래머');
     await page.fill('#f-author', '데이비드 토머스 · 앤드루 헌트');
@@ -1055,10 +1053,8 @@ try {
     await page.click('#f-submit');
     await page.waitForTimeout(500); // 이미 같은 책이 있으면 추가되지 않고, 없으면 추가됩니다. 어느 쪽이든 책 찾기에서 다시 담기면 안 됩니다.
     await page.goto(base + '#catalog');
-    const row = view.locator('div.book', { hasText: '실용주의 프로그래머(20주년' });
-    await row.locator('a.btn', { hasText: '서재에 있음' }).waitFor();
-    assert.equal(await row.locator('[data-act="catadd"]').count(), 0);
-    assert.match(await row.locator('a.btn').getAttribute('href'), /^#book-/);
+    await view.locator('h1.page').waitFor();
+    assert.equal(await view.locator('div.book', { hasText: '실용주의 프로그래머(20주년' }).count(), 0, '서재에 같은 책이 있으면 책 찾기에 나오지 않음');
     await page.goto(base + '#library'); await page.reload();
     await view.locator('a.book').first().waitFor();
     assert.equal(await view.locator('a.book .book-title', { hasText: '실용주의 프로그래머' }).count() <= 1, true, '같은 책은 한 권만');
