@@ -1,7 +1,7 @@
 // 연간 기록 화면: 연도별 완독 책, 월별 완료 챕터, 읽은 날.
-import { state } from "./state.js?v=60";
-import { esc, fmt, hue } from "./util.js?v=60";
-import { yearSummary } from "./core.js?v=60";
+import { state } from "./state.js?v=62";
+import { esc, fmt, hue } from "./util.js?v=62";
+import { yearSummary } from "./core.js?v=62";
 
 export function yearView(y) {
   var s = yearSummary(Array.from(state.books.values()), y);

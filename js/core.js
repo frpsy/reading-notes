@@ -524,18 +524,33 @@ export function searchMemos(books, q, limit = 30) {
   return out.slice(0, limit);
 }
 
-// 같은 책이 이미 서재에 있는지(제목은 대소문자·공백·문장부호 무시, 저자가 둘 다 있으면 저자도 비교)
+// 제목 비교용 키: 대소문자·공백·문장부호와 괄호 안 표기((20주년 기념판), (복구본) 등)를 무시합니다.
+const titleKey = (x) => String(x || "").toLowerCase().replace(/[(\[{（【][^)\]}）】]*[)\]}）】]/g, "").replace(/[\s.,:;!?·'"()\[\]{}<>\-–—_]/g, "");
+// 부제는 ":" 또는 " - " 뒤로 봅니다.
+const mainKey = (x) => titleKey(String(x || "").replace(/[(\[{（【][^)\]}）】]*[)\]}）】]/g, "").split(/[:：]|\s[-–—]\s/)[0]);
+// 같은 책이 이미 서재에 있는지(저자가 둘 다 있으면 저자도 비교). 한쪽에만 부제가 있으면 같은 책, 둘 다 있는데 다르면(1부·2부 등) 다른 책입니다.
 export function findDuplicate(books, title, author, exceptId) {
   const norm = (x) => String(x || "").toLowerCase().replace(/[\s.,:;!?·'"()\[\]{}<>\-–—_]/g, "");
-  // 부제는 ":" 또는 " - " 뒤로 봅니다. 한쪽에만 부제가 있으면 같은 책으로 보고, 둘 다 있는데 다르면(1부·2부 등) 다른 책입니다.
-  const main = (x) => norm(String(x || "").split(/[:：]|\s[-–—]\s/)[0]);
-  const same = (x, y) => norm(x) === norm(y) || (main(x).length >= 2 && (main(x) === norm(y) || main(y) === norm(x)));
-  const t = norm(title), a = norm(author);
+  const same = (x, y) => titleKey(x) === titleKey(y) || (mainKey(x).length >= 2 && (mainKey(x) === titleKey(y) || mainKey(y) === titleKey(x)));
+  const t = titleKey(title), a = norm(author);
   if (!t) return null;
   for (const b of books) {
     if (b.id === exceptId || !same(b.title, title)) continue;
     if (a && norm(b.author) && norm(b.author) !== a) continue;
     return b;
+  }
+  return null;
+}
+// 책 찾기에서 '이미 서재에 있는 책'인지 볼 때는 더 넓게 봅니다. 저자 표기(앤드루/앤드류)나 판본 표기가 달라도 같은 책이면 한 권만 유지합니다.
+export function findSimilarBook(books, title) {
+  const t = titleKey(title), m = mainKey(title);
+  if (!t) return null;
+  for (const b of books) {
+    const bt = titleKey(b.title), bm = mainKey(b.title);
+    if (!bt) continue;
+    if (bt === t || (m.length >= 2 && bm === m)) return b;
+    const [short, long] = bt.length <= t.length ? [bt, t] : [t, bt];
+    if (short.length >= 4 && long.startsWith(short)) return b;
   }
   return null;
 }

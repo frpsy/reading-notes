@@ -1,16 +1,16 @@
 // 준비된 책(catalog/): Claude가 repo에 추가하면 여기서 서재에 담습니다.
-import { state } from "./state.js?v=60";
-import { render } from "./bus.js?v=60";
-import { persist } from "./sync.js?v=60";
-import { esc, hue } from "./util.js?v=60";
-import { showNotice } from "./undo.js?v=60";
-import { currentRoute } from "./router.js?v=60";
-import { parseToc, parseCatalogText, normalizeBook, findDuplicate } from "./core.js?v=60";
+import { state } from "./state.js?v=62";
+import { render } from "./bus.js?v=62";
+import { persist } from "./sync.js?v=62";
+import { esc, hue } from "./util.js?v=62";
+import { showNotice } from "./undo.js?v=62";
+import { currentRoute } from "./router.js?v=62";
+import { parseToc, parseCatalogText, normalizeBook, findSimilarBook } from "./core.js?v=62";
 
 // 준비된 책 목록은 책 찾기 화면에서만 씁니다. 다른 화면(특히 입력 중인 책 추가 폼)은 다시 그리지 않습니다.
 function redraw() { if (currentRoute().name === "catalog") render(); }
-// 서재에 같은 책(제목·저자)이 이미 있으면 그 책을 돌려줍니다. 직접 추가한 책은 id 가 달라 제목으로도 확인합니다.
-function owned(x) { return state.books.get(x.id) || findDuplicate(Array.from(state.books.values()), x.c.title, x.c.author); }
+// 서재에 같은 책(제목 기준, 저자·판본 표기는 무시)이 이미 있으면 그 책을 돌려줍니다. 직접 추가한 책은 id 가 달라 제목으로도 확인합니다.
+function owned(x) { return state.books.get(x.id) || findSimilarBook(Array.from(state.books.values()), x.c.title); }
 export function loadCatalog() {
   fetch("catalog/index.json").then(function (r) { return r.json(); }).then(function (list) {
     return Promise.all(list.map(function (x) {

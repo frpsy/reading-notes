@@ -356,6 +356,16 @@ test("중복 책 확인: 제목(공백·문장부호 무시)과 저자", async (
   assert.equal(findDuplicate([{ id: "s", title: "사피엔스 - 유인원에서 사이보그까지", author: "" }], "사피엔스", "").id, "s");
   assert.equal(findDuplicate([{ id: "v", title: "토지: 1부", author: "" }], "토지: 2부", ""), null, "부제가 서로 다르면 다른 책");
   assert.equal(findDuplicate([{ id: "n", title: "인생", author: "" }], "인생 역사", ""), null, "앞부분만 같은 제목은 다른 책");
+  assert.equal(findDuplicate([{ id: "p", title: "실용주의 프로그래머", author: "" }], "실용주의 프로그래머(20주년 기념판)", "").id, "p", "괄호 안 판본 표기는 무시");
+});
+
+test("책 찾기: 직접 추가·복구한 같은 책도 이미 있는 책으로 봄", async () => {
+  const { findSimilarBook } = await import("../js/core.js");
+  const books = [{ id: "a", title: "실용주의 프로그래머", author: "데이비드 토머스 · 앤드루 헌트" }, { id: "r", title: "도파민네이션 (복구본)", author: "" }, { id: "i", title: "인생", author: "" }];
+  assert.equal(findSimilarBook(books, "실용주의 프로그래머(20주년 기념판)").id, "a", "저자 표기·판본 표기가 달라도 같은 책");
+  assert.equal(findSimilarBook(books, "도파민네이션").id, "r", "복구본도 같은 책");
+  assert.equal(findSimilarBook(books, "인생의 역사"), null, "짧은 제목의 앞부분만 같으면 다른 책");
+  assert.equal(findSimilarBook(books, "내면소통"), null);
 });
 
 

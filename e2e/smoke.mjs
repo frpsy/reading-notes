@@ -594,7 +594,7 @@ try {
     await page.locator('button.memo-done').first().click();
   });
 
-  await step('같은 제목의 책을 추가하면 기존 책을 알려 주고 한 번 더 확인', async () => {
+  await step('같은 책은 서재에 한 권만: 추가하려 하면 기존 책을 알려 주고 막음', async () => {
     await page.goto(page.url().replace(/#.*/, '#library'));
     const title = (await view.locator('a.book .book-title').first().innerText()).replace(/\s*예시$/, '').trim();
     const before = await view.locator('a.book').count();
@@ -602,9 +602,11 @@ try {
     await page.fill('#f-title', ' ' + title + ' ');
     await page.fill('#f-toc', '1장');
     await page.click('#f-submit');
-    await page.locator('#f-lost', { hasText: '같은 제목의 책' }).waitFor();
-    assert.equal(await page.locator('#f-submit').innerText(), '그래도 추가');
+    await page.locator('#f-lost', { hasText: '이미 같은 책' }).waitFor();
+    assert.equal(await page.locator('#f-submit').innerText(), '책 추가');
     assert.match(page.url(), /#add/);
+    await page.click('#f-submit'); await page.waitForTimeout(300);
+    assert.match(page.url(), /#add/, '다시 눌러도 추가되지 않음');
     await page.fill('#f-title', title + ' 2');
     assert.equal(await page.locator('#f-lost').isVisible(), false, '제목을 고치면 경고 초기화');
     await page.goto(page.url().replace(/#.*/, '#library'));
@@ -1042,6 +1044,43 @@ try {
     await page.locator('[data-act="filter"][data-v="todo"]').click();
     assert.equal(await page.evaluate(() => document.activeElement.dataset.v), 'todo');
     await page.locator('[data-act="filter"][data-v="all"]').click();
+  });
+
+  await step('읽는 중인 책과 제목·저자 표기만 다른 준비된 책은 책 찾기에서 다시 담기지 않음', async () => {
+    await page.goto(base + '#add');
+    await page.fill('#f-title', '실용주의 프로그래머');
+    await page.fill('#f-author', '데이비드 토머스 · 앤드루 헌트');
+    await page.fill('#f-toc', '1장\n2장');
+    await page.fill('#f-start', '2026-11-01');
+    await page.click('#f-submit');
+    await page.waitForTimeout(500); // 이미 같은 책이 있으면 추가되지 않고, 없으면 추가됩니다. 어느 쪽이든 책 찾기에서 다시 담기면 안 됩니다.
+    await page.goto(base + '#catalog');
+    const row = view.locator('div.book', { hasText: '실용주의 프로그래머(20주년' });
+    await row.locator('a.btn', { hasText: '서재에 있음' }).waitFor();
+    assert.equal(await row.locator('[data-act="catadd"]').count(), 0);
+    assert.match(await row.locator('a.btn').getAttribute('href'), /^#book-/);
+    await page.goto(base + '#library'); await page.reload();
+    await view.locator('a.book').first().waitFor();
+    assert.equal(await view.locator('a.book .book-title', { hasText: '실용주의 프로그래머' }).count() <= 1, true, '같은 책은 한 권만');
+  });
+
+  await step('책 수정 중 그 책이 목록에서 빠져도 새 책이 생기지 않음', async () => {
+    await page.goto(base + '#library'); await page.reload();
+    await view.locator('a.book').first().waitFor();
+    const href = await view.locator('a.book').first().getAttribute('href');
+    const bid = href.replace('#book-', '');
+    const before = await view.locator('a.book').count();
+    await page.goto(base + '#edit-' + bid);
+    await page.locator('#f-title').waitFor();
+    await page.evaluate((i) => { const d = JSON.parse(localStorage.getItem('e2e-books')); delete d[i]; localStorage.setItem('e2e-books', JSON.stringify(d)); window.dispatchEvent(new StorageEvent('storage', { key: 'e2e-books' })); }, bid);
+    await page.waitForFunction((i) => !localStorage.getItem('e2e-books').includes('"' + i + '"'), bid);
+    await page.locator('#f-submit').click();
+    await page.waitForTimeout(400);
+    assert.ok(page.url().includes('#edit-'), '새 책 화면으로 넘어가지 않음');
+    await page.goto(base + '#library'); await page.reload();
+    await view.locator('a.book').first().waitFor();
+    assert.equal(await view.locator('a.book').count(), before - 1, '삭제된 책이 새 책으로 되살아나지 않음');
+    await page.evaluate(() => localStorage.removeItem('e2e-books')); // 이후 단계에 영향이 없게 원상 복구는 다음 단계의 새로고침에 맡기지 않음
   });
 
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
