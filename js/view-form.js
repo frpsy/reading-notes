@@ -1,9 +1,9 @@
 // 책 추가·정보 수정 화면: 목차 붙여넣기, 미리보기, 준비된 책 불러오기.
-import { state } from "./state.js?v=60";
-import { esc } from "./util.js?v=60";
-import { parseToc, tocText, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver, findDuplicate } from "./core.js?v=60";
-import { persist } from "./sync.js?v=60";
-import { notFound } from "./view-common.js?v=60";
+import { state } from "./state.js?v=62";
+import { esc } from "./util.js?v=62";
+import { parseToc, tocText, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver, findSimilarBook } from "./core.js?v=62";
+import { persist } from "./sync.js?v=62";
+import { notFound } from "./view-common.js?v=62";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
@@ -97,14 +97,16 @@ export function bindForm(id) {
     if (!title) { showErr('제목을 입력해 주세요.', document.getElementById('f-title')); return }
     if (!items.length) { showErr('목차를 한 줄 이상 입력해 주세요.', ta); return }
     var pages = parseInt(document.getElementById('f-pages').value, 10);
-    var b = id ? structuredClone(state.books.get(id)) : null, isNew = !b;
+    var b = id ? state.books.get(id) : null, isNew = !id;
+    // 수정 중 그 책이 목록에서 사라졌다면(다른 기기 삭제·동기화) 새 책으로 만들지 않고 알려 줍니다.
+    if (id && !b) { showErr('수정하던 책을 찾을 수 없습니다. 서재로 돌아가 다시 열어 주세요.'); return; }
+    if (b) b = structuredClone(b);
     if (isNew) {
-      var dup = findDuplicate(Array.from(state.books.values()), title, document.getElementById('f-author').value);
-      if (dup && dupAck !== dup.id) {
-        // 같은 책을 두 번 담는 실수를 막습니다. 다시 누르면 그대로 추가합니다(같은 책을 다시 읽는 경우).
-        dupAck = dup.id;
-        lostBox.innerHTML = '<p><b>서재에 같은 제목의 책이 있습니다.</b> <a href="#book-' + esc(dup.id) + '">' + esc(dup.title) + (dup.author ? ' · ' + esc(dup.author) : '') + '</a></p><p class="muted">다시 읽는 기록을 따로 남기려면 아래 버튼을 한 번 더 누르세요.</p>';
-        lostBox.hidden = false; err.hidden = true; submitBtn.textContent = '그래도 추가';
+      // 한 책은 서재에 한 권만 둡니다(읽는 중·독서 예정 어느 쪽이든). 이미 있으면 그 책으로 안내하고 추가하지 않습니다.
+      var dup = findSimilarBook(Array.from(state.books.values()), title);
+      if (dup) {
+        lostBox.innerHTML = '<p><b>서재에 이미 같은 책이 있습니다.</b> <a href="#book-' + esc(dup.id) + '">' + esc(dup.title) + (dup.author ? ' · ' + esc(dup.author) : '') + '</a></p><p class="muted">한 책은 한 권만 둘 수 있습니다. 위 책을 열어 이어서 읽어 주세요.</p>';
+        lostBox.hidden = false; err.hidden = true;
         return;
       }
       b = { id: newId(), createdAt: Date.now(), rating: 0, note: '', endDate: null, endAuto: false };
