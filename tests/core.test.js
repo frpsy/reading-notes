@@ -352,6 +352,10 @@ test("중복 책 확인: 제목(공백·문장부호 무시)과 저자", async (
   assert.equal(findDuplicate(books, "다른 책", ""), null);
   assert.equal(findDuplicate(books, "인생 역사", "", "b"), null, "자기 자신 제외");
   assert.equal(findDuplicate(books, "", ""), null);
+  assert.equal(findDuplicate(books, "인생 역사: 시를 읽는 마음", "").id, "b", "한쪽에만 부제가 있으면 같은 책");
+  assert.equal(findDuplicate([{ id: "s", title: "사피엔스 - 유인원에서 사이보그까지", author: "" }], "사피엔스", "").id, "s");
+  assert.equal(findDuplicate([{ id: "v", title: "토지: 1부", author: "" }], "토지: 2부", ""), null, "부제가 서로 다르면 다른 책");
+  assert.equal(findDuplicate([{ id: "n", title: "인생", author: "" }], "인생 역사", ""), null, "앞부분만 같은 제목은 다른 책");
 });
 
 

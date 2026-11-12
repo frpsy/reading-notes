@@ -1,24 +1,24 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=58";
-import { state } from "./state.js?v=58";
-import { setRenderer, render } from "./bus.js?v=58";
-import { initPrefs, saveFolded } from "./prefs.js?v=58";
-import { initUndo, mutate, hideToast } from "./undo.js?v=58";
-import { initSync, removeBook } from "./sync.js?v=58";
-import { onAuth } from "./session.js?v=58";
-import { currentRoute } from "./router.js?v=58";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=58";
-import { loginView, loadingView } from "./view-common.js?v=58";
-import { libraryView, activityView } from "./view-library.js?v=58";
-import { settingsView, catalogView } from "./view-settings.js?v=58";
-import { bookView, fillMemos } from "./view-book.js?v=58";
-import { yearView } from "./view-year.js?v=58";
-import { patchView, resetPatch } from "./patch.js?v=58";
-import { formView, bindForm } from "./view-form.js?v=58";
-import { nextLeafIndex, completeThrough, toggleChapter as toggle, friendlyError } from "./core.js?v=58";
+import * as store from "./store.js?v=59";
+import { state } from "./state.js?v=59";
+import { setRenderer, render } from "./bus.js?v=59";
+import { initPrefs, saveFolded } from "./prefs.js?v=59";
+import { initUndo, mutate, hideToast } from "./undo.js?v=59";
+import { initSync, removeBook } from "./sync.js?v=59";
+import { onAuth } from "./session.js?v=59";
+import { currentRoute } from "./router.js?v=59";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=59";
+import { loginView, loadingView } from "./view-common.js?v=59";
+import { libraryView, activityView } from "./view-library.js?v=59";
+import { settingsView, catalogView } from "./view-settings.js?v=59";
+import { bookView, fillMemos } from "./view-book.js?v=59";
+import { yearView } from "./view-year.js?v=59";
+import { patchView, resetPatch } from "./patch.js?v=59";
+import { formView, bindForm } from "./view-form.js?v=59";
+import { nextLeafIndex, completeThrough, toggleChapter as toggle, friendlyError } from "./core.js?v=59";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=58";
-import { toggleMemoEditor, deleteMemo, foldAll, toggleFold, setGoalPreset, rememberNote, saveTypedText, applyFieldChange } from "./actions.js?v=58";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=59";
+import { toggleMemoEditor, deleteMemo, foldAll, toggleFold, setGoalPreset, rememberNote, saveTypedText, applyFieldChange } from "./actions.js?v=59";
 
 var view = document.getElementById("view");
 
@@ -28,7 +28,8 @@ function draw() {
   document.getElementById("settings-link").hidden = state.phase !== "app";
   var ae = document.activeElement, fk = null;
   if (ae && ae !== document.body && ae.dataset && ae.dataset.act) {
-    fk = '[data-act="' + ae.dataset.act + '"]' + (ae.dataset.i != null ? '[data-i="' + ae.dataset.i + '"]' : "");
+    // 같은 동작의 버튼이 여럿이면(필터 탭 등) 값까지 맞춰야 누른 버튼으로 포커스가 돌아갑니다.
+    fk = '[data-act="' + ae.dataset.act + '"]' + ["i", "v", "id", "key", "weeks"].map(function (k) { return ae.dataset[k] != null ? '[data-' + k + '="' + CSS.escape(ae.dataset[k]) + '"]' : ""; }).join("");
   }
   var disclosures = new Map(Array.from(view.querySelectorAll('details[data-disclosure]')).map(function (el) { return [el.dataset.disclosure, el.open]; }));
   var r = currentRoute(), html;
@@ -134,7 +135,7 @@ view.addEventListener("click", function (e) {
       break;
     case "toggle":
       if (b) {
-        var ti = +el.dataset.i, tc = b.chapters[ti];
+        var ti = +el.dataset.i;
         mutate(b, function () { toggle(b, ti); });
       }
       break;

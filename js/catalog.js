@@ -1,10 +1,16 @@
 // 준비된 책(catalog/): Claude가 repo에 추가하면 여기서 서재에 담습니다.
-import { state } from "./state.js?v=58";
-import { render } from "./bus.js?v=58";
-import { persist } from "./sync.js?v=58";
-import { esc, hue } from "./util.js?v=58";
-import { parseToc, parseCatalogText, normalizeBook } from "./core.js?v=58";
+import { state } from "./state.js?v=59";
+import { render } from "./bus.js?v=59";
+import { persist } from "./sync.js?v=59";
+import { esc, hue } from "./util.js?v=59";
+import { showNotice } from "./undo.js?v=59";
+import { currentRoute } from "./router.js?v=59";
+import { parseToc, parseCatalogText, normalizeBook, findDuplicate } from "./core.js?v=59";
 
+// 준비된 책 목록은 책 찾기 화면에서만 씁니다. 다른 화면(특히 입력 중인 책 추가 폼)은 다시 그리지 않습니다.
+function redraw() { if (currentRoute().name === "catalog") render(); }
+// 서재에 같은 책(제목·저자)이 이미 있으면 그 책을 돌려줍니다. 직접 추가한 책은 id 가 달라 제목으로도 확인합니다.
+function owned(x) { return state.books.get(x.id) || findDuplicate(Array.from(state.books.values()), x.c.title, x.c.author); }
 export function loadCatalog() {
   fetch("catalog/index.json").then(function (r) { return r.json(); }).then(function (list) {
     return Promise.all(list.map(function (x) {
@@ -12,20 +18,23 @@ export function loadCatalog() {
         return { id: "c-" + x.file.replace(/\.txt$/, ""), c: parseCatalogText(t) };
       });
     }));
-  }).then(function (all) { state.catalog = all.filter(function (x) { return x.c.title && x.c.toc; }); state.catalogFailed = false; render(); }).catch(function () { state.catalogFailed = true; render(); });
+  }).then(function (all) { state.catalog = all.filter(function (x) { return x.c.title && x.c.toc; }); state.catalogFailed = false; redraw(); }).catch(function () { state.catalogFailed = true; redraw(); });
 }
 export function catalogHtml() {
   var rest = state.catalog.filter(function (x) { return !state.books.has(x.id); });
+  if (state.catalog.length && !rest.length) return '<p class="muted" role="status">준비된 책을 모두 서재에 담았습니다.</p>';
   if (!rest.length) return state.catalogFailed ? '<div class="sec-h"><h2 class="sec">담을 수 있는 책</h2></div><p class="err" role="status">책 목록을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해 주세요.</p>' : "";
   return '<div class="sec-h"><h2 class="sec">담을 수 있는 책</h2></div><div class="books">' + rest.map(function (x) {
+    var have = owned(x);
     return '<div class="book"><span class="cover" style="--h:' + hue(x.c.title) + '" aria-hidden="true">' + esc(x.c.title.charAt(0)) + '</span>' +
       '<span class="book-main"><span class="book-title">' + esc(x.c.title) + '</span><span class="book-sub">' + esc(x.c.author) + '</span></span>' +
-      '<span class="book-side"><button type="button" class="btn sm primary" data-act="catadd" data-id="' + esc(x.id) + '">서재에 담기</button></span></div>';
+      '<span class="book-side">' + (have ? '<a class="btn sm" href="#book-' + esc(have.id) + '">서재에 있음</a>' : '<button type="button" class="btn sm primary" data-act="catadd" data-id="' + esc(x.id) + '">서재에 담기</button>') + '</span></div>';
   }).join("") + "</div>";
 }
 export function addFromCatalog(id) {
   var x = state.catalog.find(function (y) { return y.id === id; });
-  if (!x || state.books.has(id)) return;
+  if (!x) return;
+  if (owned(x)) { showNotice("이미 서재에 있는 책입니다."); render(); return; }
   var b = normalizeBook({
     id: id, title: x.c.title, author: x.c.author, totalPages: x.c.totalPages,
     // 단순히 담는 동작은 읽기 시작이 아닙니다. 시작일·완료일은 첫 챕터 체크 시 기록합니다.

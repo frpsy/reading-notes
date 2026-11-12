@@ -527,10 +527,13 @@ export function searchMemos(books, q, limit = 30) {
 // 같은 책이 이미 서재에 있는지(제목은 대소문자·공백·문장부호 무시, 저자가 둘 다 있으면 저자도 비교)
 export function findDuplicate(books, title, author, exceptId) {
   const norm = (x) => String(x || "").toLowerCase().replace(/[\s.,:;!?·'"()\[\]{}<>\-–—_]/g, "");
+  // 부제는 ":" 또는 " - " 뒤로 봅니다. 한쪽에만 부제가 있으면 같은 책으로 보고, 둘 다 있는데 다르면(1부·2부 등) 다른 책입니다.
+  const main = (x) => norm(String(x || "").split(/[:：]|\s[-–—]\s/)[0]);
+  const same = (x, y) => norm(x) === norm(y) || (main(x).length >= 2 && (main(x) === norm(y) || main(y) === norm(x)));
   const t = norm(title), a = norm(author);
   if (!t) return null;
   for (const b of books) {
-    if (b.id === exceptId || norm(b.title) !== t) continue;
+    if (b.id === exceptId || !same(b.title, title)) continue;
     if (a && norm(b.author) && norm(b.author) !== a) continue;
     return b;
   }
