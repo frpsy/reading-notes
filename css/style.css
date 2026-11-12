@@ -924,7 +924,8 @@ html{background:var(--bg)}
 .tab.zero{opacity:1;color:var(--muted)}
 .tab.zero em{color:var(--muted)}
 .tab.zero:not([aria-pressed="true"]){color:color-mix(in srgb,var(--muted) 70%,var(--bg))}
-.settings-nav{min-width:44px;padding:0 14px;margin-right:-8px;background:var(--surface-2);border-radius:999px;color:var(--ink)}
+.settings-nav{min-width:44px;width:44px;padding:0;margin-right:-8px;background:var(--surface-2);border-radius:999px;color:var(--ink)}
+.settings-nav svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:600px){
   .top{margin-bottom:12px;padding-bottom:0}
   .lib-head{margin-bottom:16px}
