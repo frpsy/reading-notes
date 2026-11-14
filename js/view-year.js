@@ -1,7 +1,7 @@
 // 연간 기록 화면: 연도별 완독 책, 월별 완료 챕터, 읽은 날.
-import { state } from "./state.js?v=64";
-import { esc, fmt, hue } from "./util.js?v=64";
-import { yearSummary } from "./core.js?v=64";
+import { state } from "./state.js?v=65";
+import { esc, fmt, hue } from "./util.js?v=65";
+import { yearSummary } from "./core.js?v=65";
 
 export function yearView(y) {
   var s = yearSummary(Array.from(state.books.values()), y);
@@ -18,9 +18,9 @@ export function yearView(y) {
   var list = s.done.length ? '<div class="books">' + s.done.map(function (x) {
     var sub = fmt(x.end) + ' 완독' + (x.days ? ' · ' + x.days + '일' : '') + ' · ' + x.L + '챕터';
     return '<a class="book" href="#book-' + esc(x.id) + '"><span class="cover" style="--h:' + hue(x.title) + '" aria-hidden="true">' + esc(x.title.charAt(0)) + '</span>' +
-      '<span class="book-main"><span class="book-title">' + esc(x.title) + '</span><span class="book-sub">' + (x.author ? esc(x.author) + ' · ' : '') + esc(sub) + '</span></span>' +
-      '<span class="rating mono">' + (x.rating ? x.rating + ' / 5' : '') + '</span></a>';
+      '<span class="book-main"><span class="book-title">' + esc(x.title) + '</span><span class="book-sub">' + (x.author ? esc(x.author) + ' · ' : '') + esc(sub) + '</span>' +
+      (x.rating ? '<span class="rating" aria-label="평점 5점 중 ' + x.rating + '점"><span aria-hidden="true">' + '★'.repeat(x.rating) + '<i>' + '★'.repeat(5 - x.rating) + '</i></span></span>' : '') + '</span></a>';
   }).join('') + '</div>' : '<p class="muted">이 해에 완독한 책이 아직 없습니다.</p>';
-  return '<a class="back" href="#library">← 서재</a><h1 class="page">' + esc(s.year) + '년 독서 기록</h1>' + tabs + strip + bars +
+  return '<a class="back" href="#settings">← 설정</a><h1 class="page">' + esc(s.year) + '년 독서 기록</h1>' + tabs + strip + bars +
     '<div class="sec-h"><h2 class="sec">완독한 책</h2></div>' + list;
 }

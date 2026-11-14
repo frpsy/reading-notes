@@ -1,8 +1,8 @@
 // 서재: 핵심 독서 기능. 독서 활동 통계는 별도 화면에 표시합니다.
-import { state } from "./state.js?v=64";
-import { esc, fmt, ago } from "./util.js?v=64";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=64";
-import { coverHtml, chipHtml } from "./view-common.js?v=64";
+import { state } from "./state.js?v=65";
+import { esc, fmt, ago } from "./util.js?v=65";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=65";
+import { coverHtml, chipHtml } from "./view-common.js?v=65";
 
 function nextLine(b, m) {
   // 독서 예정인 책은 '다음' 안내를 표시해 시작한 것처럼 보이지 않게 합니다.
@@ -57,7 +57,8 @@ function activityHtml(list) {
     }).join('');
   }).join('');
   return '<section class="activity" aria-label="최근 12주 독서 기록"><div class="act-h"><b class="mono">' + cur + '</b><span>일 연속</span><span class="muted">· 최장 ' + best + '일</span></div>' +
-    '<div class="heat" role="img" aria-label="최근 12주 동안 챕터를 읽은 날">' + cells + '</div></section>';
+    '<div class="heat" role="img" aria-label="최근 12주 동안 챕터를 읽은 날">' + cells + '</div>' +
+    '<p class="heat-legend" aria-hidden="true"><span>최근 12주</span><span class="heat-scale">적게<i class="hc"></i><i class="hc l1"></i><i class="hc l2"></i><i class="hc l3"></i>많이</span></p></section>';
 }
 
 export function libraryView() {

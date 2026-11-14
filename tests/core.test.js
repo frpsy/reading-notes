@@ -402,3 +402,11 @@ test("글자 크기: 범위·단위·잘못된 값 처리", () => {
   assert.equal(C.stepFontScale(130, 1), 130);
   assert.equal(C.stepFontScale(90, -1), 90);
 });
+
+test("읽은 날 입력: 미래 날짜는 오늘로, 틀린 형식은 비움", () => {
+  assert.equal(C.clampPastDate("2026-11-10", "2026-11-14"), "2026-11-10");
+  assert.equal(C.clampPastDate("2026-11-14", "2026-11-14"), "2026-11-14");
+  assert.equal(C.clampPastDate("2026-12-01", "2026-11-14"), "2026-11-14");
+  assert.equal(C.clampPastDate("", "2026-11-14"), null);
+  assert.equal(C.clampPastDate("2026-02-31", "2026-11-14"), null);
+});

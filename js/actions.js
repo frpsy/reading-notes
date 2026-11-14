@@ -1,15 +1,34 @@
 // 책 화면의 사용자 동작(메모·접기·목표일·입력 저장). app.js 는 이벤트를 받아 여기로 넘기기만 합니다.
 // DOM 은 root(#view)를 인자로 받아 읽으며, 상태는 state 로만 바꿉니다.
-import { state } from "./state.js?v=64";
-import { render } from "./bus.js?v=64";
-import { saveFolded } from "./prefs.js?v=64";
-import { persist } from "./sync.js?v=64";
-import { offerUndo } from "./undo.js?v=64";
-import { preserve } from "./records.js?v=64";
-import { refreshMemos } from "./view-book.js?v=64";
-import { metrics as calcMetrics, isGroup, autoDates, dnum, dstr, todayStr } from "./core.js?v=64";
+import { state } from "./state.js?v=65";
+import { render } from "./bus.js?v=65";
+import { saveFolded } from "./prefs.js?v=65";
+import { persist } from "./sync.js?v=65";
+import { offerUndo } from "./undo.js?v=65";
+import { preserve } from "./records.js?v=65";
+import { refreshMemos } from "./view-book.js?v=65";
+import { metrics as calcMetrics, isGroup, autoDates, dnum, dstr, todayStr, toggleChapter, clampPastDate } from "./core.js?v=65";
 
 const memoSelector = (i) => 'textarea[data-act="memotext"][data-i="' + i + '"]';
+
+// 체크를 실수로 풀었다가 다시 누르면 원래 읽은 날을 되살립니다(오늘 날짜로 바뀌어 기록이 흐트러지지 않게).
+// 이번에 화면을 열어 둔 동안만 기억하며, 챕터 제목이 같을 때만 되살립니다.
+const clearedDates = new Map();
+export function toggleChapterKeepingDate(b, i) {
+  const before = b.chapters.map(function (c) { return c.done; });
+  toggleChapter(b, i);
+  let restored = false;
+  b.chapters.forEach(function (c, j) {
+    const key = b.id + ":" + j;
+    if (before[j] && !c.done) clearedDates.set(key, { t: c.t, done: before[j] });
+    else if (!before[j] && c.done) {
+      const old = clearedDates.get(key);
+      clearedDates.delete(key);
+      if (old && old.t === c.t) { c.done = old.done; restored = true; }
+    }
+  });
+  if (restored) { b.endDate = null; b.endAuto = false; autoDates(b); }
+}
 
 // 메모 입력란은 글 길이에 맞게 늘어난다(화면 높이의 60%까지)
 export function growMemo(ta, force) {
@@ -112,6 +131,8 @@ export function saveTypedText(b, el, act) {
   persist(b);
   const row = el.closest(".memo-row"), cnt = row && row.querySelector("[data-memo-count]");
   if (cnt) cnt.textContent = Array.from(el.value).length + "/2000";
+  const del = row && row.querySelector(".memo-del");
+  if (del) del.hidden = !el.value.trim() && !state.ui.memoOrig.get(b.id + ":" + el.dataset.i);
 }
 
 // 책 정보 입력칸(날짜·평점 등)이 바뀌었을 때의 저장.
@@ -120,7 +141,13 @@ export function applyFieldChange(b, act, el) {
     case "start": b.startDate = el.value || null; persist(b); render(); break;
     case "end": b.endDate = calcMetrics(b).status === "done" ? (el.value || null) : null; b.endAuto = false; persist(b); render(); break;
     case "goal": b.goalDate = el.value || null; persist(b); render(); break;
-    case "chdate": b.chapters[+el.dataset.i].done = el.value || null; autoDates(b); persist(b); render(); break;
+    case "chdate": {
+      // 읽은 날은 오늘까지만 받습니다(미래 날짜는 연속 기록·예상 완독일을 흐트러뜨립니다).
+      const day = clampPastDate(el.value);
+      b.chapters[+el.dataset.i].done = day;
+      if (calcMetrics(b).status === "done" && b.endAuto) b.endDate = null; // 자동으로 채운 종료일은 바뀐 날짜에 맞춰 다시 계산
+      autoDates(b); persist(b); render(); break;
+    }
     case "memotext": break; // input에서 기기에 즉시 보관
     case "rating": b.rating = parseInt(el.value, 10) || 0; persist(b); break;
     case "note": break; // input에서 기기에 즉시 보관
