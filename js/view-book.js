@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=65";
-import { esc, fmt, ago } from "./util.js?v=65";
-import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=65";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=65";
+import { state } from "./state.js?v=66";
+import { esc, fmt, ago } from "./util.js?v=66";
+import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=66";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=66";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -173,8 +173,13 @@ function deleteControl(b) {
     '<button type="button" class="btn danger sm" data-act="del">책 삭제</button>';
 }
 
-function ratingOptions(b) {
-  return '<option value="0">평점 없음</option>' + [1, 2, 3, 4, 5].map(function (n) { return '<option value="' + n + '"' + ((b.rating || 0) === n ? ' selected' : '') + '>' + n + ' / 5</option>' }).join('');
+// 평점은 별 5개로 고릅니다. 고른 별을 다시 누르면 평점을 지웁니다.
+function ratingStars(b) {
+  const r = b.rating || 0;
+  return '<div class="rating-field"><span class="rating-label" id="d-rating-label">평점</span><div id="d-rating" class="stars" role="radiogroup" aria-labelledby="d-rating-label">' +
+    [1, 2, 3, 4, 5].map(function (n) {
+      return '<button type="button" class="star' + (n <= r ? ' on' : '') + '" role="radio" aria-checked="' + (r === n) + '" data-act="rate" data-v="' + n + '" aria-label="5점 중 ' + n + '점' + (r === n ? ' (다시 누르면 지움)' : '') + '">★</button>';
+    }).join('') + '</div><span class="rating-text">' + (r ? r + ' / 5' : '아직 없음') + '</span></div>';
 }
 
 // 접기 상태는 책별로 기기에만 보관합니다. 그룹이 없는 책은 제어 버튼을 표시하지 않습니다.
@@ -217,7 +222,7 @@ function chapterHeading(b) {
 }
 
 function noteSection(b) {
-  return '<div class="sec-h"><h2 class="sec">독서 메모</h2></div><div class="panel note-panel" style="margin-top:0"><div class="dates"><label class="fld"><span>평점</span><select id="d-rating" data-act="rating">' + ratingOptions(b) + '</select></label></div>' + noteEditor(b.note) + '</div>';
+  return '<div class="sec-h"><h2 class="sec">독서 메모</h2></div><div class="panel note-panel" style="margin-top:0">' + ratingStars(b) + noteEditor(b.note) + '</div>';
 }
 
 export function bookView(id) {

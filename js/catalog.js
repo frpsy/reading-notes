@@ -1,11 +1,11 @@
 // 준비된 책(catalog/): Claude가 repo에 추가하면 여기서 서재에 담습니다.
-import { state } from "./state.js?v=65";
-import { render } from "./bus.js?v=65";
-import { persist } from "./sync.js?v=65";
-import { esc, hue } from "./util.js?v=65";
-import { showNotice } from "./undo.js?v=65";
-import { currentRoute } from "./router.js?v=65";
-import { parseToc, parseCatalogText, normalizeBook, findSimilarBook } from "./core.js?v=65";
+import { state } from "./state.js?v=66";
+import { render } from "./bus.js?v=66";
+import { persist } from "./sync.js?v=66";
+import { esc, hue } from "./util.js?v=66";
+import { showNotice } from "./undo.js?v=66";
+import { currentRoute } from "./router.js?v=66";
+import { parseToc, parseCatalogText, normalizeBook, findSimilarBook } from "./core.js?v=66";
 
 // 준비된 책 목록은 책 찾기 화면에서만 씁니다. 다른 화면(특히 입력 중인 책 추가 폼)은 다시 그리지 않습니다.
 function redraw() { if (currentRoute().name === "catalog") render(); }

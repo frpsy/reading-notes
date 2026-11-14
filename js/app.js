@@ -1,24 +1,24 @@
 // 책갈피 진입점: 화면 그리기, 이벤트 연결, 시작. 나머지 기능은 모듈별 파일에 있습니다.
-import * as store from "./store.js?v=65";
-import { state } from "./state.js?v=65";
-import { setRenderer, render } from "./bus.js?v=65";
-import { initPrefs, saveFolded } from "./prefs.js?v=65";
-import { initUndo, mutate, hideToast } from "./undo.js?v=65";
-import { initSync, removeBook } from "./sync.js?v=65";
-import { onAuth } from "./session.js?v=65";
-import { currentRoute } from "./router.js?v=65";
-import { loadCatalog, addFromCatalog } from "./catalog.js?v=65";
-import { loginView, loadingView } from "./view-common.js?v=65";
-import { libraryView, activityView } from "./view-library.js?v=65";
-import { settingsView, catalogView } from "./view-settings.js?v=65";
-import { bookView, fillMemos } from "./view-book.js?v=65";
-import { yearView } from "./view-year.js?v=65";
-import { patchView, resetPatch } from "./patch.js?v=65";
-import { formView, bindForm } from "./view-form.js?v=65";
-import { nextLeafIndex, completeThrough, friendlyError } from "./core.js?v=65";
+import * as store from "./store.js?v=66";
+import { state } from "./state.js?v=66";
+import { setRenderer, render } from "./bus.js?v=66";
+import { initPrefs, saveFolded } from "./prefs.js?v=66";
+import { initUndo, mutate, hideToast } from "./undo.js?v=66";
+import { initSync, removeBook } from "./sync.js?v=66";
+import { onAuth } from "./session.js?v=66";
+import { currentRoute } from "./router.js?v=66";
+import { loadCatalog, addFromCatalog } from "./catalog.js?v=66";
+import { loginView, loadingView } from "./view-common.js?v=66";
+import { libraryView, activityView } from "./view-library.js?v=66";
+import { settingsView, catalogView } from "./view-settings.js?v=66";
+import { bookView, fillMemos } from "./view-book.js?v=66";
+import { yearView } from "./view-year.js?v=66";
+import { patchView, resetPatch } from "./patch.js?v=66";
+import { formView, bindForm } from "./view-form.js?v=66";
+import { nextLeafIndex, completeThrough, friendlyError } from "./core.js?v=66";
 
-import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=65";
-import { toggleChapterKeepingDate as toggle, toggleMemoEditor, deleteMemo, foldAll, toggleFold, setGoalPreset, rememberNote, saveTypedText, applyFieldChange } from "./actions.js?v=65";
+import { recordsView, preserve, restoreTrash, exportRecords } from "./records.js?v=66";
+import { toggleChapterKeepingDate as toggle, toggleMemoEditor, deleteMemo, foldAll, toggleFold, setGoalPreset, rememberNote, saveTypedText, applyFieldChange } from "./actions.js?v=66";
 
 var view = document.getElementById("view");
 var drawnHash = null; // 직전에 그린 화면의 주소. 펼침 상태는 같은 화면을 다시 그릴 때만 되살립니다.
@@ -142,6 +142,9 @@ view.addEventListener("click", function (e) {
         var ti = +el.dataset.i;
         mutate(b, function () { toggle(b, ti); });
       }
+      break;
+    case "rate":
+      if (b) { var rv = +el.dataset.v; mutate(b, function () { b.rating = b.rating === rv ? 0 : rv; }); }
       break;
     case "foldall": if (b) foldAll(b); break;
     case "fold": if (b) toggleFold(b, +el.dataset.i); break;

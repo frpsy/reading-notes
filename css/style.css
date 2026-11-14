@@ -962,3 +962,30 @@ html{background:var(--bg)}
 .heat-scale{display:inline-flex;align-items:center;gap:3px}
 .heat-scale .hc{width:12px;height:12px;border-radius:3px}
 @media(max-width:600px){a.book .rating{grid-column:2;grid-row:3}}
+
+/* 2026-11-14 디자인 정돈: 별 평점, 메모 모아보기, 책 찾기 카드, 연간·활동·기록·설정 */
+.rating-field{display:flex;align-items:center;gap:4px 10px;flex-wrap:wrap}
+.rating-label{font-size:.875rem;color:var(--muted);margin-right:2px}
+.stars{display:flex;margin-left:-8px}
+.star{width:44px;height:44px;padding:0;border:0;border-radius:10px;background:none;color:var(--field);font-size:1.625rem;line-height:1;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color var(--duration),transform var(--duration)}
+.star.on{color:var(--accent)}
+.star:active{transform:scale(.88)}
+@media (hover:hover){.star:hover{background:var(--surface-2)}}
+.rating-text{font-size:.8125rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.panel.memos{padding-block:6px}
+.panel.memos[open]{padding-bottom:10px}
+.memos>summary{list-style:none;display:flex;align-items:center;gap:6px}
+.memos>summary::-webkit-details-marker{display:none}
+.memos>summary::after{content:"";width:8px;height:8px;margin:0 4px 4px auto;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);transition:transform var(--duration)}
+.memos[open]>summary::after{transform:rotate(-135deg);margin-bottom:-4px}
+.memos[open]>ul{margin-top:2px}
+div.book{align-items:center;padding:16px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-panel)}
+div.book .book-title{font-size:1.0625rem}
+@media(max-width:600px){div.book{padding:16px 14px}div.book>.book-side{margin-top:8px}}
+.tools{margin-top:16px;padding-top:0;border-top:0}
+.year-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-panel)}
+.year-strip b{color:var(--ink)}
+.mo i.zero{background:var(--line)}
+.activity-page .activity{margin-top:12px;padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-panel)}
+.settings-account{color:var(--muted);font-size:.875rem;min-width:0;overflow-wrap:anywhere}
+@media (prefers-reduced-motion:reduce){.star,.memos>summary::after{transition:none}}
