@@ -627,7 +627,7 @@ try {
       const bg = getComputedStyle(document.body).backgroundColor;
       const pick = (sel, prop = 'color') => { const el = document.querySelector(sel); return el ? getComputedStyle(el)[prop] : null; };
       return { scheme: matchMedia('(prefers-color-scheme: dark)').matches, body: ratio(getComputedStyle(document.body).color, bg), muted: ratio(pick('.count') || pick('.pg') || pick('.by'), bg),
-        title: ratio(pick('.ch-title'), bg), field: ratio(pick('#d-rating', 'borderTopColor'), pick('.note-panel', 'backgroundColor')) };
+        title: ratio(pick('.ch-title'), bg), field: ratio(pick('#d-note', 'borderTopColor'), pick('.note-panel', 'backgroundColor')) };
     });
     assert.ok(r.scheme);
     assert.ok(r.body >= 4.5 && r.title >= 4.5 && r.muted >= 4.5, JSON.stringify(r));
@@ -1135,6 +1135,15 @@ try {
     await page.locator('textarea[data-act="memotext"]').fill('새 메모');
     assert.equal(await page.locator('button.memo-del').isVisible(), true);
     await page.locator('.memo-done').click();
+    // 평점은 별을 눌러 고르고, 고른 별을 다시 누르면 지웁니다.
+    await page.locator('#d-rating .star').nth(3).click();
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('e2e-books')).qa1.rating === 4);
+    assert.equal(await page.locator('#d-rating .star.on').count(), 4);
+    assert.equal(await page.locator('#d-rating .star[aria-checked="true"]').count(), 1);
+    assert.ok((await page.locator('#d-rating .star').first().boundingBox()).width >= 44, '별 터치 영역 44px');
+    await page.locator('#d-rating .star').nth(3).click();
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('e2e-books')).qa1.rating === 0);
+    assert.equal(await page.locator('#d-rating .star.on').count(), 0);
     // 첫째 책에서 펼친 메모·편집 상태가 둘째 책의 같은 번호 챕터로 옮겨 가지 않습니다.
     await page.locator('#ch-0 .memo-preview > summary').click();
     assert.equal(await page.locator('#ch-0 .memo-preview').evaluate(el => el.open), true);

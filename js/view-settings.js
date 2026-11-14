@@ -1,8 +1,8 @@
 // 주요 독서 화면과 분리된 설정·책 찾기 화면입니다.
-import { state } from "./state.js?v=65";
-import { esc } from "./util.js?v=65";
-import { catalogHtml } from "./catalog.js?v=65";
-import { themeLabel, fontScaleState } from "./prefs.js?v=65";
+import { state } from "./state.js?v=66";
+import { esc } from "./util.js?v=66";
+import { catalogHtml } from "./catalog.js?v=66";
+import { themeLabel, fontScaleState } from "./prefs.js?v=66";
 
 // 글자 크기 조절: 눌러 바로 전체 화면에 적용하고 이 기기에 저장합니다(5% 단위).
 function fontScaleItem() {
@@ -15,7 +15,7 @@ function fontScaleItem() {
 }
 
 export function settingsView() {
-  const account = state.userEmail ? '<p class="settings-detail">' + esc(state.userEmail) + '</p>' : '';
+  const logout = state.mode === 'firebase' ? '<button type="button" class="btn sm" data-act="logout">로그아웃</button>' : '';
   return '<a class="back" href="#library">← 서재</a><h1 class="page">설정</h1>' +
     '<section class="settings-section"><h2 class="sec">화면</h2><div class="settings-item"><span>화면 테마</span><button class="btn sm" id="theme" type="button">' + themeLabel() + '</button></div>' +
     fontScaleItem() + '</section>' +
@@ -23,8 +23,7 @@ export function settingsView() {
     '<a class="settings-item settings-link" href="#activity"><span>독서 활동</span><span aria-hidden="true">›</span></a>' +
     '<a class="settings-item settings-link" href="#year"><span>연간 기록</span><span aria-hidden="true">›</span></a>' +
     '<a class="settings-item settings-link" href="#records"><span>기록 백업 · 휴지통</span><span aria-hidden="true">›</span></a></section>' +
-    '<section class="settings-section"><h2 class="sec">계정</h2>' + account +
-    (state.mode === 'firebase' ? '<button type="button" class="btn sm" data-act="logout">로그아웃</button>' : '') + '</section>';
+    '<section class="settings-section"><h2 class="sec">계정</h2><div class="settings-item"><span class="settings-account">' + esc(state.userEmail || '로그인 계정') + '</span>' + logout + '</div></section>';
 }
 
 export function catalogView() {
