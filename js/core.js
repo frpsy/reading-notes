@@ -44,6 +44,13 @@ export function agoText(s, today = todayStr()) {
   return d <= 0 ? "오늘" : d === 1 ? "어제" : d + "일 전";
 }
 
+// 읽은 날 입력값: 형식이 틀리면 null, 오늘보다 뒤면 오늘로 맞춥니다.
+export function clampPastDate(s, today = todayStr()) {
+  const n = dnum(s);
+  if (n == null) return null;
+  return n > dnum(today) ? today : s;
+}
+
 export function newId(now = Date.now(), rnd = Math.random) {
   return "b" + now.toString(36) + rnd().toString(36).slice(2, 5);
 }

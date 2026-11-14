@@ -947,3 +947,18 @@ html{background:var(--bg)}
 
 .done-banner .reread{margin-top:10px}
 .done-banner .reread .confirm{align-items:center}
+
+/* 2026-11-14 검수: 연간 기록 평점, 짧은 메모 정렬, 독서 활동 히트맵 */
+.rating{color:var(--accent);font-size:.875rem;letter-spacing:.08em;line-height:1.4}
+.rating i{font-style:normal;color:var(--line)}
+.memo-del[hidden]{display:none}
+.ch.leaf .ch-memo .memo-preview:not([open])>summary{display:flex;align-items:center}
+.activity{container-type:inline-size}
+.act-h b{font-family:var(--sans);font-variant-numeric:tabular-nums}
+.heat{--cell:14px;grid-template-rows:repeat(7,var(--cell));grid-auto-columns:var(--cell)}
+@supports (width:1cqw){.heat{--cell:clamp(14px,calc((100cqw - 33px) / 12),26px)}}
+.hc{width:auto;height:auto;border-radius:4px}
+.heat-legend{display:flex;justify-content:space-between;align-items:center;gap:12px;max-width:345px;margin:10px 0 0;font-size:.75rem;color:var(--muted)}
+.heat-scale{display:inline-flex;align-items:center;gap:3px}
+.heat-scale .hc{width:12px;height:12px;border-radius:3px}
+@media(max-width:600px){a.book .rating{grid-column:2;grid-row:3}}

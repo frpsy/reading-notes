@@ -1105,6 +1105,59 @@ try {
     await page.evaluate(() => localStorage.removeItem('e2e-books')); // 이후 단계에 영향이 없게 원상 복구는 다음 단계의 새로고침에 맡기지 않음
   });
 
+  await step('체크 실수 복구·미래 날짜 방지·책 사이 펼침 상태 분리·연간 평점', async () => {
+    const day = (n) => { const t = new Date(Date.now() - n * 864e5); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); };
+    const ch = (t, done, memo) => ({ t, lv: 0, p: null, done: done || null, memo: memo || '' });
+    await page.evaluate((books) => { localStorage.setItem('e2e-books', JSON.stringify(books)); }, {
+      qa1: { id: 'qa1', title: '검수 첫째 책', author: '', createdAt: 1, startDate: day(9), note: '첫째 책의 독서 메모', rating: 0, chapters: [ch('하나', day(9), '첫째 책 메모'), ch('둘', day(5)), ch('셋')] },
+      qa2: { id: 'qa2', title: '검수 둘째 책', author: '', createdAt: 2, startDate: day(30), endDate: day(20), rating: 4, note: '', chapters: [ch('가', day(30), '둘째 책 메모'), ch('나', day(20))] },
+    });
+    await page.goto(base + '#book-qa1'); await page.reload();
+    await page.locator('#ch-1').waitFor();
+    const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('e2e-books')));
+    // 실수로 체크를 풀었다가 다시 누르면 원래 읽은 날이 유지됩니다.
+    await page.locator('#ch-1 .chk').click();
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('e2e-books')).qa1.chapters[1].done === null);
+    await page.locator('#ch-1 .chk').click();
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('e2e-books')).qa1.chapters[1].done !== null);
+    assert.equal((await stored()).qa1.chapters[1].done, day(5), '다시 체크하면 원래 날짜로 복구');
+    // 읽은 날은 오늘까지만 받습니다.
+    await page.locator('#ch-1 .chapter-options > summary').click();
+    const dateInput = page.locator('#ch-1 input[type=date]');
+    assert.equal(await dateInput.getAttribute('max'), day(0));
+    await dateInput.fill(day(-30)); await dateInput.dispatchEvent('change');
+    await page.waitForFunction((t) => JSON.parse(localStorage.getItem('e2e-books')).qa1.chapters[1].done === t, day(0));
+    await page.keyboard.press('Escape');
+    // 새 메모 입력창에는 지울 내용이 생기기 전까지 삭제 버튼이 없습니다.
+    await page.locator('#ch-2 .chapter-options > summary').click();
+    await page.locator('#ch-2 [data-act="memo"]').click();
+    assert.equal(await page.locator('button.memo-del').isVisible(), false);
+    await page.locator('textarea[data-act="memotext"]').fill('새 메모');
+    assert.equal(await page.locator('button.memo-del').isVisible(), true);
+    await page.locator('.memo-done').click();
+    // 첫째 책에서 펼친 메모·편집 상태가 둘째 책의 같은 번호 챕터로 옮겨 가지 않습니다.
+    await page.locator('#ch-0 .memo-preview > summary').click();
+    assert.equal(await page.locator('#ch-0 .memo-preview').evaluate(el => el.open), true);
+    assert.equal(await page.locator('.note-editor').evaluate(el => el.open), false);
+    await page.evaluate(() => { location.hash = 'book-qa2'; });
+    await page.locator('h1', { hasText: '검수 둘째 책' }).waitFor();
+    assert.equal(await page.locator('#ch-0 .memo-preview').evaluate(el => el.open), false, '다른 책의 메모는 접힌 채로 시작');
+    assert.equal(await page.locator('#d-note').isVisible(), true, '독서 메모가 없는 책은 입력란이 바로 보임');
+    // 연간 기록: 평점이 책 정보 안에 있어 좁은 화면에서도 표지 아래로 떨어지지 않습니다.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(base + '#year-' + day(20).slice(0, 4));
+    const row = view.locator('a.book', { hasText: '검수 둘째 책' });
+    await row.waitFor();
+    const rating = await row.locator('.rating').boundingBox(), cover = await row.locator('.cover').boundingBox();
+    assert.ok(rating.x >= cover.x + cover.width, '평점은 표지 오른쪽 정보 영역에 표시');
+    assert.equal(await row.locator('.rating').getAttribute('aria-label'), '평점 5점 중 4점');
+    await page.goto(base + '#activity');
+    const heat = await page.locator('.heat').boundingBox();
+    assert.ok(heat.width <= 390 && await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), '히트맵이 화면을 넘지 않음');
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.evaluate(() => localStorage.removeItem('e2e-books'));
+  });
+
   await step("화면 오류 없음", async () => { assert.deepEqual(errors, []); });
   await ctx.close();
 } finally {
