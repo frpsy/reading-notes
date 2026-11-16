@@ -385,6 +385,8 @@ test("아주 작은 습관의 힘·도파민네이션: 공식 한국어판 목�
     assert.equal(chapters.filter((x) => /^\d+장 /.test(x.t)).length, chapterCount);
     assert.ok(chapters.every((x) => x.p == null), "시작 페이지를 추측하지 않음: " + file);
   }
+  const ah = parseToc(parseCatalogText(fs.readFileSync(new URL("../catalog/atomic-habits-ko.txt", import.meta.url), "utf8")).toc).map((x) => x.t);
+  assert.deepEqual(ah.slice(-4), ["에필로그 100번만 반복하면 그게 당신의 무기가 된다", "부록 1 사람들의 행동에 관한 18가지 진실", "부록 2 이 책을 즐겁게 읽었다면", "주석"], "공식 목차의 뒷부분(주석 포함)");
 });
 
 test("글자 크기: 범위·단위·잘못된 값 처리", () => {
