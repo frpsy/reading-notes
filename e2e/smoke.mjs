@@ -990,6 +990,39 @@ try {
     assert.equal(await page.locator('.chapters > li.leaf').count(), 2);
   });
 
+  await step('서점 페이지를 붙여 넣으면 제목·저자·쪽수·목차를 채우고 그대로 추가', async () => {
+    await page.goto(base + '#add');
+    assert.equal(await page.locator('#tab-paste').getAttribute('aria-selected'), 'true');
+    const pageText = ['로그인', '장바구니', '붙여넣기 시험책 당신을 위한 부제 [ 양장 ]', '김시험 저/이번역 역 | 시험출판 | 2024년 03월 02일',
+      '카트에 넣기', '붙여넣기 시험책', '도서정보', '쪽수, 무게, 크기\t212쪽 | 300g', 'ISBN13\t9791100000001',
+      '목차', '프롤로그', '1장 첫 번째 이야기', '2장 두 번째 이야기', '에필로그', '접어보기', '저자 소개'].join('\n');
+    await page.locator('#f-paste').fill(pageText);
+    await page.locator('#paste-result').waitFor();
+    assert.equal(await page.locator('#f-title').inputValue(), '붙여넣기 시험책');
+    assert.equal(await page.locator('#f-author').inputValue(), '김시험');
+    assert.equal(await page.locator('#f-pages').inputValue(), '212');
+    assert.equal(await page.locator('#f-toc').inputValue(), '프롤로그\n1장 첫 번째 이야기\n2장 두 번째 이야기\n에필로그');
+    assert.match(await page.locator('#paste-result').innerText(), /목차\(4챕터\)/);
+    assert.equal(await page.locator('#f-paste').inputValue(), '', '다 채우면 붙여 넣은 원문은 비움');
+    await page.locator('#f-submit').click();
+    await page.waitForURL(/#book-/);
+    await page.locator('.chapters > li').first().waitFor();
+    assert.equal(await page.locator('h1').innerText(), '붙여넣기 시험책');
+    assert.equal(await page.locator('.chapters > li').count(), 4);
+    // 목차 칸에 페이지 전체를 붙여 넣어도 목차만 남습니다.
+    await page.goto(base + '#add');
+    await page.locator('#f-toc').focus();
+    await page.evaluate(t => { const ta = document.getElementById('f-toc'); ta.value = t; ta.dispatchEvent(new Event('paste')); ta.dispatchEvent(new Event('input', { bubbles: true })); }, pageText.replace('붙여넣기 시험책', '두 번째 시험책').replace('붙여넣기 시험책', '두 번째 시험책'));
+    await page.waitForFunction(() => document.getElementById('f-title').value === '두 번째 시험책');
+    assert.equal(await page.locator('#f-toc').inputValue(), '프롤로그\n1장 첫 번째 이야기\n2장 두 번째 이야기\n에필로그');
+    // 탭: 준비된 책으로 바꿔도 입력은 남아 있습니다.
+    await page.locator('#tab-shelf').click();
+    assert.equal(await page.locator('#bookForm').isVisible(), false);
+    assert.equal(await page.locator('#add-shelf').isVisible(), true);
+    await page.locator('#tab-paste').click();
+    assert.equal(await page.locator('#f-title').inputValue(), '두 번째 시험책');
+  });
+
   await step('직접 책 추가도 시작일을 비워 독서 예정으로 등록', async () => {
     await page.goto(base + '#add');
     assert.equal(await page.locator('#f-start').inputValue(), '', '새 책의 시작일은 기본 공란');

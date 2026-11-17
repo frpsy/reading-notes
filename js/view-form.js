@@ -1,10 +1,10 @@
 // 책 추가·정보 수정 화면: 준비된 책 담기(책 추가일 때), 목차 붙여넣기, 미리보기.
-import { state } from "./state.js?v=69";
-import { esc } from "./util.js?v=69";
-import { parseToc, tocText, leavesOf, isGroup, newId, autoDates, validateBook, carryOver, findSimilarBook } from "./core.js?v=69";
-import { persist } from "./sync.js?v=69";
-import { notFound } from "./view-common.js?v=69";
-import { catalogHtml } from "./catalog.js?v=69";
+import { state } from "./state.js?v=70";
+import { esc } from "./util.js?v=70";
+import { parseToc, tocText, leavesOf, isGroup, newId, parseBookPaste, autoDates, validateBook, carryOver, findSimilarBook } from "./core.js?v=70";
+import { persist } from "./sync.js?v=70";
+import { notFound } from "./view-common.js?v=70";
+import { catalogHtml, catalogCount } from "./catalog.js?v=70";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
@@ -16,15 +16,28 @@ function previewHtml(items) {
     (items.length > 14 ? '<p class="muted" style="margin-top:8px">외 ' + (items.length - 14) + '개 항목</p>' : '');
 }
 
-export function formView(id) {
+function addTabs(shelfFirst) {
+  var n = catalogCount();
+  return '<div class="add-tabs" role="tablist" aria-label="책 추가 방법">' +
+    '<button type="button" role="tab" id="tab-paste" aria-controls="bookForm" aria-selected="' + !shelfFirst + '">붙여 넣기</button>' +
+    '<button type="button" role="tab" id="tab-shelf" aria-controls="add-shelf" aria-selected="' + shelfFirst + '">준비된 책<em id="shelf-count">' + (n == null ? '' : n) + '</em></button></div>' +
+    '<section class="add-shelf" id="add-shelf" role="tabpanel" aria-labelledby="tab-shelf"' + (shelfFirst ? '' : ' hidden') + '><p class="muted shelf-help">누르면 서재의 \'독서 예정\'에 바로 담깁니다.</p><div class="cat-list" id="cat-list">' + catalogHtml() + '</div></section>';
+}
+
+export function formView(id, from) {
   var b = id ? state.books.get(id) : null;
   if (id && !b) return notFound();
   var v = { title: b ? b.title : '', author: b ? (b.author || '') : '', pages: b && b.totalPages ? b.totalPages : '', start: b ? (b.startDate || '') : '', goal: b ? (b.goalDate || '') : '', toc: b ? tocText(b) : '' };
   return '<a class="back" href="' + (b ? '#book-' + esc(b.id) : '#library') + '">← ' + (b ? '책으로 돌아가기' : '서재') + '</a>' +
     '<h1 class="page">' + (b ? '정보·목차 수정' : '책 추가') + '</h1>' +
-    // 책 찾기와 책 추가를 한 화면으로: 위에는 준비된 책 선반, 아래에는 직접 입력.
-    (b ? '' : '<section class="cat-shelf" aria-labelledby="cat-h"><h2 class="sec" id="cat-h">준비된 책에서 담기</h2><div class="cat-list" id="cat-list">' + catalogHtml() + '</div></section><h2 class="sec form-h" id="form-h">직접 입력</h2>') +
-    '<form class="form" id="bookForm" novalidate' + (b ? '' : ' aria-labelledby="form-h"') + '>' +
+    // 책 추가: '붙여 넣기'와 '준비된 책' 두 가지 방법을 탭으로 나눠 한 번에 하나만 보여 줍니다.
+    (b ? '' : addTabs(from === 'catalog')) +
+    '<form class="form" id="bookForm" novalidate' + (b ? '' : ' role="tabpanel" aria-labelledby="tab-paste"' + (from === 'catalog' ? ' hidden' : '')) + '>' +
+      (b ? '' : '<div class="paste-box"><label class="paste-label" for="f-paste">서점 페이지나 목차를 붙여 넣으세요</label>' +
+        '<textarea id="f-paste" rows="4" spellcheck="false" aria-describedby="f-paste-hint" placeholder="YES24·교보문고·알라딘 책 페이지에서 전체 선택(⌘A 또는 Ctrl+A) → 복사 → 여기에 붙여넣기"></textarea>' +
+        '<p class="hint" id="f-paste-hint">제목·저자·쪽수·목차를 알아서 채웁니다. 목차만 붙여 넣어도 됩니다.</p>' +
+        '<p class="paste-result" id="paste-result" role="status" aria-live="polite" hidden></p></div>' +
+        '<p class="form-h">확인하고 필요하면 고쳐 주세요</p>') +
       '<label class="fld"><span>제목</span><input id="f-title" aria-required="true" type="text" maxlength="200" value="' + esc(v.title) + '" autocomplete="off"></label>' +
       '<div class="row2">' +
         '<label class="fld"><span>저자 (선택)</span><input id="f-author" type="text" maxlength="100" value="' + esc(v.author) + '" autocomplete="off"></label>' +
@@ -47,6 +60,55 @@ export function bindForm(id) {
   var ta = document.getElementById('f-toc'), out = document.getElementById('toc-preview');
   ta.placeholder = '1부. 시작하기 ........ 9\n  1장. 왜 읽는가 ........ 11\n  2장. 무엇을 읽는가 ........ 27\n2부. 깊이 읽기 ........ 45\n  3장. 질문하며 읽기 ........ 47';
   function upd() { out.innerHTML = previewHtml(parseToc(ta.value)) }
+  // 탭: 화면을 다시 그리지 않고 보이기만 바꿔 입력 중인 내용을 지킵니다.
+  var tabs = Array.from(document.querySelectorAll('.add-tabs [role="tab"]'));
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () { selectTab(tab); });
+    tab.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault(); var next = tabs[(tabs.indexOf(tab) + 1) % tabs.length]; selectTab(next); next.focus();
+    });
+  });
+  function selectTab(tab) {
+    tabs.forEach(function (t) { var on = t === tab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; document.getElementById(t.getAttribute('aria-controls')).hidden = !on; });
+  }
+  tabs.forEach(function (t) { t.tabIndex = t.getAttribute('aria-selected') === 'true' ? 0 : -1; });
+  // 붙여 넣은 서점 페이지·목차에서 찾은 값으로 칸을 채웁니다. 찾지 못한 칸은 그대로 둡니다.
+  var paste = document.getElementById('f-paste'), result = document.getElementById('paste-result');
+  function fill(r) {
+    var set = function (elId, value) { if (value == null || value === '') return false; var el = document.getElementById(elId); el.value = value; el.removeAttribute('aria-invalid'); return true; };
+    set('f-title', r.title); set('f-author', r.author); set('f-pages', r.pages);
+    if (r.toc) { ta.value = r.toc; upd(); }
+    dupAck = null; resetLost(); err.hidden = true;
+  }
+  function describe(r) {
+    if (!r.found.length) return '책 정보나 목차를 찾지 못했습니다. 아래 칸에 직접 입력해 주세요.';
+    var leaves = r.toc ? leavesOf(parseToc(r.toc)).length : 0;
+    var got = [r.title && '제목', r.author && '저자', r.pages && '쪽수(' + r.pages + '쪽)', leaves && '목차(' + leaves + '챕터)'].filter(Boolean).join(' · ');
+    var extra = [r.publisher, r.isbn && 'ISBN ' + r.isbn].filter(Boolean).join(' · ');
+    return '채웠습니다: ' + got + (extra ? ' — ' + extra : '') + (r.toc ? '' : '. 목차는 찾지 못했습니다. 목차 부분도 복사해 붙여 넣어 주세요.');
+  }
+  var pasteTimer = null;
+  if (paste) paste.addEventListener('input', function () {
+    clearTimeout(pasteTimer);
+    pasteTimer = setTimeout(function () {
+      if (!paste.value.trim()) { result.hidden = true; return; }
+      var r = parseBookPaste(paste.value);
+      fill(r);
+      result.textContent = describe(r);
+      result.classList.toggle('miss', !r.found.length);
+      result.hidden = false;
+      // 다 채웠으면 붙여 넣은 원문은 비워 화면을 깔끔하게 둡니다(입력 이벤트 없이 비우므로 결과 안내는 남습니다).
+      if (r.found.length) paste.value = '';
+    }, 120);
+  });
+  // 목차 칸에 페이지 전체를 붙여 넣어도 목차만 골라내고 나머지 칸을 채웁니다.
+  ta.addEventListener('paste', function () {
+    setTimeout(function () {
+      var r = parseBookPaste(ta.value);
+      if (r.found.some(function (k) { return k !== 'toc'; }) || /(^|\n)\s*목\s*차\s*(\n|$)/.test(ta.value)) { fill(r); if (result) { result.textContent = describe(r); result.classList.remove('miss'); result.hidden = false; } }
+    }, 0);
+  });
   var form = document.getElementById('bookForm'), err = document.getElementById('f-err');
   var lostBox = document.getElementById('f-lost'), submitBtn = document.getElementById('f-submit'), lostAck = null, dupAck = null, saved = false;
   function showErr(msg, field) {
