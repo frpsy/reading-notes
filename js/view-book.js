@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=67";
-import { esc, fmt, ago } from "./util.js?v=67";
-import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf, progressSegments } from "./core.js?v=67";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=67";
+import { state } from "./state.js?v=68";
+import { esc, fmt, ago } from "./util.js?v=68";
+import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf, progressSegments } from "./core.js?v=68";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=68";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';

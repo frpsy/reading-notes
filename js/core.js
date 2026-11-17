@@ -317,6 +317,19 @@ export function heatmapWeeks(map, today = todayStr(), weeks = 12) {
   return cols;
 }
 
+// 히트맵 위의 월 표시: 열(주)의 첫날이 새 달이면 'N월'. 바로 붙은 두 표시는 앞의 것을 뺍니다.
+export function heatmapMonths(cols) {
+  const out = cols.map(function () { return ""; });
+  let prev = null;
+  cols.forEach(function (col, w) {
+    const mo = +col[0].date.slice(5, 7);
+    if (mo !== prev) out[w] = mo + "월";
+    prev = mo;
+  });
+  for (let w = 0; w + 2 < out.length; w++) if (out[w] && (out[w + 1] || out[w + 2])) out[w] = "";
+  return out;
+}
+
 /* ---------- 누적 그래프 ---------- */
 export function chartGeometry(book, m, today = todayStr()) {
   if (!m.doneDates.length) return null;

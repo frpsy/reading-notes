@@ -1,7 +1,8 @@
 // 연간 기록 화면: 연도별 완독 책, 월별 완료 챕터, 읽은 날.
-import { state } from "./state.js?v=67";
-import { esc, fmt, hue } from "./util.js?v=67";
-import { yearSummary } from "./core.js?v=67";
+import { state } from "./state.js?v=68";
+import { esc, fmt } from "./util.js?v=68";
+import { coverHtml } from "./view-common.js?v=68";
+import { yearSummary } from "./core.js?v=68";
 
 export function yearView(y) {
   var s = yearSummary(Array.from(state.books.values()), y);
@@ -12,12 +13,13 @@ export function yearView(y) {
   var strip = '<div class="strip year-strip"><div class="s"><b>' + s.done.length + '</b><span>완독</span></div>' +
     '<div class="s"><b>' + s.chapters + '</b><span>완료 챕터</span></div>' +
     '<div class="s"><b>' + s.readDays + '</b><span>읽은 날</span></div></div>';
+  var now = new Date(), thisMonth = String(now.getFullYear()) === String(s.year) ? now.getMonth() : -1;
   var bars = '<section class="panel" aria-label="월별 완료 챕터"><h2 class="sec">월별 완료 챕터</h2><div class="months">' + s.months.map(function (n, i) {
-    return '<div class="mo" title="' + (i + 1) + '월 · ' + n + '챕터"><span class="mo-n mono">' + (n || '') + '</span><i' + (n ? '' : ' class="zero"') + ' style="height:' + Math.round(n / max * 100) + '%"></i><span class="mo-l">' + (i + 1) + '</span></div>';
+    return '<div class="mo' + (i === thisMonth ? ' now' : '') + '" title="' + (i + 1) + '월 · ' + n + '챕터"><span class="mo-n mono">' + (n || '') + '</span><i' + (n ? '' : ' class="zero"') + ' style="height:' + Math.round(n / max * 100) + '%"></i><span class="mo-l">' + (i + 1) + '</span></div>';
   }).join('') + '</div></section>';
   var list = s.done.length ? '<div class="books">' + s.done.map(function (x) {
     var sub = fmt(x.end) + ' 완독' + (x.days ? ' · ' + x.days + '일' : '') + ' · ' + x.L + '챕터';
-    return '<a class="book" href="#book-' + esc(x.id) + '"><span class="cover" style="--h:' + hue(x.title) + '" aria-hidden="true">' + esc(x.title.charAt(0)) + '</span>' +
+    return '<a class="book" href="#book-' + esc(x.id) + '">' + coverHtml(x) +
       '<span class="book-main"><span class="book-title">' + esc(x.title) + '</span><span class="book-sub">' + (x.author ? esc(x.author) + ' · ' : '') + esc(sub) + '</span>' +
       (x.rating ? '<span class="rating" aria-label="평점 5점 중 ' + x.rating + '점"><span aria-hidden="true">' + '★'.repeat(x.rating) + '<i>' + '★'.repeat(5 - x.rating) + '</i></span></span>' : '') + '</span></a>';
   }).join('') + '</div>' : '<p class="muted">이 해에 완독한 책이 아직 없습니다.</p>';

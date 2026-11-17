@@ -1,11 +1,12 @@
 // 준비된 책(catalog/): Claude가 repo에 추가하면 여기서 서재에 담습니다.
-import { state } from "./state.js?v=67";
-import { render } from "./bus.js?v=67";
-import { persist } from "./sync.js?v=67";
-import { esc, hue } from "./util.js?v=67";
-import { showNotice } from "./undo.js?v=67";
-import { currentRoute } from "./router.js?v=67";
-import { parseToc, parseCatalogText, normalizeBook, findSimilarBook } from "./core.js?v=67";
+import { state } from "./state.js?v=68";
+import { render } from "./bus.js?v=68";
+import { persist } from "./sync.js?v=68";
+import { esc } from "./util.js?v=68";
+import { coverHtml } from "./view-common.js?v=68";
+import { showNotice } from "./undo.js?v=68";
+import { currentRoute } from "./router.js?v=68";
+import { parseToc, parseCatalogText, normalizeBook, findSimilarBook, leavesOf } from "./core.js?v=68";
 
 // 준비된 책 목록은 책 찾기 화면에서만 씁니다. 다른 화면(특히 입력 중인 책 추가 폼)은 다시 그리지 않습니다.
 function redraw() { if (currentRoute().name === "catalog") render(); }
@@ -25,9 +26,12 @@ export function catalogHtml() {
   if (state.catalog.length && !rest.length) return '<p class="muted" role="status">준비된 책을 모두 서재에 담았습니다.</p>';
   if (!rest.length) return state.catalogFailed ? '<div class="sec-h"><h2 class="sec">담을 수 있는 책</h2></div><p class="err" role="status">책 목록을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해 주세요.</p>' : "";
   return '<div class="sec-h"><h2 class="sec">담을 수 있는 책</h2></div><div class="books">' + rest.map(function (x) {
-    return '<div class="book"><span class="cover" style="--h:' + hue(x.c.title) + '" aria-hidden="true">' + esc(x.c.title.charAt(0)) + '</span>' +
-      '<span class="book-main"><span class="book-title">' + esc(x.c.title) + '</span><span class="book-sub">' + esc(x.c.author) + '</span></span>' +
-      '<span class="book-side"><button type="button" class="btn sm primary" data-act="catadd" data-id="' + esc(x.id) + '">서재에 담기</button></span></div>';
+    // 담기 전에 분량을 가늠하도록 챕터 수와 쪽수를 함께 보여 줍니다.
+    var n = leavesOf(parseToc(x.c.toc)).length;
+    var meta = [n ? n + '챕터' : '', x.c.totalPages ? x.c.totalPages + '쪽' : ''].filter(Boolean).join(' · ');
+    return '<div class="book cat-book">' + coverHtml({ title: x.c.title }) +
+      '<span class="book-main"><span class="book-title">' + esc(x.c.title) + '</span><span class="book-sub">' + esc(x.c.author) + '</span>' + (meta ? '<span class="book-meta">' + esc(meta) + '</span>' : '') + '</span>' +
+      '<span class="book-side"><button type="button" class="btn sm primary" data-act="catadd" data-id="' + esc(x.id) + '" aria-label="' + esc(x.c.title) + ' 서재에 담기">담기</button></span></div>';
   }).join("") + "</div>";
 }
 export function addFromCatalog(id) {
