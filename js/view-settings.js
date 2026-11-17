@@ -1,8 +1,8 @@
 // 주요 독서 화면과 분리된 설정·책 찾기 화면입니다.
-import { state } from "./state.js?v=66";
-import { esc } from "./util.js?v=66";
-import { catalogHtml } from "./catalog.js?v=66";
-import { themeLabel, fontScaleState } from "./prefs.js?v=66";
+import { state } from "./state.js?v=67";
+import { esc } from "./util.js?v=67";
+import { catalogHtml } from "./catalog.js?v=67";
+import { themeLabel, fontScaleState } from "./prefs.js?v=67";
 
 // 글자 크기 조절: 눌러 바로 전체 화면에 적용하고 이 기기에 저장합니다(5% 단위).
 function fontScaleItem() {

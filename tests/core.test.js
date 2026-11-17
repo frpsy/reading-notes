@@ -412,3 +412,19 @@ test("읽은 날 입력: 미래 날짜는 오늘로, 틀린 형식은 비움", (
   assert.equal(C.clampPastDate("", "2026-11-14"), null);
   assert.equal(C.clampPastDate("2026-02-31", "2026-11-14"), null);
 });
+
+test("recentDays: 오늘까지 최근 n일을 오래된 날부터 돌려줌", () => {
+  const days = C.recentDays({ "2026-11-17": 2, "2026-11-15": 1, "2026-11-01": 9 }, "2026-11-17", 7);
+  assert.equal(days.length, 7);
+  assert.equal(days[0].date, "2026-11-11");
+  assert.deepEqual(days.slice(-3).map((d) => d.count), [1, 0, 2]);
+  assert.deepEqual(C.recentDays({}, "잘못된 날짜", 7), []);
+});
+
+test("progressSegments: 읽을 단위마다 한 칸, 다음 챕터 표시, 너무 많으면 null", () => {
+  const segs = C.progressSegments(book({ chapters: [{ t: "1부", lv: 0 }, { t: "1장", lv: 1, done: "2026-11-01" }, { t: "2장", lv: 1 }, { t: "3장", lv: 0 }] }));
+  assert.deepEqual(segs.map((s) => [s.i, s.done, s.next]), [[1, true, false], [2, false, true], [3, false, false]]);
+  const many = Array.from({ length: 61 }, (_, i) => ({ t: "c" + i, lv: 0 }));
+  assert.equal(C.progressSegments(book({ chapters: many })), null);
+  assert.equal(C.progressSegments(book({ chapters: [] })), null);
+});

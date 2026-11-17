@@ -989,3 +989,24 @@ div.book .book-title{font-size:1.0625rem}
 .activity-page .activity{margin-top:12px;padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-panel)}
 .settings-account{color:var(--muted);font-size:.875rem;min-width:0;overflow-wrap:anywhere}
 @media (prefers-reduced-motion:reduce){.star,.memos>summary::after{transition:none}}
+
+/* 책갈피 v4 (2026-11-17): 책 모양 표지와 책갈피 리본, 챕터 칸 진도, 최근 7일 리듬. 색 토큰·레이아웃은 그대로 둡니다. */
+:root{--ribbon:#B5432D}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ribbon:#E8826B}}
+:root[data-theme="dark"]{--ribbon:#E8826B}
+.cover{position:relative;overflow:visible;background:linear-gradient(90deg,rgba(0,0,0,.26) 0,rgba(0,0,0,.26) 3px,rgba(255,255,255,.14) 3px,rgba(255,255,255,0) 7px),linear-gradient(165deg,hsl(var(--h) 40% 41%),hsl(var(--h) 38% 28%));box-shadow:2px 2px 0 -1px var(--surface),2px 2px 0 0 var(--line),4px 4px 0 -1px var(--surface),4px 4px 0 0 var(--line)}
+a.book .cover,.cover{border-radius:2px 6px 6px 2px}
+.cover.marked::after{content:"";position:absolute;top:-3px;right:9px;width:8px;height:24px;background:var(--ribbon);clip-path:polygon(0 0,100% 0,100% 100%,50% 76%,0 100%);box-shadow:none}
+.cover.lg.marked::after{right:11px;width:9px;height:30px}
+.bar.seg{display:flex;gap:3px;height:10px;background:transparent;border-radius:0;overflow:visible}
+.bar.seg i{flex:1 1 0;min-width:2px;width:auto;height:100%;border-radius:2px;background:var(--surface-2);transition:background-color var(--duration) ease-out}
+.bar.seg i.on{background:var(--accent)}
+.bar.seg.ok i.on{background:var(--ok)}
+.bar.seg i.next{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.rhythm{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:.8125rem;color:var(--muted)}
+.rhythm-dots{display:inline-flex;gap:4px}
+.rhythm-dots i{display:block;width:9px;height:9px;border-radius:50%;background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.rhythm-dots i.on{background:var(--accent)}
+.rhythm-dots i.today{box-shadow:0 0 0 1.5px var(--surface),0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent)}
+@media (prefers-reduced-motion:reduce){.bar.seg i{transition:none}}
+@media (forced-colors:active){.bar.seg i{border:1px solid CanvasText}.bar.seg i.on{background:CanvasText}.rhythm-dots i{border:1px solid CanvasText}.rhythm-dots i.on{background:CanvasText}}

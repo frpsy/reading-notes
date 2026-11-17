@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=66";
-import { esc, fmt, ago } from "./util.js?v=66";
-import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf } from "./core.js?v=66";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=66";
+import { state } from "./state.js?v=67";
+import { esc, fmt, ago } from "./util.js?v=67";
+import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf, progressSegments } from "./core.js?v=67";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=67";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -189,10 +189,12 @@ function foldAllButton(b) {
   return groupIndices.length ? '<button type="button" class="tgl fold-all" data-act="foldall" aria-controls="chapters-list" aria-expanded="' + (!allFolded) + '">' + (allFolded ? '전체 펼치기' : '전체 접기') + '</button>' : '';
 }
 
-function progressHtml(m) {
+function progressHtml(b, m) {
   const pct = Math.round(m.pct * 100);
+  // 챕터가 60개 이하이면 챕터마다 한 칸씩 보여 줍니다(다음 챕터는 테두리). 접근성 값은 그대로입니다.
+  const segs = progressSegments(b);
   const alt = m.pagePct != null ? '<span class="alt">분량 기준 ' + Math.round(m.pagePct * 100) + '% (' + m.pagesRead + '/' + m.pagesTotal + '쪽)</span>' : '';
-  return '<section class="reading-progress" aria-label="진척 현황"><div class="prog"><span class="big">' + pct + '%</span><span class="of">' + m.D + ' / ' + m.L + ' 챕터</span>' + alt + '</div><div role="progressbar" aria-label="읽은 챕터" aria-valuemin="0" aria-valuemax="' + m.L + '" aria-valuenow="' + m.D + '" aria-valuetext="' + m.L + '개 중 ' + m.D + '개 완료, ' + pct + '%" class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + pct + '%"></i></div></section>';
+  return '<section class="reading-progress" aria-label="진척 현황"><div class="prog"><span class="big">' + pct + '%</span><span class="of">' + m.D + ' / ' + m.L + ' 챕터</span>' + alt + '</div><div role="progressbar" aria-label="읽은 챕터" aria-valuemin="0" aria-valuemax="' + m.L + '" aria-valuenow="' + m.D + '" aria-valuetext="' + m.L + '개 중 ' + m.D + '개 완료, ' + pct + '%" class="bar' + (m.status === 'done' ? ' ok' : '') + (segs ? ' seg' : '') + '">' + (segs ? segs.map(function (s) { return '<i class="' + (s.done ? 'on' : s.next ? 'next' : '') + '"></i>'; }).join('') : '<i style="width:' + pct + '%"></i>') + '</div></section>';
 }
 
 function insightsHtml(b, m) {
@@ -213,7 +215,7 @@ function insightsHtml(b, m) {
 
 function headHtml(b, m) {
   const stale = m.status === 'reading' && m.last && (dnum(todayStr()) - dnum(m.last)) >= 7;
-  return '<div class="head">' + coverHtml(b, true) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? '<span class="by-author">' + esc(b.author) + '</span>' : '') + chipHtml(m) + (stale ? '<span class="chip">잠시 쉬는 중</span>' : '') + (b.totalPages ? '<span class="by-pages">' + b.totalPages + '쪽</span>' : '') + '</div></div>' +
+  return '<div class="head">' + coverHtml(b, true, m.status) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? '<span class="by-author">' + esc(b.author) + '</span>' : '') + chipHtml(m) + (stale ? '<span class="chip">잠시 쉬는 중</span>' : '') + (b.totalPages ? '<span class="by-pages">' + b.totalPages + '쪽</span>' : '') + '</div></div>' +
     '<details class="book-menu" data-disclosure="menu-' + esc(b.id) + '"><summary aria-label="책 설정">⋯</summary><div class="book-menu-items"><a href="#edit-' + esc(b.id) + '">정보·목차 수정</a>' + deleteControl(b) + '</div></details></div>';
 }
 
@@ -230,6 +232,6 @@ export function bookView(id) {
   if (!b) return notFound();
   const m = calcMetrics(b);
   return '<a class="back" href="#library">← 서재</a>' + headHtml(b, m) +
-    nextPanel(b, m) + doneBanner(b, m) + progressHtml(m) + insightsHtml(b, m) +
+    nextPanel(b, m) + doneBanner(b, m) + progressHtml(b, m) + insightsHtml(b, m) +
     chapterHeading(b) + chaptersHtml(b, m) + '<div id="memos-box">' + memosHtml(b, false) + '</div>' + noteSection(b);
 }
