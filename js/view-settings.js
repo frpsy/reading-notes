@@ -1,8 +1,7 @@
-// 주요 독서 화면과 분리된 설정·책 찾기 화면입니다.
-import { state } from "./state.js?v=68";
-import { esc } from "./util.js?v=68";
-import { catalogHtml } from "./catalog.js?v=68";
-import { themeLabel, fontScaleState } from "./prefs.js?v=68";
+// 설정 화면입니다(책 찾기는 책 추가 화면으로 합쳤습니다).
+import { state } from "./state.js?v=69";
+import { esc } from "./util.js?v=69";
+import { themeLabel, fontScaleState } from "./prefs.js?v=69";
 
 // 글자 크기 조절: 눌러 바로 전체 화면에 적용하고 이 기기에 저장합니다(5% 단위).
 function fontScaleItem() {
@@ -26,7 +25,3 @@ export function settingsView() {
     '<section class="settings-section"><h2 class="sec">계정</h2><div class="settings-item"><span class="settings-account">' + esc(state.userEmail || '로그인 계정') + '</span>' + logout + '</div></section>';
 }
 
-export function catalogView() {
-  return '<a class="back" href="#library">← 서재</a><div class="lib-head"><h1 class="page">책 찾기</h1><a class="btn primary" href="#add">직접 추가</a></div>' +
-    '<p class="muted">준비된 책을 선택하여 서재에 담을 수 있습니다.</p>' + catalogHtml();
-}

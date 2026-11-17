@@ -1,15 +1,20 @@
 // 준비된 책(catalog/): Claude가 repo에 추가하면 여기서 서재에 담습니다.
-import { state } from "./state.js?v=68";
-import { render } from "./bus.js?v=68";
-import { persist } from "./sync.js?v=68";
-import { esc } from "./util.js?v=68";
-import { coverHtml } from "./view-common.js?v=68";
-import { showNotice } from "./undo.js?v=68";
-import { currentRoute } from "./router.js?v=68";
-import { parseToc, parseCatalogText, normalizeBook, findSimilarBook, leavesOf } from "./core.js?v=68";
+import { state } from "./state.js?v=69";
+import { render } from "./bus.js?v=69";
+import { persist } from "./sync.js?v=69";
+import { esc } from "./util.js?v=69";
+import { coverHtml } from "./view-common.js?v=69";
+import { showNotice } from "./undo.js?v=69";
+import { currentRoute } from "./router.js?v=69";
+import { parseToc, parseCatalogText, normalizeBook, findSimilarBook, leavesOf } from "./core.js?v=69";
 
-// 준비된 책 목록은 책 찾기 화면에서만 씁니다. 다른 화면(특히 입력 중인 책 추가 폼)은 다시 그리지 않습니다.
-function redraw() { if (currentRoute().name === "catalog") render(); }
+// 준비된 책 선반은 책 추가 화면 안에 있습니다. 입력 중인 폼을 지우지 않도록 선반 영역만 바꿉니다.
+function redraw() {
+  var r = currentRoute();
+  if (r.name !== "form" || r.id) return;
+  var box = document.getElementById("cat-list");
+  if (box) box.innerHTML = catalogHtml();
+}
 // 서재에 같은 책(제목 기준, 저자·판본 표기는 무시)이 이미 있으면 그 책을 돌려줍니다. 직접 추가한 책은 id 가 달라 제목으로도 확인합니다.
 function owned(x) { return state.books.get(x.id) || findSimilarBook(Array.from(state.books.values()), x.c.title); }
 export function loadCatalog() {
@@ -21,18 +26,20 @@ export function loadCatalog() {
     }));
   }).then(function (all) { state.catalog = all.filter(function (x) { return x.c.title && x.c.toc; }); state.catalogFailed = false; redraw(); }).catch(function () { state.catalogFailed = true; redraw(); });
 }
+// 책 추가 화면의 '준비된 책' 선반 내용. 서재에 이미 있는 책은 뺍니다.
 export function catalogHtml() {
-  var rest = state.catalog.filter(function (x) { return !owned(x); }); // 서재에 이미 있는 책은 목록에서 뺍니다
-  if (state.catalog.length && !rest.length) return '<p class="muted" role="status">준비된 책을 모두 서재에 담았습니다.</p>';
-  if (!rest.length) return state.catalogFailed ? '<div class="sec-h"><h2 class="sec">담을 수 있는 책</h2></div><p class="err" role="status">책 목록을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해 주세요.</p>' : "";
-  return '<div class="sec-h"><h2 class="sec">담을 수 있는 책</h2></div><div class="books">' + rest.map(function (x) {
+  if (state.catalogFailed && !state.catalog.length) return '<p class="err cat-note" role="status">준비된 책 목록을 불러오지 못했습니다. 아래에 직접 입력해 주세요.</p>';
+  if (!state.catalog.length) return '<p class="muted cat-note" role="status">준비된 책을 불러오는 중…</p>';
+  var rest = state.catalog.filter(function (x) { return !owned(x); });
+  if (!rest.length) return '<p class="muted cat-note" role="status">준비된 책을 모두 서재에 담았습니다.</p>';
+  return rest.map(function (x) {
     // 담기 전에 분량을 가늠하도록 챕터 수와 쪽수를 함께 보여 줍니다.
     var n = leavesOf(parseToc(x.c.toc)).length;
     var meta = [n ? n + '챕터' : '', x.c.totalPages ? x.c.totalPages + '쪽' : ''].filter(Boolean).join(' · ');
     return '<div class="book cat-book">' + coverHtml({ title: x.c.title }) +
       '<span class="book-main"><span class="book-title">' + esc(x.c.title) + '</span><span class="book-sub">' + esc(x.c.author) + '</span>' + (meta ? '<span class="book-meta">' + esc(meta) + '</span>' : '') + '</span>' +
       '<span class="book-side"><button type="button" class="btn sm primary" data-act="catadd" data-id="' + esc(x.id) + '" aria-label="' + esc(x.c.title) + ' 서재에 담기">담기</button></span></div>';
-  }).join("") + "</div>";
+  }).join("");
 }
 export function addFromCatalog(id) {
   var x = state.catalog.find(function (y) { return y.id === id; });
@@ -49,7 +56,7 @@ export function addFromCatalog(id) {
   state.books.set(id, b);
   // 이전에 '읽는 중' 필터/검색을 사용했어도 새로 담은 책이 바로 보여야 합니다.
   state.ui.filter = 'todo'; state.ui.q = '';
-  // 책 찾기 화면에서 담으면 서재의 독서 예정 목록으로 이동합니다.
-  if (location.hash === "#catalog") location.hash = "library";
+  // 책 추가 화면에서 담으면 서재의 독서 예정 목록으로 이동합니다.
+  if (location.hash === "#catalog" || location.hash === "#add") location.hash = "library";
   render();
 }
