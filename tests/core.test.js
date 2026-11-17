@@ -436,3 +436,17 @@ test("heatmapMonths: 새 달이 시작되는 주에 'N월', 붙은 표시는 앞
   assert.deepEqual(labels.filter(Boolean), ["9월", "10월", "11월"]);
   assert.equal(labels[0], "");
 });
+
+test("스트레스(새폴스키): 공식 한국어판 18장 목차와 쪽수", () => {
+  const list = JSON.parse(fs.readFileSync(new URL("../catalog/index.json", import.meta.url), "utf8"));
+  assert.equal(list.filter((x) => x.file === "stress-sapolsky-ko.txt").length, 1);
+  const book = parseCatalogText(fs.readFileSync(new URL("../catalog/stress-sapolsky-ko.txt", import.meta.url), "utf8"));
+  const chapters = parseToc(book.toc);
+  assert.equal(book.title, "스트레스");
+  assert.equal(book.author, "로버트 M. 새폴스키");
+  assert.equal(book.totalPages, 760);
+  assert.equal(chapters.filter((x) => /^\d+장 /.test(x.t)).length, 18);
+  assert.equal(chapters[0].t, "머리말");
+  assert.deepEqual(chapters.slice(-3).map((x) => x.t), ["18장 스트레스 관리하기", "주(註)", "더 읽을거리"]);
+  assert.ok(chapters.every((x) => x.p == null), "시작 페이지를 추측하지 않음");
+});
