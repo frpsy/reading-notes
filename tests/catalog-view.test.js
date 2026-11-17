@@ -19,17 +19,25 @@ test('책 찾기: 카드에 챕터 수·쪽수와 책 이름이 들어간 담기
   state.catalog = [];
 });
 
-test('책 추가 통합: 추가 화면에 준비된 책 선반과 직접 입력, 수정 화면에는 선반 없음', async () => {
+test('책 추가: 붙여 넣기·준비된 책 두 탭, 책 찾기 주소는 준비된 책 탭, 수정 화면에는 탭 없음', async () => {
   const { formView } = await import('../js/view-form.js?v=' + V);
   const { libraryView } = await import('../js/view-library.js?v=' + V);
   state.books.clear();
   state.catalog = [];
   const add = formView(null);
-  assert.match(add, /<section class="cat-shelf"[\s\S]*id="cat-list"[\s\S]*불러오는 중/);
-  assert.ok(add.indexOf('cat-shelf') < add.indexOf('id="bookForm"'), '선반이 폼 위');
-  assert.doesNotMatch(add, /id="f-cat"/, '불러오기 선택 상자는 없앰');
+  assert.match(add, /role="tablist"/);
+  assert.match(add, /id="tab-paste"[^>]*aria-selected="true"/);
+  assert.match(add, /<section class="add-shelf" id="add-shelf" role="tabpanel"[^>]* hidden>/);
+  assert.match(add, /<form class="form" id="bookForm" novalidate role="tabpanel" aria-labelledby="tab-paste">/);
+  assert.match(add, /id="f-paste"/);
+  assert.ok(add.indexOf('id="f-paste"') < add.indexOf('id="f-title"'), '붙여 넣기 칸이 맨 위');
+  assert.doesNotMatch(add, /id="f-cat"/);
+  const fromCatalog = formView(null, 'catalog');
+  assert.match(fromCatalog, /id="tab-shelf"[^>]*aria-selected="true"/);
+  assert.match(fromCatalog, /id="bookForm" novalidate role="tabpanel" aria-labelledby="tab-paste" hidden>/);
   state.books.set('e1', { id: 'e1', title: '수정할 책', chapters: [{ t: '1장', lv: 0 }], createdAt: 1 });
-  assert.doesNotMatch(formView('e1'), /cat-shelf/);
+  const edit = formView('e1');
+  assert.doesNotMatch(edit, /tablist|f-paste|add-shelf/);
   state.books.clear();
   const lib = libraryView();
   assert.doesNotMatch(lib, /href="#catalog"/);

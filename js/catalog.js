@@ -1,12 +1,12 @@
 // 준비된 책(catalog/): Claude가 repo에 추가하면 여기서 서재에 담습니다.
-import { state } from "./state.js?v=69";
-import { render } from "./bus.js?v=69";
-import { persist } from "./sync.js?v=69";
-import { esc } from "./util.js?v=69";
-import { coverHtml } from "./view-common.js?v=69";
-import { showNotice } from "./undo.js?v=69";
-import { currentRoute } from "./router.js?v=69";
-import { parseToc, parseCatalogText, normalizeBook, findSimilarBook, leavesOf } from "./core.js?v=69";
+import { state } from "./state.js?v=70";
+import { render } from "./bus.js?v=70";
+import { persist } from "./sync.js?v=70";
+import { esc } from "./util.js?v=70";
+import { coverHtml } from "./view-common.js?v=70";
+import { showNotice } from "./undo.js?v=70";
+import { currentRoute } from "./router.js?v=70";
+import { parseToc, parseCatalogText, normalizeBook, findSimilarBook, leavesOf } from "./core.js?v=70";
 
 // 준비된 책 선반은 책 추가 화면 안에 있습니다. 입력 중인 폼을 지우지 않도록 선반 영역만 바꿉니다.
 function redraw() {
@@ -14,6 +14,13 @@ function redraw() {
   if (r.name !== "form" || r.id) return;
   var box = document.getElementById("cat-list");
   if (box) box.innerHTML = catalogHtml();
+  var count = document.getElementById("shelf-count");
+  if (count) count.textContent = catalogCount() == null ? "" : String(catalogCount());
+}
+// 담을 수 있는 준비된 책 수. 목록을 아직 불러오지 못했으면 null.
+export function catalogCount() {
+  if (!state.catalog.length) return null;
+  return state.catalog.filter(function (x) { return !owned(x); }).length;
 }
 // 서재에 같은 책(제목 기준, 저자·판본 표기는 무시)이 이미 있으면 그 책을 돌려줍니다. 직접 추가한 책은 id 가 달라 제목으로도 확인합니다.
 function owned(x) { return state.books.get(x.id) || findSimilarBook(Array.from(state.books.values()), x.c.title); }

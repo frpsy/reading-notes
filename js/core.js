@@ -89,6 +89,120 @@ export function parseToc(text) {
   return items;
 }
 
+/* ---------- 서점 페이지 붙여넣기 ---------- */
+// YES24·알라딘·교보문고 상품 페이지를 통째로 복사해 붙여 넣으면 제목·저자·출판사·쪽수·ISBN·목차를 골라냅니다.
+// 목차만 붙여 넣어도 됩니다. 찾지 못한 값은 비워 두고(추측하지 않음) found 에 무엇을 찾았는지 남깁니다.
+const WEB_PAGE = /(?:로그인|회원가입|장바구니|카트에 넣기|바로구매|고객센터|Copyright|All Rights Reserved)/i;
+const TOC_HEAD = /^\s*(?:\[\s*)?목\s*차(?:\s*\])?(?:\s*(?:보기|열기|펼치기|펼쳐보기))?\s*$/;
+const TOC_STOP = /^\s*(?:접어보기|펼쳐보기|더보기|닫기|저자\s*소개|작가\s*소개|저자소개|역자\s*소개|옮긴이\s*소개|책\s*속으로|책\s*속에서|책속에서|출판사\s*리뷰|출판사\s*서평|출판사\s*제공|추천평|추천사|회원\s*리뷰|리뷰|한줄평|품목\s*정보|상세\s*이미지|북\s*트레일러|이\s*책의|카테고리|관련\s*분류|이벤트|책\s*소개|기본\s*정보|주제\s*분류|함께\s*(?:구매|산|본)|구매\s*혜택|배송|교환|반품|작가의\s*다른|이\s*상품의|선택한\s*상품|미리보기)(?:\s|\(|$)/;
+const MARK_PART = /^(?:part\s*\d+|파트\s*\d+|제?\s*\d+\s*부(?:\s|[.:]|$)|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+\s*[.:]?\s|section\s*\d+)/i;
+const MARK_CH = /^(?:chapter\s*\d+|챕터\s*\d+|제?\s*\d+\s*(?:장|강|화|편)(?:\s|[.:]|$)|\d+(?:\.\d+)*\s*[.)]?\s+\S|\d+[.)]\S)/i;
+const MARK_EDGE = /^(?:prologue|epilogue|introduction|intro|preface|appendix|notes?|index|프롤로그|에필로그|서문|서론|결론|머리말|머리글|들어가며|들어가는\s*말|시작하며|여는\s*글|나오며|나가며|맺음말|맺는\s*말|마치며|닫는\s*글|부록|주석?(?:\s*\(|$|\s)|미주|참고\s*문헌|찾아보기|색인|감사의\s*(?:말|글)|옮긴이의\s*말|역자\s*(?:후기|의\s*말)|해제|추천의\s*(?:말|글)|더\s*읽을거리|작가의\s*말|저자의\s*말)/i;
+function cleanTitle(t) {
+  t = String(t || "").replace(/^\s*\[(?:도서|eBook|전자책|중고|국내도서|외국도서)\]\s*/i, "");
+  t = t.split(/\s+\|\s+/)[0];                       // 알라딘 "제목 : 부제 | 시리즈"
+  t = t.split(/\s+[:：]\s+/)[0];                     // "제목 : 부제"
+  t = t.replace(/\s*\[\s*[^\]]*\]\s*/g, " ");          // [ 양장 ] 같은 표기
+  t = t.replace(/\s*\((?=[^)]*(?:판|에디션|기념|개정|합본|양장|반양장|무선|리커버|특별))[^)]*\)\s*/g, " ");
+  t = t.replace(/^[A-Z][A-Z0-9&'.\- ]{3,}\s+(?=[가-힣])/, ""); // YES24 "STRESS 스트레스"
+  return t.replace(/\s+/g, " ").trim();
+}
+function authorFromLine(line) {
+  let m;
+  // YES24: "제임스 클리어 저/이한이 역 | 비즈니스북스 | 2019년 02월 26일"
+  if ((m = line.match(/^(.+?)\s*(?:저|글|지음|著)(?:\s*[\/·,]\s*.+?)?\s*\|\s*([^|]+?)\s*\|\s*(?:\d{4}[년.\-])/))) return { author: m[1], publisher: m[2] };
+  // 알라딘: "로버트 M. 새폴스키 (지은이),이재담 (옮긴이)사이언스북스2008-11-28"
+  if ((m = line.match(/^(.+?)\s*\((?:지은이|글|저자)\)(?:.*\((?:옮긴이|그림|엮은이|감수)\))?\s*(.*?)(\d{4}-\d{2}-\d{2})/))) return { author: m[1], publisher: m[2].replace(/^[,\s]+/, "") };
+  // 교보문고: "로버트 M. 새폴스키 저자(글) · 이재담 번역 · 사이언스북스 · 2008년 11월 28일"
+  if ((m = line.match(/^(.+?)\s*저자(?:\(글\))?(?:\s*[·∙|]\s*.+?(?:번역|옮김|역|그림))*\s*[·∙|]\s*([^·∙|]+?)\s*[·∙|]\s*\d{4}[년.\-]/))) return { author: m[1], publisher: m[2] };
+  return null;
+}
+export function parseBookPaste(text) {
+  const out = { title: "", author: "", publisher: "", pages: null, isbn: "", toc: "", found: [] };
+  const lines = String(text || "").replace(/\r/g, "").split("\n");
+  const t = lines.map((l) => l.replace(/ /g, " ").trimEnd());
+  // 저자 줄과 그 위의 제목 줄
+  let ai = -1;
+  for (let i = 0; i < t.length; i++) { const a = authorFromLine(t[i].trim()); if (a) { ai = i; out.author = a.author.replace(/\s*외\s*\d*명?$/, "").trim(); out.publisher = a.publisher.trim(); break; } }
+  // 교보문고는 "저자명 / 저자(글) / 역자 / 번역 / 출판사 / · / 날짜"가 한 줄씩 나뉩니다.
+  if (ai < 0) {
+    const ki = t.findIndex((l) => /^\s*저자(?:\(글\))?\s*$/.test(l));
+    if (ki > 0) {
+      const back = (i) => { i--; while (i >= 0 && !t[i].trim()) i--; return i; };
+      const fwd = (i) => { i++; while (i < t.length && !t[i].trim()) i++; return i; };
+      const na = back(ki);
+      out.author = t[na].trim();
+      let j = fwd(ki);
+      while (j < t.length && (/^\s*(?:번역|옮김|그림|감수|엮음|역)\s*$/.test(t[j + 1] || "") || /^\s*(?:번역|옮김|그림|감수|엮음|역)\s*$/.test(t[j]))) j = fwd(j);
+      if (j < t.length && !/^\s*[·∙]\s*$/.test(t[j]) && !/\d{4}년/.test(t[j])) out.publisher = t[j].trim();
+      // 제목: 저자 위로 가격·판매처 줄을 건너뛰고, 빈 줄로 떨어진 부제가 있으면 그 위 줄이 제목입니다.
+      const skip = (l) => !l.trim() || /원$|^(?:국내도서|외국도서|eBook|전자책|중고|sam|오디오북)$/i.test(l.trim());
+      let c = na - 1; while (c >= 0 && skip(t[c])) c--;
+      let c2 = c - 1, gap = false; while (c2 >= 0 && !t[c2].trim()) { c2--; gap = true; }
+      out.title = cleanTitle(gap && c2 >= 0 ? t[c2] : t[c]);
+      ai = na;
+    }
+  }
+  if (ai > 0 && !out.title) {
+    let k = ai - 1;
+    while (k >= 0 && !t[k].trim()) k--;
+    if (k >= 0) out.title = cleanTitle(t[k]);
+    // YES24 는 '도서정보' 바로 위에 부제 없는 짧은 제목을 한 번 더 씁니다.
+    const di = t.findIndex((l, i) => i > ai && /^\s*도서\s*정보\s*$/.test(l));
+    if (di > 0) { let j = di - 1; while (j > ai && !t[j].trim()) j--; const short = cleanTitle(t[j]); if (short && out.title.indexOf(short) === 0 || (short && short.length < out.title.length && out.title.includes(short))) out.title = short; }
+  }
+  const joined = t.join("\n");
+  let m = joined.match(/쪽수[^\n]*?(\d{2,5})\s*(?:쪽|페이지|p\b)/) || joined.match(/(?:^|[\s|,(])(\d{2,5})\s*쪽(?:\s*\||\s*,|\s*$|\s*\))/m);
+  if (m) out.pages = parseInt(m[1], 10);
+  m = joined.match(/(?:ISBN(?:13)?[^\n\d]*)?\b(97[89][\d\- ]{10,14})/i);
+  if (m) { const digits = m[1].replace(/\D/g, ""); if (digits.length === 13) out.isbn = digits; }
+  // 목차: '목차' 머리 다음부터 다른 영역 제목 전까지. 머리가 없고 저자 줄도 없으면 전체를 목차로 봅니다.
+  let start = t.findIndex((l) => TOC_HEAD.test(l));
+  let body;
+  if (start >= 0) {
+    body = [];
+    for (let i = start + 1; i < t.length; i++) { if (TOC_STOP.test(t[i])) break; body.push(t[i]); }
+  } else body = ai >= 0 || WEB_PAGE.test(joined) ? [] : t.slice(); // 상품 페이지가 아닌 웹 화면 전체는 목차로 쓰지 않습니다.
+  out.toc = tidyToc(body);
+  ["title", "author", "publisher", "pages", "isbn"].forEach((k) => { if (out[k]) out.found.push(k); });
+  if (out.toc) out.found.push("toc");
+  return out;
+}
+// 서점 목차 정리: 빈 줄·판권 줄을 빼고, 장 아래 소개 줄(절 목록)을 빼고, 부 아래 장을 들여씁니다.
+export function tidyToc(rawLines) {
+  const src = (Array.isArray(rawLines) ? rawLines : String(rawLines || "").replace(/\r/g, "").split("\n"));
+  const rows = [];
+  src.forEach((raw) => {
+    const s = raw.replace(/ /g, " ");
+    const trimmed = s.trim();
+    if (!trimmed) return;
+    if (/^(?:화보\s*)?판권$|^화보$|^(?:목차|목\s*차)$/.test(trimmed)) return;
+    rows.push({ raw: s.replace(/\s+$/, ""), t: trimmed, indented: /^[ \t　]/.test(s) });
+  });
+  if (!rows.length) return "";
+  const kind = (x) => MARK_PART.test(x) ? "part" : MARK_CH.test(x) ? "ch" : MARK_EDGE.test(x) ? "edge" : "";
+  rows.forEach((r) => { r.k = kind(r.t); });
+  const marked = rows.filter((r) => r.k).length;
+  const structured = marked >= 3 && !rows.some((r) => r.indented);
+  const kept = [];
+  rows.forEach((r) => {
+    if (structured) {
+      if (/\s[｜|]\s/.test(r.t)) return;                       // 절 목록 줄
+      const prev = kept[kept.length - 1];
+      if (!r.k && prev && prev.k === "ch") return;            // 장 바로 아래 소개 줄
+    }
+    kept.push(r);
+  });
+  const hasPart = structured && kept.some((r) => r.k === "part") && kept.some((r) => r.k === "ch");
+  let inPart = false;
+  return kept.map((r) => {
+    if (!structured) return r.raw;
+    if (r.k === "part") { inPart = true; return r.t; }
+    if (r.k === "edge") { inPart = false; return r.t; }
+    return (hasPart && inPart ? "  " : "") + r.t;
+  }).join("\n");
+}
+
 export function tocText(book) {
   return book.chapters.map((c) => "  ".repeat(c.lv) + c.t + (c.p != null ? " ........ " + c.p : "")).join("\n");
 }
