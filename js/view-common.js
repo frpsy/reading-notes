@@ -1,6 +1,6 @@
 // 여러 화면이 함께 쓰는 조각(표지, 칩, 로그인 화면 등)입니다.
-import { state } from "./state.js?v=66";
-import { esc, hue } from "./util.js?v=66";
+import { state } from "./state.js?v=67";
+import { esc, hue } from "./util.js?v=67";
 
 export var CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 export var DASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg>';
@@ -8,9 +8,10 @@ export var CHEVRON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l
 export var DOTS = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>';
 export var ST = { reading: '읽는 중', done: '완독', todo: '독서 예정' };
 
-export function coverHtml(b, lg) {
+// 표지는 책 모양(책등·책장 단면)이고, 읽는 중인 책에는 책갈피 리본을 꽂습니다.
+export function coverHtml(b, lg, status) {
   var ch = (b.title || '?').trim().charAt(0) || '?';
-  return '<span class="cover' + (lg ? ' lg' : '') + '" style="--h:' + hue(b.title || '') + '" aria-hidden="true">' + esc(ch) + '</span>';
+  return '<span class="cover' + (lg ? ' lg' : '') + (status === 'reading' ? ' marked' : '') + '" style="--h:' + hue(b.title || '') + '" aria-hidden="true">' + esc(ch) + '</span>';
 }
 export function chipHtml(m) { return '<span class="chip ' + m.status + '">' + ST[m.status] + '</span>'; }
 export function loadingView() { return '<p class="muted" role="status" aria-live="polite">불러오는 중…</p>'; }

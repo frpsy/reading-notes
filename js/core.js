@@ -240,6 +240,24 @@ export function goalInfo(book, m, today = todayStr()) {
 
 /* ---------- 독서 기록(연속 일수·히트맵) ---------- */
 // 날짜별 완료한 읽을 단위 수
+// 최근 n일(오늘 포함, 오래된 날부터)의 읽은 챕터 수. 서재의 '최근 7일' 리듬 표시에 씁니다.
+export function recentDays(map, today = todayStr(), n = 7) {
+  const end = dnum(today);
+  if (end == null) return [];
+  const out = [];
+  for (let k = n - 1; k >= 0; k--) { const date = dstr(end - k); out.push({ date: date, count: map[date] || 0 }); }
+  return out;
+}
+
+// 책 상세의 진도 칸: 읽을 단위(챕터)마다 한 칸. 많으면 칸 대신 기존 막대를 씁니다.
+export function progressSegments(book, max = 60) {
+  const ch = book.chapters || [];
+  const leaves = leavesOf(ch);
+  if (!leaves.length || leaves.length > max) return null;
+  const next = nextLeafIndex(book);
+  return leaves.map((i) => ({ i: i, done: !!ch[i].done, next: i === next }));
+}
+
 export function activityByDate(books) {
   const map = {};
   books.forEach((b) => {

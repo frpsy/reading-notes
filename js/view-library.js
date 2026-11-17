@@ -1,8 +1,8 @@
 // 서재: 핵심 독서 기능. 독서 활동 통계는 별도 화면에 표시합니다.
-import { state } from "./state.js?v=66";
-import { esc, fmt, ago } from "./util.js?v=66";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=66";
-import { coverHtml, chipHtml } from "./view-common.js?v=66";
+import { state } from "./state.js?v=67";
+import { esc, fmt, ago } from "./util.js?v=67";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, recentDays, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=67";
+import { coverHtml, chipHtml } from "./view-common.js?v=67";
 
 function nextLine(b, m) {
   // 독서 예정인 책은 '다음' 안내를 표시해 시작한 것처럼 보이지 않게 합니다.
@@ -21,7 +21,7 @@ function bookRow(b, m, hideChip) {
   // 큰 퍼센트와 같은 값이면 반복하지 않고, 다를 때만 분량 기준을 보여 줍니다.
   if (m.pagePct != null && Math.round(m.pagePct * 100) !== Math.round(m.pct * 100)) meta += ' · 분량 기준 ' + Math.round(m.pagePct * 100) + '%';
   var stale = m.status === 'reading' && m.last && (dnum(todayStr()) - dnum(m.last)) >= 7;
-  return '<a class="book" href="#book-' + esc(b.id) + '">' + coverHtml(b) +
+  return '<a class="book" href="#book-' + esc(b.id) + '">' + coverHtml(b, false, m.status) +
     '<span class="book-main"><span class="book-title">' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</span>' +
     '<span class="book-sub">' + by + sub + '</span>' +
     '<span class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + Math.round(m.pct * 100) + '%"></i></span>' +
@@ -30,6 +30,16 @@ function bookRow(b, m, hideChip) {
 }
 
 // 기존 독서 기록에서 최근 읽은 한 권을 표시합니다. 오늘 읽었어도 안내는 유지합니다.
+// 최근 7일 리듬: 읽은 날만 채운 점 일곱 개. 재촉하는 문구 없이 사실만 보여 줍니다.
+function rhythmHtml(all) {
+  var days = recentDays(activityByDate(all.map(function (x) { return x.b; })), todayStr(), 7);
+  var read = days.filter(function (d) { return d.count > 0; }).length;
+  if (!read) return '';
+  return '<span class="rhythm"><span class="rhythm-dots" aria-hidden="true">' + days.map(function (d, k) {
+    return '<i class="' + (d.count > 0 ? 'on' : '') + (k === days.length - 1 ? ' today' : '') + '"></i>';
+  }).join('') + '</span><span class="rhythm-txt">최근 7일 중 ' + read + '일 읽음</span></span>';
+}
+
 function resumeHtml(all) {
   var reading = all.filter(function (x) { return x.m.status === 'reading' && nextLeafIndex(x.b) >= 0; });
   if (!reading.length) return '';
@@ -39,10 +49,10 @@ function resumeHtml(all) {
   });
   var x = reading[0], i = nextLeafIndex(x.b), pct = Math.round(x.m.pct * 100);
   return '<a class="remind resume" href="#book-' + esc(x.b.id) + '" aria-label="이어서 읽기: ' + esc(x.b.title) + ', 진행률 ' + pct + '%">' +
-    coverHtml(x.b) + '<span class="resume-body"><span class="resume-label">이어서 읽기</span>' +
+    coverHtml(x.b, false, 'reading') + '<span class="resume-body"><span class="resume-label">이어서 읽기</span>' +
     '<strong class="resume-title">' + esc(x.b.title) + '</strong>' +
     '<span class="resume-next">' + esc(x.b.chapters[i].t) + '</span>' +
-    '<span class="bar" aria-hidden="true"><i style="width:' + pct + '%"></i></span></span>' +
+    '<span class="bar" aria-hidden="true"><i style="width:' + pct + '%"></i></span>' + rhythmHtml(all) + '</span>' +
     '<span class="resume-side"><b>' + pct + '%</b><span>읽기 ›</span></span></a>';
 }
 

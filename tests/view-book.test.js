@@ -69,3 +69,15 @@ test('책 상세 머리말: 저자·상태·쪽수는 점 없이 칸으로 나�
   assert.ok(by.includes('<span class="by-pages">300쪽</span>'));
   assert.ok(!by.includes('·'));
 });
+
+test('책 상세: 진도는 챕터마다 한 칸이고 접근성 값은 그대로 유지', () => {
+  reset(book());
+  const html = bookView('b1');
+  const bar = /<div role="progressbar"[\s\S]*?<\/div>/.exec(html)[0];
+  assert.match(bar, /class="bar seg"/);
+  assert.match(bar, /aria-valuenow="1"/);
+  assert.equal((bar.match(/<i class="on">/g) || []).length, 1);
+  assert.equal((bar.match(/<i class="next">/g) || []).length, 1);
+  assert.equal((bar.match(/<i /g) || []).length, 3);
+  assert.match(html, /<span class="cover lg marked"/);
+});
