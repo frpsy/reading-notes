@@ -68,3 +68,14 @@ test('서재: 읽는 중 책 표지에만 책갈피 리본, 이어서 읽기에 
   assert.doesNotMatch(row('w'), /marked/);
   assert.doesNotMatch(row('d'), /marked/);
 });
+
+test('독서 활동: 요일·월 표시와 오늘 칸, 연속 기록이 없으면 0 대신 문구', async () => {
+  const { activityView } = await import('../js/view-library.js?v=' + V);
+  reset(book('old', '지난 책', '2026-10-01', { completed: true }));
+  const html = activityView();
+  assert.match(html, /class="heat-days"[^>]*><i><\/i><i>월<\/i>/);
+  assert.match(html, /class="heat-months"/);
+  assert.equal((html.match(/hc[^"]* today"/g) || []).length, 1);
+  assert.match(html, /연속 기록 없음/);
+  assert.doesNotMatch(html, /<b class="mono">0<\/b><span>일 연속/);
+});

@@ -428,3 +428,11 @@ test("progressSegments: 읽을 단위마다 한 칸, 다음 챕터 표시, 너�
   assert.equal(C.progressSegments(book({ chapters: many })), null);
   assert.equal(C.progressSegments(book({ chapters: [] })), null);
 });
+
+test("heatmapMonths: 새 달이 시작되는 주에 'N월', 붙은 표시는 앞의 것을 뺌", () => {
+  const cols = C.heatmapWeeks({}, "2026-11-18", 12);
+  const labels = C.heatmapMonths(cols);
+  assert.equal(labels.length, 12);
+  assert.deepEqual(labels.filter(Boolean), ["9월", "10월", "11월"]);
+  assert.equal(labels[0], "");
+});

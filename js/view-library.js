@@ -1,8 +1,8 @@
 // 서재: 핵심 독서 기능. 독서 활동 통계는 별도 화면에 표시합니다.
-import { state } from "./state.js?v=67";
-import { esc, fmt, ago } from "./util.js?v=67";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, recentDays, currentStreak, longestStreak, streakStatus, heatmapWeeks, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=67";
-import { coverHtml, chipHtml } from "./view-common.js?v=67";
+import { state } from "./state.js?v=68";
+import { esc, fmt, ago } from "./util.js?v=68";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, recentDays, currentStreak, longestStreak, streakStatus, heatmapWeeks, heatmapMonths, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=68";
+import { coverHtml, chipHtml } from "./view-common.js?v=68";
 
 function nextLine(b, m) {
   // 독서 예정인 책은 '다음' 안내를 표시해 시작한 것처럼 보이지 않게 합니다.
@@ -60,14 +60,19 @@ function activityHtml(list) {
   var map = activityByDate(list);
   if (!Object.keys(map).length) return '';
   var cur = currentStreak(map), best = longestStreak(map);
-  var cols = heatmapWeeks(map, todayStr(), 12);
+  var today = todayStr();
+  var cols = heatmapWeeks(map, today, 12);
+  var months = heatmapMonths(cols).map(function (label) { return '<span>' + label + '</span>'; }).join('');
   var cells = cols.map(function (col) {
     return col.map(function (d) {
-      return '<i class="hc l' + d.level + (d.future ? ' fut' : '') + '"' + (d.future ? '' : ' title="' + esc(d.date.slice(5).replace('-', '/') + ' · ' + d.count + '챕터') + '"') + '></i>';
+      return '<i class="hc l' + d.level + (d.future ? ' fut' : '') + (d.date === today ? ' today' : '') + '"' + (d.future ? '' : ' title="' + esc(d.date.slice(5).replace('-', '/') + ' · ' + d.count + '챕터') + '"') + '></i>';
     }).join('');
   }).join('');
-  return '<section class="activity" aria-label="최근 12주 독서 기록"><div class="act-h"><b class="mono">' + cur + '</b><span>일 연속</span><span class="muted">· 최장 ' + best + '일</span></div>' +
-    '<div class="heat" role="img" aria-label="최근 12주 동안 챕터를 읽은 날">' + cells + '</div>' +
+  // 연속 기록이 없으면 '0일 연속' 대신 사실만 적습니다.
+  var head = cur ? '<b class="mono">' + cur + '</b><span>일 연속</span>' : '<span>연속 기록 없음</span>';
+  return '<section class="activity" aria-label="최근 12주 독서 기록"><div class="act-h">' + head + '<span class="muted">· 최장 ' + best + '일</span></div>' +
+    '<div class="heat-wrap"><span class="heat-days" aria-hidden="true"><i></i><i>월</i><i></i><i>수</i><i></i><i>금</i><i></i></span><span class="heat-months" aria-hidden="true">' + months + '</span>' +
+    '<div class="heat" role="img" aria-label="최근 12주 동안 챕터를 읽은 날">' + cells + '</div></div>' +
     '<p class="heat-legend" aria-hidden="true"><span>최근 12주</span><span class="heat-scale">적게<i class="hc"></i><i class="hc l1"></i><i class="hc l2"></i><i class="hc l3"></i>많이</span></p></section>';
 }
 
