@@ -1,8 +1,8 @@
 // 서재: 핵심 독서 기능. 독서 활동 통계는 별도 화면에 표시합니다.
-import { state } from "./state.js?v=68";
-import { esc, fmt, ago } from "./util.js?v=68";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, recentDays, currentStreak, longestStreak, streakStatus, heatmapWeeks, heatmapMonths, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=68";
-import { coverHtml, chipHtml } from "./view-common.js?v=68";
+import { state } from "./state.js?v=69";
+import { esc, fmt, ago } from "./util.js?v=69";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, recentDays, currentStreak, longestStreak, streakStatus, heatmapWeeks, heatmapMonths, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=69";
+import { coverHtml, chipHtml } from "./view-common.js?v=69";
 
 function nextLine(b, m) {
   // 독서 예정인 책은 '다음' 안내를 표시해 시작한 것처럼 보이지 않게 합니다.
@@ -80,9 +80,9 @@ export function libraryView() {
   var all = Array.from(state.books.values()).map(function (b) { return { b: b, m: calcMetrics(b) } });
   var cnt = { all: all.length, reading: 0, todo: 0, done: 0 };
   all.forEach(function (x) { cnt[x.m.status]++; });
-  var head = '<div class="lib-head"><h1 class="page">내 서재</h1><div class="lib-actions"><a class="btn" href="#catalog">책 찾기</a><a class="btn primary" href="#add">책 추가</a></div></div>';
+  var head = '<div class="lib-head"><h1 class="page">내 서재</h1><div class="lib-actions"><a class="btn primary" href="#add">책 추가</a></div></div>';
   if (!all.length) {
-    return head + '<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>책을 직접 추가하거나 준비된 책을 찾아보세요.</p><a class="btn" href="#catalog">책 찾기</a></div>';
+    return head + '<div class="empty"><h2>아직 담은 책이 없습니다</h2><p>준비된 책을 담거나 목차를 붙여 넣어 책을 추가해 보세요.</p><a class="btn primary" href="#add">책 추가</a></div>';
   }
   var tabs = '<div class="tabs" role="group" aria-label="상태 필터">' + [['all', '전체'], ['reading', '읽는 중'], ['todo', '독서 예정'], ['done', '완독']].map(function (x) {
     return '<button type="button" class="tab' + (cnt[x[0]] === 0 ? ' zero' : '') + '" data-act="filter" data-v="' + x[0] + '" aria-pressed="' + (state.ui.filter === x[0]) + '">' + x[1] + '<em>' + cnt[x[0]] + '</em></button>';

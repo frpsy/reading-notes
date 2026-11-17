@@ -1,9 +1,10 @@
-// 책 추가·정보 수정 화면: 목차 붙여넣기, 미리보기, 준비된 책 불러오기.
-import { state } from "./state.js?v=68";
-import { esc } from "./util.js?v=68";
-import { parseToc, tocText, leavesOf, isGroup, parseCatalogText, newId, autoDates, validateBook, carryOver, findSimilarBook } from "./core.js?v=68";
-import { persist } from "./sync.js?v=68";
-import { notFound } from "./view-common.js?v=68";
+// 책 추가·정보 수정 화면: 준비된 책 담기(책 추가일 때), 목차 붙여넣기, 미리보기.
+import { state } from "./state.js?v=69";
+import { esc } from "./util.js?v=69";
+import { parseToc, tocText, leavesOf, isGroup, newId, autoDates, validateBook, carryOver, findSimilarBook } from "./core.js?v=69";
+import { persist } from "./sync.js?v=69";
+import { notFound } from "./view-common.js?v=69";
+import { catalogHtml } from "./catalog.js?v=69";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
@@ -21,8 +22,9 @@ export function formView(id) {
   var v = { title: b ? b.title : '', author: b ? (b.author || '') : '', pages: b && b.totalPages ? b.totalPages : '', start: b ? (b.startDate || '') : '', goal: b ? (b.goalDate || '') : '', toc: b ? tocText(b) : '' };
   return '<a class="back" href="' + (b ? '#book-' + esc(b.id) : '#library') + '">← ' + (b ? '책으로 돌아가기' : '서재') + '</a>' +
     '<h1 class="page">' + (b ? '정보·목차 수정' : '책 추가') + '</h1>' +
-    '<form class="form" id="bookForm" novalidate>' +
-      (b ? '' : '<label class="fld"><span>준비된 책에서 불러오기 (선택)</span><select id="f-cat"><option value="">직접 입력</option></select></label>') +
+    // 책 찾기와 책 추가를 한 화면으로: 위에는 준비된 책 선반, 아래에는 직접 입력.
+    (b ? '' : '<section class="cat-shelf" aria-labelledby="cat-h"><h2 class="sec" id="cat-h">준비된 책에서 담기</h2><div class="cat-list" id="cat-list">' + catalogHtml() + '</div></section><h2 class="sec form-h" id="form-h">직접 입력</h2>') +
+    '<form class="form" id="bookForm" novalidate' + (b ? '' : ' aria-labelledby="form-h"') + '>' +
       '<label class="fld"><span>제목</span><input id="f-title" aria-required="true" type="text" maxlength="200" value="' + esc(v.title) + '" autocomplete="off"></label>' +
       '<div class="row2">' +
         '<label class="fld"><span>저자 (선택)</span><input id="f-author" type="text" maxlength="100" value="' + esc(v.author) + '" autocomplete="off"></label>' +
@@ -45,25 +47,6 @@ export function bindForm(id) {
   var ta = document.getElementById('f-toc'), out = document.getElementById('toc-preview');
   ta.placeholder = '1부. 시작하기 ........ 9\n  1장. 왜 읽는가 ........ 11\n  2장. 무엇을 읽는가 ........ 27\n2부. 깊이 읽기 ........ 45\n  3장. 질문하며 읽기 ........ 47';
   function upd() { out.innerHTML = previewHtml(parseToc(ta.value)) }
-  var cat = document.getElementById('f-cat');
-  if (cat) {
-    fetch('catalog/index.json').then(function (r) { return r.json() }).then(function (list) {
-      list.forEach(function (x) { var o = document.createElement('option'); o.value = x.file; o.textContent = x.label; cat.appendChild(o) });
-    }).catch(function () {
-      var e = document.getElementById('f-err');
-      if (e) { e.textContent = '준비된 책 목록을 불러오지 못했습니다. 목차를 직접 붙여넣어 주세요.'; e.hidden = false }
-    });
-    cat.addEventListener('change', function () {
-      if (!cat.value) return;
-      fetch('catalog/' + encodeURIComponent(cat.value)).then(function (r) { return r.text() }).then(function (t) {
-        var c = parseCatalogText(t);
-        document.getElementById('f-title').value = c.title;
-        document.getElementById('f-author').value = c.author;
-        document.getElementById('f-pages').value = c.totalPages || '';
-        ta.value = c.toc; upd(); dupAck = null; resetLost();
-      }).catch(function () { showErr('목록을 불러오지 못했습니다.') });
-    });
-  }
   var form = document.getElementById('bookForm'), err = document.getElementById('f-err');
   var lostBox = document.getElementById('f-lost'), submitBtn = document.getElementById('f-submit'), lostAck = null, dupAck = null, saved = false;
   function showErr(msg, field) {

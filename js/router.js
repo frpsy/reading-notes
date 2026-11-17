@@ -1,11 +1,11 @@
 // 주소(해시)를 화면 종류로 바꿉니다.
-import { todayStr } from "./core.js?v=68";
+import { todayStr } from "./core.js?v=69";
 
 export function currentRoute() {
   var h = location.hash.replace(/^#/, ""), m;
   if (h === "records") return { name: "records" };
   if (h === "settings") return { name: "settings" };
-  if (h === "catalog") return { name: "catalog" };
+  if (h === "catalog") return { name: "form", id: null, from: "catalog" }; // 책 찾기는 책 추가 화면으로 합쳤습니다(옛 주소 유지)
   if (h === "activity") return { name: "activity" };
   if (h === "add") return { name: "form", id: null };
   if ((m = /^edit-(.+)$/.exec(h))) return { name: "form", id: m[1] };
