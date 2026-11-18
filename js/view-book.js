@@ -1,17 +1,18 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=72";
-import { esc, fmt, ago } from "./util.js?v=72";
-import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf, progressSegments } from "./core.js?v=72";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=72";
+import { state } from "./state.js?v=73";
+import { esc, fmt, ago } from "./util.js?v=73";
+import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf, progressSegments } from "./core.js?v=73";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=73";
 
+// 진척과 이어 읽기를 한 판에 묶어 챕터 목록이 첫 화면에 더 일찍 보이게 합니다.
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
   const i = nextLeafIndex(b);
   if (i < 0) return '';
   const c = b.chapters[i];
-  return '<section class="panel next" aria-label="이어 읽기"><div class="next-main"><span class="next-lbl">이어 읽기</span>' +
+  return '<section class="panel next" aria-label="진척과 이어 읽기">' + progressHtml(b, m) + '<div class="next-row"><div class="next-main"><span class="next-lbl">이어 읽기</span>' +
     '<span class="next-title">' + esc(c.t) + '</span>' + (c.p != null ? '<span class="pg">p.' + c.p + '</span>' : '') + '</div>' +
-    '<div class="next-act"><a class="btn" href="#ch-' + i + '" data-act="jump" data-id="' + esc(b.id) + '" data-i="' + i + '" aria-label="목차에서 ' + esc(c.t) + ' 위치 보기">위치</a><button type="button" class="btn primary" data-act="nextdone">읽음 표시</button></div></section>';
+    '<div class="next-act"><a class="btn" href="#ch-' + i + '" data-act="jump" data-id="' + esc(b.id) + '" data-i="' + i + '" aria-label="목차에서 ' + esc(c.t) + ' 위치 보기">위치</a><button type="button" class="btn primary" data-act="nextdone">읽음 표시</button></div></div></section>';
 }
 function doneBanner(b, m) {
   if (m.status !== 'done') return '';
@@ -215,7 +216,7 @@ function insightsHtml(b, m) {
 
 function headHtml(b, m) {
   const stale = m.status === 'reading' && m.last && (dnum(todayStr()) - dnum(m.last)) >= 7;
-  return '<div class="head">' + coverHtml(b, true, m.status) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? '<span class="by-author">' + esc(b.author) + '</span>' : '') + chipHtml(m) + (stale ? '<span class="chip">잠시 쉬는 중</span>' : '') + (b.totalPages ? '<span class="by-pages">' + b.totalPages + '쪽</span>' : '') + '</div></div>' +
+  return '<div class="head">' + coverHtml(b, true, m.status) + '<div><h1>' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</h1><div class="by">' + (b.author ? '<span class="by-author">' + esc(b.author) + '</span>' : '') + (stale ? '<span class="chip rest">잠시 쉬는 중</span>' : chipHtml(m)) + (b.totalPages ? '<span class="by-pages">' + b.totalPages + '쪽</span>' : '') + '</div></div>' +
     '<details class="book-menu" data-disclosure="menu-' + esc(b.id) + '"><summary aria-label="책 설정">⋯</summary><div class="book-menu-items"><a href="#edit-' + esc(b.id) + '">정보·목차 수정</a>' + deleteControl(b) + '</div></details></div>';
 }
 
@@ -232,6 +233,6 @@ export function bookView(id) {
   if (!b) return notFound();
   const m = calcMetrics(b);
   return '<a class="back" href="#library">← 서재</a>' + headHtml(b, m) +
-    nextPanel(b, m) + doneBanner(b, m) + progressHtml(b, m) + insightsHtml(b, m) +
+    (nextPanel(b, m) || doneBanner(b, m) + progressHtml(b, m)) + insightsHtml(b, m) +
     chapterHeading(b) + chaptersHtml(b, m) + '<div id="memos-box">' + memosHtml(b, false) + '</div>' + noteSection(b);
 }

@@ -1,12 +1,12 @@
 // 준비된 책(catalog/): Claude가 repo에 추가하면 여기서 서재에 담습니다.
-import { state } from "./state.js?v=72";
-import { render } from "./bus.js?v=72";
-import { persist } from "./sync.js?v=72";
-import { esc } from "./util.js?v=72";
-import { coverHtml } from "./view-common.js?v=72";
-import { showNotice } from "./undo.js?v=72";
-import { currentRoute } from "./router.js?v=72";
-import { parseToc, parseCatalogText, normalizeBook, findSimilarBook, leavesOf } from "./core.js?v=72";
+import { state } from "./state.js?v=73";
+import { render } from "./bus.js?v=73";
+import { persist } from "./sync.js?v=73";
+import { esc } from "./util.js?v=73";
+import { coverHtml } from "./view-common.js?v=73";
+import { showNotice } from "./undo.js?v=73";
+import { currentRoute } from "./router.js?v=73";
+import { parseToc, parseCatalogText, normalizeBook, findSimilarBook, leavesOf } from "./core.js?v=73";
 
 // 준비된 책 선반은 책 추가 화면 안에 있습니다. 입력 중인 폼을 지우지 않도록 선반 영역만 바꿉니다.
 function redraw() {

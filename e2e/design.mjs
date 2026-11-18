@@ -160,7 +160,8 @@ try{
         await hit('.panel.next .btn','next buttons');
         await hit('.ch-opt .chapter-options > summary','chapter options');
         await hit('.memos > summary','memo collection');
-        await hit('.note-editor > summary','note editor');
+        // 빈 독서 메모는 '접기' 없이 입력란을 바로 보여 줍니다(디자인 v7). 버튼이 보일 때만 터치 영역을 잽니다.
+        if(await page.locator('.note-editor > summary').first().isVisible())await hit('.note-editor > summary','note editor');
         assert.equal(await page.locator('.head .by').evaluate(el=>{const c=el.cloneNode(true);c.querySelectorAll('.by-author').forEach(n=>n.remove());return /[·]/.test(c.textContent);}),false,'status and pages are separated by gaps, not dots that can wrap');
         if(width<=430){
           const menuSummary=done.locator('.chapter-options > summary');
