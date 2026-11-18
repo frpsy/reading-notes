@@ -1021,6 +1021,19 @@ try {
     assert.equal(await page.locator('#add-shelf').isVisible(), true);
     await page.locator('#tab-paste').click();
     assert.equal(await page.locator('#f-title').inputValue(), '두 번째 시험책');
+    // 쪽수가 없는 다른 책 페이지를 붙여 넣으면 앞 책의 쪽수가 남지 않습니다.
+    await page.locator('#f-pages').fill('999');
+    await page.locator('#f-paste').fill(['로그인', '세 번째 시험책', '박셋 저 | 셋출판 | 2024년 01월 01일', '목차', '1장 하나', '2장 둘', '접어보기'].join('\n'));
+    await page.waitForFunction(() => document.getElementById('f-title').value === '세 번째 시험책');
+    assert.equal(await page.locator('#f-author').inputValue(), '박셋');
+    assert.equal(await page.locator('#f-pages').inputValue(), '');
+    // 목차만 붙여 넣으면 소제목 줄을 지우지 않고, 마지막 줄의 'N쪽'을 전체 쪽수로 읽지 않습니다.
+    await page.locator('#f-pages').fill('300');
+    await page.locator('#f-paste').fill('1장 습관의 힘\n습관이란 무엇인가\n2장 정체성 ........ 120쪽');
+    await page.locator('#paste-result').waitFor();
+    await page.waitForFunction(() => document.getElementById('f-toc').value.includes('습관이란'));
+    assert.equal(await page.locator('#f-toc').inputValue(), '1장 습관의 힘\n습관이란 무엇인가\n2장 정체성 ........ 120쪽');
+    assert.equal(await page.locator('#f-pages').inputValue(), '300');
   });
 
   await step('직접 책 추가도 시작일을 비워 독서 예정으로 등록', async () => {

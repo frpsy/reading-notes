@@ -1,10 +1,10 @@
 // 책 추가·정보 수정 화면: 준비된 책 담기(책 추가일 때), 목차 붙여넣기, 미리보기.
-import { state } from "./state.js?v=70";
-import { esc } from "./util.js?v=70";
-import { parseToc, tocText, leavesOf, isGroup, newId, parseBookPaste, autoDates, validateBook, carryOver, findSimilarBook } from "./core.js?v=70";
-import { persist } from "./sync.js?v=70";
-import { notFound } from "./view-common.js?v=70";
-import { catalogHtml, catalogCount } from "./catalog.js?v=70";
+import { state } from "./state.js?v=71";
+import { esc } from "./util.js?v=71";
+import { parseToc, tocText, leavesOf, isGroup, newId, parseBookPaste, autoDates, validateBook, carryOver, findSimilarBook } from "./core.js?v=71";
+import { persist } from "./sync.js?v=71";
+import { notFound } from "./view-common.js?v=71";
+import { catalogHtml, catalogCount } from "./catalog.js?v=71";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';
@@ -34,8 +34,8 @@ export function formView(id, from) {
     (b ? '' : addTabs(from === 'catalog')) +
     '<form class="form" id="bookForm" novalidate' + (b ? '' : ' role="tabpanel" aria-labelledby="tab-paste"' + (from === 'catalog' ? ' hidden' : '')) + '>' +
       (b ? '' : '<div class="paste-box"><label class="paste-label" for="f-paste">서점 페이지나 목차를 붙여 넣으세요</label>' +
-        '<textarea id="f-paste" rows="4" spellcheck="false" aria-describedby="f-paste-hint" placeholder="YES24·교보문고·알라딘 책 페이지에서 전체 선택(⌘A 또는 Ctrl+A) → 복사 → 여기에 붙여넣기"></textarea>' +
-        '<p class="hint" id="f-paste-hint">제목·저자·쪽수·목차를 알아서 채웁니다. 목차만 붙여 넣어도 됩니다.</p>' +
+        '<textarea id="f-paste" rows="4" spellcheck="false" aria-describedby="f-paste-hint" placeholder="여기에 붙여 넣기"></textarea>' +
+        '<p class="hint" id="f-paste-hint">YES24·교보문고·알라딘 책 페이지에서 <b>전체 선택</b>(⌘A·Ctrl+A) 후 복사해 붙여 넣으면 제목·저자·쪽수·목차를 채웁니다. 목차만 붙여 넣어도 됩니다.</p>' +
         '<p class="paste-result" id="paste-result" role="status" aria-live="polite" hidden></p></div>' +
         '<p class="form-h">확인하고 필요하면 고쳐 주세요</p>') +
       '<label class="fld"><span>제목</span><input id="f-title" aria-required="true" type="text" maxlength="200" value="' + esc(v.title) + '" autocomplete="off"></label>' +
@@ -78,6 +78,8 @@ export function bindForm(id) {
   function fill(r) {
     var set = function (elId, value) { if (value == null || value === '') return false; var el = document.getElementById(elId); el.value = value; el.removeAttribute('aria-invalid'); return true; };
     set('f-title', r.title); set('f-author', r.author); set('f-pages', r.pages);
+    // 다른 책 페이지를 새로 붙여 넣었으면(제목을 찾음) 앞 책의 쪽수가 남지 않게 찾지 못한 쪽수 칸은 비웁니다.
+    if (r.title && !r.pages) document.getElementById('f-pages').value = '';
     if (r.toc) { ta.value = r.toc; upd(); }
     dupAck = null; resetLost(); err.hidden = true;
   }

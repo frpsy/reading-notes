@@ -1,8 +1,8 @@
 // 서재: 핵심 독서 기능. 독서 활동 통계는 별도 화면에 표시합니다.
-import { state } from "./state.js?v=70";
-import { esc, fmt, ago } from "./util.js?v=70";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, recentDays, currentStreak, longestStreak, streakStatus, heatmapWeeks, heatmapMonths, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=70";
-import { coverHtml, chipHtml } from "./view-common.js?v=70";
+import { state } from "./state.js?v=71";
+import { esc, fmt, ago } from "./util.js?v=71";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, recentDays, currentStreak, longestStreak, streakStatus, heatmapWeeks, heatmapMonths, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=71";
+import { coverHtml, chipHtml } from "./view-common.js?v=71";
 
 function nextLine(b, m) {
   // 독서 예정인 책은 '다음' 안내를 표시해 시작한 것처럼 보이지 않게 합니다.

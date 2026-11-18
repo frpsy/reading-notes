@@ -95,3 +95,24 @@ test("목차만 붙여 넣으면 들여쓰기와 쪽수를 그대로 둠, 상품
 test("tidyToc: 표시 없는 평범한 목록은 손대지 않음", () => {
   assert.equal(tidyToc("서문\n첫째 이야기\n둘째 이야기"), "서문\n첫째 이야기\n둘째 이야기");
 });
+
+test("목차만 붙여 넣으면 장 아래 소제목·'|' 줄도 지우지 않음(서점 페이지에서만 소개 줄 정리)", () => {
+  const plain = "1장 습관의 힘\n습관이란 무엇인가\n작은 변화\n2장 정체성\n정체성 기반 습관 | 질문\n3장 환경\n에필로그";
+  const r = parseBookPaste(plain);
+  assert.equal(parseToc(r.toc).length, 7);
+  assert.equal(r.toc, plain);
+});
+
+test("목차 끝 줄의 'N쪽'을 책 전체 쪽수로 읽지 않음, 목차 쪽수로는 인식", () => {
+  const plain = "프롤로그 ........ 7\n1장 시작 ........ 13\n2장 중간 ........ 45\n3장 끝 ........ 120쪽";
+  const r = parseBookPaste(plain);
+  assert.equal(r.pages, null);
+  assert.deepEqual(r.found, ["toc"]);
+  const items = parseToc(r.toc);
+  assert.equal(items[3].t, "3장 끝");
+  assert.equal(items[3].p, 120);
+  assert.equal(parseToc("머리말 ....... p.5\n본문  12p")[0].p, 5);
+  assert.equal(parseToc("머리말 ....... p.5\n본문  12p")[1].p, 12);
+  // 숫자로 끝나는 평범한 제목은 그대로 둡니다.
+  assert.equal(parseToc("1장 2026")[0].t, "1장 2026");
+});

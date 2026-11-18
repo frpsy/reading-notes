@@ -68,8 +68,9 @@ export function parseToc(text) {
     let lv = Math.floor(indent / 2);
     let t = raw.trim();
     let p = null;
-    const m = t.match(/^(.*?\S)(?:\s*(?:[.·]{2,}|…+)\s*|\t+\s*|\s{3,})(\d{1,4})$/);
-    if (m) { t = m[1].trim(); p = parseInt(m[2], 10); }
+    // "........ 123", "........ 123쪽", "....... p.5"처럼 점선·탭·넓은 간격 뒤의 숫자, 또는 "12쪽"·"12p"처럼 단위가 붙은 숫자.
+    const m = t.match(/^(.*?\S)(?:\s*(?:[.·]{2,}|…+)\s*|\t+\s*|\s{3,})(?:p\.?\s*)?(\d{1,4})\s*(?:쪽|p\.?)?$/i) || t.match(/^(.*?\S)\s+(?:p\.\s*(\d{1,4})|(\d{1,4})\s*(?:쪽|p))$/i);
+    if (m) { t = m[1].trim(); p = parseInt(m[2] || m[3], 10); }
     if (lv === 0) {
       const n = t.match(/^(\d+(?:\.\d+)*)(?=[.\s)])/);
       if (n) {
@@ -152,24 +153,28 @@ export function parseBookPaste(text) {
     if (di > 0) { let j = di - 1; while (j > ai && !t[j].trim()) j--; const short = cleanTitle(t[j]); if (short && out.title.indexOf(short) === 0 || (short && short.length < out.title.length && out.title.includes(short))) out.title = short; }
   }
   const joined = t.join("\n");
-  let m = joined.match(/쪽수[^\n]*?(\d{2,5})\s*(?:쪽|페이지|p\b)/) || joined.match(/(?:^|[\s|,(])(\d{2,5})\s*쪽(?:\s*\||\s*,|\s*$|\s*\))/m);
+  let start = t.findIndex((l) => TOC_HEAD.test(l));
+  // 서점 페이지(저자 줄·'목차' 머리·사이트 메뉴)일 때만 느슨한 쪽수·ISBN 표기를 읽습니다.
+  // 목차만 붙여 넣었을 때 마지막 줄의 "120쪽"을 책 전체 쪽수로 오해하지 않게 합니다.
+  const store = ai >= 0 || start >= 0 || WEB_PAGE.test(joined);
+  let m = joined.match(/쪽수[^\n]*?(\d{2,5})\s*(?:쪽|페이지|p\b)/) || (store && joined.match(/(?:^|[\s|,(])(\d{2,5})\s*쪽(?:\s*\||\s*,|\s*$|\s*\))/m));
   if (m) out.pages = parseInt(m[1], 10);
-  m = joined.match(/(?:ISBN(?:13)?[^\n\d]*)?\b(97[89][\d\- ]{10,14})/i);
+  m = store && joined.match(/(?:ISBN(?:13)?[^\n\d]*)?\b(97[89][\d\- ]{10,14})/i);
   if (m) { const digits = m[1].replace(/\D/g, ""); if (digits.length === 13) out.isbn = digits; }
   // 목차: '목차' 머리 다음부터 다른 영역 제목 전까지. 머리가 없고 저자 줄도 없으면 전체를 목차로 봅니다.
-  let start = t.findIndex((l) => TOC_HEAD.test(l));
   let body;
   if (start >= 0) {
     body = [];
     for (let i = start + 1; i < t.length; i++) { if (TOC_STOP.test(t[i])) break; body.push(t[i]); }
   } else body = ai >= 0 || WEB_PAGE.test(joined) ? [] : t.slice(); // 상품 페이지가 아닌 웹 화면 전체는 목차로 쓰지 않습니다.
-  out.toc = tidyToc(body);
+  // 목차만 붙여 넣은 경우에는 줄을 지우지 않습니다(소개 줄 정리는 서점 페이지 목차에만).
+  out.toc = tidyToc(body, { store: start >= 0 || ai >= 0 });
   ["title", "author", "publisher", "pages", "isbn"].forEach((k) => { if (out[k]) out.found.push(k); });
   if (out.toc) out.found.push("toc");
   return out;
 }
 // 서점 목차 정리: 빈 줄·판권 줄을 빼고, 장 아래 소개 줄(절 목록)을 빼고, 부 아래 장을 들여씁니다.
-export function tidyToc(rawLines) {
+export function tidyToc(rawLines, { store = true } = {}) {
   const src = (Array.isArray(rawLines) ? rawLines : String(rawLines || "").replace(/\r/g, "").split("\n"));
   const rows = [];
   src.forEach((raw) => {
@@ -183,7 +188,7 @@ export function tidyToc(rawLines) {
   const kind = (x) => MARK_PART.test(x) ? "part" : MARK_CH.test(x) ? "ch" : MARK_EDGE.test(x) ? "edge" : "";
   rows.forEach((r) => { r.k = kind(r.t); });
   const marked = rows.filter((r) => r.k).length;
-  const structured = marked >= 3 && !rows.some((r) => r.indented);
+  const structured = store && marked >= 3 && !rows.some((r) => r.indented);
   const kept = [];
   rows.forEach((r) => {
     if (structured) {
