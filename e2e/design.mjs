@@ -37,6 +37,7 @@ try{
    await ctx.addInitScript(b=>{if(!localStorage.getItem('e2e-books')){localStorage.setItem('e2e-signed-in','yes');localStorage.setItem('e2e-books',JSON.stringify({design:b}));}},book);
    const page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));
    async function fits(label){assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${name} ${label}: horizontal overflow`);}
+   const sizeAt390={};
    for(const theme of ['light','dark']){
     await page.emulateMedia({colorScheme:theme,reducedMotion:'reduce'});
     for(const width of baseline?[390,1280]:[320,375,390,430,768,1280]){
@@ -67,6 +68,22 @@ try{
         const paddingTop=await page.evaluate(()=>parseFloat(getComputedStyle(document.body).paddingTop));
         assert.ok(brand.y>=paddingTop-1,'WebKit brand must remain below its effective top padding');
         // Linux WebKit does not emulate iOS Safari chrome or Dynamic Island. Real iPhone verification remains required.
+       }
+       // 가독성 기준 v6: 페이지 제목은 휴대폰 26px·PC(768+) 28px로 모든 화면이 같고, 제목과 첫 내용 사이는 20px.
+       const title=await page.evaluate(()=>{const h=document.querySelector('#view>h1.page,#view>.lib-head>h1.page');if(!h)return null;const box=h.closest('.lib-head')||h;let nx=box.nextElementSibling;while(nx&&!nx.getBoundingClientRect().height)nx=nx.nextElementSibling;return {fs:parseFloat(getComputedStyle(h).fontSize),gap:nx?Math.round(nx.getBoundingClientRect().top-box.getBoundingClientRect().bottom):null,ls:parseFloat(getComputedStyle(h).letterSpacing)/parseFloat(getComputedStyle(h).fontSize)};});
+       if(title){
+        assert.equal(title.fs,width>=768?28:26,`${name} ${width} ${label}: page title size`);
+        if(title.gap!==null)assert.ok(Math.abs(title.gap-20)<=1,`${name} ${width} ${label}: title to content gap ${title.gap}`);
+        assert.ok(!(title.ls<-0.025),`${name} ${width} ${label}: page title letter-spacing not too tight`);
+       }
+       // 넓은 화면의 글자는 휴대폰(390px)의 같은 요소보다 작아지지 않습니다.
+       const sizes=await page.evaluate(()=>{const m={};for(const el of document.querySelectorAll('#view *')){if(![...el.childNodes].some(n=>n.nodeType===3&&n.textContent.trim())||!el.getBoundingClientRect().width)continue;const k=el.tagName+'.'+[...el.classList].join('.');m[k]=Math.max(m[k]||0,parseFloat(getComputedStyle(el).fontSize));}return m;});
+       if(width===390)sizeAt390[theme+label]=sizes;
+       else if(width>390&&sizeAt390[theme+label]){const shrunk=Object.keys(sizes).filter(k=>k in sizeAt390[theme+label]&&sizes[k]<sizeAt390[theme+label][k]);assert.deepEqual(shrunk,[],`${name} ${width} ${label}: text smaller than at 390px`);}
+       if(label==='settings'){
+        // 설정: 섹션 이름·항목 글자·안내 문구가 같은 왼쪽 선에서 시작합니다.
+        const xs=await page.evaluate(()=>{const textX=e=>{const r=document.createRange();const t=[e,...e.querySelectorAll('*')].map(x=>[...x.childNodes].find(n=>n.nodeType===3&&n.textContent.trim())).find(Boolean);if(!t)return null;r.selectNodeContents(t);return Math.round(r.getBoundingClientRect().left);};return [document.querySelector('.settings-section>.sec'),document.querySelector('.settings-item>span'),document.querySelector('.settings-detail')].map(e=>e&&textX(e));});
+        assert.ok(xs.every(x=>x!==null&&Math.abs(x-xs[0])<=1),`${name} ${width} settings left edges ${xs}`);
        }
        // iPhone 글자 크기: 입력칸은 16px 이상(미만이면 Safari 가 포커스 때 화면 확대), 보이는 글자는 12px 이상.
        if(width<=430){
