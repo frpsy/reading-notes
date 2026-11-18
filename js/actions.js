@@ -1,13 +1,13 @@
 // 책 화면의 사용자 동작(메모·접기·목표일·입력 저장). app.js 는 이벤트를 받아 여기로 넘기기만 합니다.
 // DOM 은 root(#view)를 인자로 받아 읽으며, 상태는 state 로만 바꿉니다.
-import { state } from "./state.js?v=71";
-import { render } from "./bus.js?v=71";
-import { saveFolded } from "./prefs.js?v=71";
-import { persist } from "./sync.js?v=71";
-import { offerUndo } from "./undo.js?v=71";
-import { preserve } from "./records.js?v=71";
-import { refreshMemos } from "./view-book.js?v=71";
-import { metrics as calcMetrics, isGroup, autoDates, dnum, dstr, todayStr, toggleChapter, clampPastDate } from "./core.js?v=71";
+import { state } from "./state.js?v=72";
+import { render } from "./bus.js?v=72";
+import { saveFolded } from "./prefs.js?v=72";
+import { persist } from "./sync.js?v=72";
+import { offerUndo } from "./undo.js?v=72";
+import { preserve } from "./records.js?v=72";
+import { refreshMemos } from "./view-book.js?v=72";
+import { metrics as calcMetrics, isGroup, autoDates, dnum, dstr, todayStr, toggleChapter, clampPastDate } from "./core.js?v=72";
 
 const memoSelector = (i) => 'textarea[data-act="memotext"][data-i="' + i + '"]';
 
@@ -143,8 +143,10 @@ export function applyFieldChange(b, act, el) {
     case "goal": b.goalDate = el.value || null; persist(b); render(); break;
     case "chdate": {
       // 읽은 날은 오늘까지만 받습니다(미래 날짜는 연속 기록·예상 완독일을 흐트러뜨립니다).
-      const day = clampPastDate(el.value);
-      b.chapters[+el.dataset.i].done = day;
+      // 날짜 칸을 비우면(iOS '지우기' 등) 체크가 몰래 풀리지 않게 원래 날짜로 되돌립니다. 체크 취소는 줄을 다시 누릅니다.
+      const day = clampPastDate(el.value), chi = +el.dataset.i;
+      if (!day || !b.chapters[chi] || !b.chapters[chi].done) { if (b.chapters[chi]) el.value = b.chapters[chi].done || ""; break; }
+      b.chapters[chi].done = day;
       if (calcMetrics(b).status === "done" && b.endAuto) b.endDate = null; // 자동으로 채운 종료일은 바뀐 날짜에 맞춰 다시 계산
       autoDates(b); persist(b); render(); break;
     }

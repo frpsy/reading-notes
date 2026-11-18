@@ -1,10 +1,10 @@
 // 휴지통은 이 기기·계정에만 보관합니다. 복구는 원본을 덮어쓰지 않는 새 책으로 만듭니다.
-import * as store from './store.js?v=71';
-import { state } from './state.js?v=71';
-import { esc, fmt } from './util.js?v=71';
-import { newId, todayStr, friendlyError } from './core.js?v=71';
-import { persist } from './sync.js?v=71';
-import { showNotice } from './undo.js?v=71';
+import * as store from './store.js?v=72';
+import { state } from './state.js?v=72';
+import { esc, fmt } from './util.js?v=72';
+import { newId, todayStr, friendlyError, memosMarkdown } from './core.js?v=72';
+import { persist } from './sync.js?v=72';
+import { showNotice } from './undo.js?v=72';
 
 export function preserve(book, kind = 'book', index = -1, text = '') {
   try { store.archiveTrash(book,kind,index,text); return true; }
@@ -35,7 +35,7 @@ export function restoreTrash(key) {
 export function exportRecords(kind) {
   const books = Array.from(state.books.values());
   const text = kind === 'json' ? JSON.stringify({ format: 'chaekgalpi', version: 1, exportedAt: new Date().toISOString(), books },null,2) :
-    '# 독서 메모\n\n' + books.map(b => '# ' + b.title + '\n' + (b.author || '') + '\n\n' + (b.note || '') + '\n\n' + b.chapters.filter(c => c.memo).map(c => '## ' + c.t + '\n\n' + c.memo).join('\n\n')).join('\n\n---\n\n');
+    memosMarkdown(books);
   const url = URL.createObjectURL(new Blob([text],{type:kind === 'json' ? 'application/json;charset=utf-8' : 'text/markdown;charset=utf-8'}));
   const a = document.createElement('a'); a.href=url; a.download='책갈피-' + todayStr() + (kind === 'json' ? '.json' : '.md');
   document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url),60000);

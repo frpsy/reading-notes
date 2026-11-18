@@ -736,6 +736,9 @@ html{background:var(--bg)}
 .ch-memo .memo-preview[open] .memo-edit-tap:active,
 .note-panel .memo-preview[open] .memo-edit-tap:active{background:var(--surface-2)}
 .note-editor.has-note:not([open])>summary{display:none}
+.note-editor:not(.has-note)>summary{color:var(--accent);font-size:.875rem;font-weight:600}
+.note-open,.note-editor[open]>summary>.note-closed{display:none}
+.note-editor[open]>summary>.note-open{display:inline}
 .note-editor.has-note[open]>summary{justify-content:flex-end;min-height:44px;color:var(--accent);font-size:.875rem;font-weight:600}
 .note-panel:has(.note-editor[open])>.memo-preview{display:none}
 
