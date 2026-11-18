@@ -1,8 +1,8 @@
 // 서재: 핵심 독서 기능. 독서 활동 통계는 별도 화면에 표시합니다.
-import { state } from "./state.js?v=72";
-import { esc, fmt, ago } from "./util.js?v=72";
-import { metrics as calcMetrics, dnum, todayStr, activityByDate, recentDays, currentStreak, longestStreak, streakStatus, heatmapWeeks, heatmapMonths, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=72";
-import { coverHtml, chipHtml } from "./view-common.js?v=72";
+import { state } from "./state.js?v=73";
+import { esc, fmt, ago } from "./util.js?v=73";
+import { metrics as calcMetrics, dnum, todayStr, activityByDate, recentDays, currentStreak, longestStreak, streakStatus, heatmapWeeks, heatmapMonths, nextLeafIndex, matchBook, searchMemos, highlightMemo } from "./core.js?v=73";
+import { coverHtml, chipHtml } from "./view-common.js?v=73";
 
 function nextLine(b, m) {
   // 독서 예정인 책은 '다음' 안내를 표시해 시작한 것처럼 보이지 않게 합니다.
@@ -10,7 +10,7 @@ function nextLine(b, m) {
   var i = nextLeafIndex(b);
   return i < 0 ? '' : '<span class="book-next"><b>다음</b> ' + esc(b.chapters[i].t) + '</span>';
 }
-function bookRow(b, m, hideChip) {
+function bookRow(b, m, hideChip, skipNext) {
   var sub;
   if (m.status === 'done') sub = fmt(m.start) + ' – ' + fmt(m.endStr);
   else if (m.status === 'reading') sub = '';
@@ -21,12 +21,18 @@ function bookRow(b, m, hideChip) {
   // 큰 퍼센트와 같은 값이면 반복하지 않고, 다를 때만 분량 기준을 보여 줍니다.
   if (m.pagePct != null && Math.round(m.pagePct * 100) !== Math.round(m.pct * 100)) meta += ' · 분량 기준 ' + Math.round(m.pagePct * 100) + '%';
   var stale = m.status === 'reading' && m.last && (dnum(todayStr()) - dnum(m.last)) >= 7;
+  // 상태 칩은 서재 묶음 제목이 이미 말해 주므로 검색 결과처럼 섞인 목록에서만 보여 줍니다.
+  // '잠시 쉬는 중'은 칩 대신 메타 줄 끝에 조용히 붙입니다.
+  var side = hideChip ? '' : chipHtml(m);
+  var parts = meta.split(' · ').map(function (part) { return '<span>' + esc(part) + '</span>'; });
+  if (stale) parts.push('<span class="book-rest">잠시 쉬는 중</span>');
+  var pct = Math.round(m.pct * 100);
   return '<a class="book" href="#book-' + esc(b.id) + '">' + coverHtml(b, false, m.status) +
     '<span class="book-main"><span class="book-title">' + esc(b.title) + (b.example ? ' <span class="chip">예시</span>' : '') + '</span>' +
     '<span class="book-sub">' + by + sub + '</span>' +
-    '<span class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + Math.round(m.pct * 100) + '%"></i></span>' +
-    '<span class="book-meta">' + meta.split(' · ').map(function (part) { return '<span>' + esc(part) + '</span>'; }).join(' · ') + '</span>' + nextLine(b, m) + '</span>' +
-    '<span class="book-side"><b class="pct">' + Math.round(m.pct * 100) + '%</b>' + (hideChip && m.status === 'reading' ? '' : chipHtml(m)) + (stale ? '<span class="chip">잠시 쉬는 중</span>' : '') + '</span></a>';
+    '<span class="book-prog"><span class="bar' + (m.status === 'done' ? ' ok' : '') + '"><i style="width:' + pct + '%"></i></span><b class="pct">' + pct + '%</b></span>' +
+    '<span class="book-meta">' + parts.join(' · ') + '</span>' + (skipNext ? '' : nextLine(b, m)) + '</span>' +
+    (side ? '<span class="book-side">' + side + '</span>' : '') + '</a>';
 }
 
 // 기존 독서 기록에서 최근 읽은 한 권을 표시합니다. 오늘 읽었어도 안내는 유지합니다.
@@ -40,14 +46,18 @@ function rhythmHtml(all) {
   }).join('') + '</span><span class="rhythm-txt">최근 7일 중 ' + read + '일 읽음</span></span>';
 }
 
-function resumeHtml(all) {
+function resumeBook(all) {
   var reading = all.filter(function (x) { return x.m.status === 'reading' && nextLeafIndex(x.b) >= 0; });
-  if (!reading.length) return '';
+  if (!reading.length) return null;
   reading.sort(function (a, b) {
     var ad = a.m.last || a.m.start || '', bd = b.m.last || b.m.start || '';
     return bd.localeCompare(ad) || (b.b.updatedAt || b.b.createdAt || 0) - (a.b.updatedAt || a.b.createdAt || 0);
   });
-  var x = reading[0], i = nextLeafIndex(x.b), pct = Math.round(x.m.pct * 100);
+  return reading[0];
+}
+function resumeHtml(x, all) {
+  if (!x) return '';
+  var i = nextLeafIndex(x.b), pct = Math.round(x.m.pct * 100);
   return '<a class="remind resume" href="#book-' + esc(x.b.id) + '" aria-label="이어서 읽기: ' + esc(x.b.title) + ', 진행률 ' + pct + '%">' +
     coverHtml(x.b, false, 'reading') + '<span class="resume-body"><span class="resume-label">이어서 읽기</span>' +
     '<strong class="resume-title">' + esc(x.b.title) + '</strong>' +
@@ -96,19 +106,21 @@ export function libraryView() {
     if (a.m.status === 'done') return (c.m.endStr || '').localeCompare(a.m.endStr || '');
     return (c.b.createdAt || 0) - (a.b.createdAt || 0);
   });
+  var top = !state.ui.q && state.ui.filter === 'all' ? resumeBook(all) : null;
+  var topId = top ? top.b.id : null;
   var rows = list.length ? (state.ui.filter === 'all' && !state.ui.q ? ['reading', 'todo', 'done'].map(function (status) {
     var books = list.filter(function (x) { return x.m.status === status; });
     if (!books.length) return '';
     var labels = { reading: '읽는 중', todo: '독서 예정', done: '완독한 책' };
-    return '<section class="library-shelf" aria-label="' + labels[status] + '"><h2 class="shelf-title">' + labels[status] + '<span>' + books.length + '</span></h2><div class="books">' + books.map(function (x) { return bookRow(x.b, x.m, true); }).join('') + '</div></section>';
-  }).join('') : '<div class="books">' + list.map(function (x) { return bookRow(x.b, x.m, state.ui.filter === 'reading' && !state.ui.q); }).join('') + '</div>') : '<div class="empty search-empty"><h2>' + (state.ui.q ? '검색 결과가 없습니다.' : '해당하는 책이 없습니다.') + '</h2><p>다른 검색어를 입력하거나 전체 서재를 확인해 보세요.</p><button class="btn" type="button" data-act="reset-search">전체 서재 보기</button></div>';
+    return '<section class="library-shelf" aria-label="' + labels[status] + '"><h2 class="shelf-title">' + labels[status] + '<span>' + books.length + '</span></h2><div class="books">' + books.map(function (x) { return bookRow(x.b, x.m, true, x.b.id === topId); }).join('') + '</div></section>';
+  }).join('') : '<div class="books">' + list.map(function (x) { return bookRow(x.b, x.m, !state.ui.q); }).join('') + '</div>') : '<div class="empty search-empty"><h2>' + (state.ui.q ? '검색 결과가 없습니다.' : '해당하는 책이 없습니다.') + '</h2><p>다른 검색어를 입력하거나 전체 서재를 확인해 보세요.</p><button class="btn" type="button" data-act="reset-search">전체 서재 보기</button></div>';
   var search = all.length > 0 ? '<input type="search" class="search" data-act="search" value="' + esc(state.ui.q) + '" placeholder="제목·저자·메모 검색" aria-label="제목·저자·메모 검색" autocomplete="off">' : '';
   var memoHits = state.ui.q ? searchMemos(filtered.map(function (x) { return x.b }), state.ui.q) : [];
   var memoHtml = memoHits.length ? '<div class="sec-h"><h2 class="sec">메모에서 찾음</h2></div><ul class="memo-hits">' + memoHits.map(function (h) {
     return '<li><a href="#book-' + esc(h.id) + '" data-act="jump" data-id="' + esc(h.id) + '" data-i="' + h.i + '"><span class="memo-hit-h"><b>' + esc(h.title) + '</b> · ' + esc(h.t) + '</span><span class="memo-hit-t">' + highlightMemo(h.text, state.ui.q) + '</span></a></li>';
   }).join('') + '</ul>' : '';
   var resultStatus = state.ui.q ? '<p class="search-status" role="status">책 ' + list.length + '권 · 메모 ' + memoHits.length + '개</p>' : '';
-  var resume = !state.ui.q && state.ui.filter === 'all' ? resumeHtml(all) : '';
+  var resume = resumeHtml(top, all);
   return head + resume + search + tabs + resultStatus + rows + memoHtml;
 }
 

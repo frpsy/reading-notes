@@ -153,7 +153,9 @@ try {
     const added = view.locator('a.book').first();
     await added.waitFor();
     assert.equal(await page.locator('[data-act="filter"][data-v="todo"]').getAttribute('aria-pressed'), 'true', '독서 예정 목록이 바로 보임');
-    assert.equal(await added.locator('.chip.todo').innerText(), '독서 예정');
+    // 상태는 필터·묶음 제목이 알려 주므로 카드에는 칩 대신 '아직 시작 전'만 표시합니다(디자인 v7).
+    assert.match(await added.locator('.book-sub').innerText(), /아직 시작 전/);
+    assert.equal(await added.locator('.chip').count(), 0, '필터된 목록 카드에는 상태 칩 없음');
     assert.equal(await added.locator('.book-next').count(), 0, '시작 전에는 이어 읽기 안내 없음');
     const key = (await added.getAttribute('href')).slice('#book-'.length);
     await page.locator('#sync[data-state="saved"]').waitFor({state:'attached'});
