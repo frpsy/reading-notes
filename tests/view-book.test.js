@@ -81,3 +81,9 @@ test('책 상세: 진도는 챕터마다 한 칸이고 접근성 값은 그대�
   assert.equal((bar.match(/<i /g) || []).length, 3);
   assert.match(html, /<span class="cover lg marked"/);
 });
+
+test('독서 메모가 비어 있으면 열린 편집기의 버튼은 "접기"로 읽힘(메모 쓰기는 닫혔을 때만)', () => {
+  const b = book({ note: '' }); reset(b);
+  const html = bookView(b.id);
+  assert.match(html, /<details class="note-editor"[^>]* open><summary[^>]*><span class="note-closed">메모 쓰기<\/span><span class="note-open">접기<\/span><\/summary>/);
+});

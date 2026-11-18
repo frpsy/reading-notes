@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=71";
-import { esc, fmt, ago } from "./util.js?v=71";
-import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf, progressSegments } from "./core.js?v=71";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=71";
+import { state } from "./state.js?v=72";
+import { esc, fmt, ago } from "./util.js?v=72";
+import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf, progressSegments } from "./core.js?v=72";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=72";
 
 function nextPanel(b, m) {
   if (m.status === 'done') return '';
@@ -75,7 +75,7 @@ function memoPreview(text, index, scope = 'collection') {
   return '<details class="memo-preview" data-disclosure="preview-' + scope + '-' + index + '" data-memo-index="' + index + '"><summary class="memo-tap"><span class="memo-excerpt">' + esc(excerpt) + '</span><span class="memo-expand">전체 보기</span><span class="memo-collapse">접기</span></summary>' + body + '</details>';
 }
 function noteEditor(note) {
-  return (note ? memoPreview(note, 'note', 'note') : '') + '<details class="note-editor' + (note ? ' has-note' : '') + '" data-disclosure="note-edit"' + (note ? '' : ' open') + '><summary aria-label="' + (note ? '독서 메모 편집 종료' : '독서 메모 쓰기') + '">' + (note ? '편집 완료' : '메모 쓰기') + '</summary><label class="fld" style="margin-top:12px"><span>전체 느낌, 남기고 싶은 문장</span><textarea maxlength="20000" id="d-note" data-act="note">' + esc(note || '') + '</textarea></label></details>';
+  return (note ? memoPreview(note, 'note', 'note') : '') + '<details class="note-editor' + (note ? ' has-note' : '') + '" data-disclosure="note-edit"' + (note ? '' : ' open') + '><summary aria-label="' + (note ? '독서 메모 편집 종료' : '독서 메모 입력란 열고 닫기') + '">' + (note ? '편집 완료' : '<span class="note-closed">메모 쓰기</span><span class="note-open">접기</span>') + '</summary><label class="fld" style="margin-top:12px"><span>전체 느낌, 남기고 싶은 문장</span><textarea maxlength="20000" id="d-note" data-act="note">' + esc(note || '') + '</textarea></label></details>';
 }
 
 function chaptersHtml(b, m) {

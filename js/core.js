@@ -649,6 +649,21 @@ export function carryOver(oldChapters, items) {
 }
 
 // 챕터 메모·독서 메모에서 검색어 찾기(대소문자·공백 무시). 결과는 책 순서·목차 순서, 최대 limit 개
+// Markdown 메모 내려받기: 메모(독서 메모·챕터 메모)가 있는 책만 담습니다. 책은 ##, 메모 제목은 ###.
+export function memosMarkdown(books, today = todayStr()) {
+  const parts = [];
+  books.forEach((b) => {
+    const note = String(b.note || "").trim();
+    const memos = (b.chapters || []).filter((c) => String(c.memo || "").trim());
+    if (!note && !memos.length) return;
+    let s = "## " + b.title + "\n\n" + (b.author ? b.author + "\n\n" : "");
+    if (note) s += "### 독서 메모\n\n" + note + "\n\n";
+    s += memos.map((c) => "### " + c.t + "\n\n" + String(c.memo).trim()).join("\n\n");
+    parts.push(s.trim());
+  });
+  return "# 책갈피 독서 메모\n\n" + fmtDate(today) + " 내려받음\n\n" + (parts.length ? parts.join("\n\n---\n\n") : "아직 남긴 메모가 없습니다.") + "\n";
+}
+
 export function memoMatch(text, q) {
   const chars = Array.from(String(text || '')), map = [], normalized = [];
   chars.forEach((ch,i) => { if (!/\s/.test(ch)) for (const c of ch.toLowerCase()) { normalized.push(c); map.push(i); } });

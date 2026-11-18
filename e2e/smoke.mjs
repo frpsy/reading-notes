@@ -1173,6 +1173,12 @@ try {
     assert.equal(await dateInput.getAttribute('max'), day(0));
     await dateInput.fill(day(-30)); await dateInput.dispatchEvent('change');
     await page.waitForFunction((t) => JSON.parse(localStorage.getItem('e2e-books')).qa1.chapters[1].done === t, day(0));
+    // 날짜 칸을 비워도(iOS '지우기') 체크가 풀리지 않고 원래 날짜로 돌아옵니다.
+    await page.locator('#ch-1 input[type=date]').fill(''); await page.locator('#ch-1 input[type=date]').dispatchEvent('change');
+    await page.waitForTimeout(150);
+    assert.equal((await stored()).qa1.chapters[1].done, day(0), '빈 날짜로 체크가 풀리지 않음');
+    assert.equal(await page.locator('#ch-1 .chk').getAttribute('aria-checked'), 'true');
+    assert.equal(await page.locator('#ch-1 input[type=date]').inputValue(), day(0));
     await page.keyboard.press('Escape');
     // 새 메모 입력창에는 지울 내용이 생기기 전까지 삭제 버튼이 없습니다.
     await page.locator('#ch-2 .chapter-options > summary').click();
