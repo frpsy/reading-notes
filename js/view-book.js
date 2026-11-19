@@ -1,8 +1,8 @@
 // 책 상세 화면: 진척, 날짜, 그래프, 챕터 체크, 메모, 평점.
-import { state } from "./state.js?v=73";
-import { esc, fmt, ago } from "./util.js?v=73";
-import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf, progressSegments } from "./core.js?v=73";
-import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=73";
+import { state } from "./state.js?v=74";
+import { esc, fmt, ago } from "./util.js?v=74";
+import { metrics as calcMetrics, dnum, dstr, todayStr, goalInfo, chartGeometry, fmtShort, isGroup, descLeaves, nextLeafIndex, memosOf, progressSegments } from "./core.js?v=74";
+import { CHECK, DASH, CHEVRON, DOTS, coverHtml, chipHtml, notFound, paceText } from "./view-common.js?v=74";
 
 // 진척과 이어 읽기를 한 판에 묶어 챕터 목록이 첫 화면에 더 일찍 보이게 합니다.
 function nextPanel(b, m) {
@@ -67,6 +67,8 @@ function memoPreview(text, index, scope = 'collection') {
   // 읽기 화면의 시작/끝 빈 줄만 숨깁니다. 편집용 원문과 저장 데이터는 그대로 둡니다.
   const visible = String(text || '').replace(/^(?:[ \t]*\r?\n)+/, '').replace(/(?:\r?\n[ \t]*)+$/, '');
   if (!longMemo(visible) && scope === 'collection') return '<p class="memo-text">' + esc(visible) + '</p>';
+  // 짧은 독서 메모는 더 펼칠 내용이 없으므로 '전체 보기' 없이 눌러서 바로 편집합니다.
+  if (!longMemo(visible) && scope === 'note') return '<div class="note-short"><button type="button" class="memo-text memo-edit-tap" data-act="edit-note" aria-label="독서 메모 수정">' + esc(visible) + '</button></div>';
   const excerpt = memoExcerpt(visible);
   const editable = scope === 'chapter' || scope === 'note';
   const act = scope === 'chapter' ? ' data-act="memo" data-i="' + index + '"' : ' data-act="edit-note"';

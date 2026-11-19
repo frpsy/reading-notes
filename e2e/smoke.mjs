@@ -44,7 +44,8 @@ try {
     await page.locator('#d-note').waitFor({state:'attached'});
     if (!(await page.locator('#d-note').isVisible())) {
       const preview = page.locator('.note-panel .memo-preview');
-      if (await preview.count()) {
+      if (await page.locator('.note-panel .note-short .memo-edit-tap').count()) await page.locator('.note-panel .note-short .memo-edit-tap').click();
+      else if (await preview.count()) {
         if (!(await preview.evaluate(el => el.open))) await preview.locator('summary').click();
         await preview.locator('.memo-edit-tap').click();
       } else await page.locator('.note-editor > summary').click();

@@ -87,3 +87,12 @@ test('독서 메모가 비어 있으면 열린 편집기의 버튼은 "접기"�
   const html = bookView(b.id);
   assert.match(html, /<details class="note-editor"[^>]* open><summary[^>]*><span class="note-closed">메모 쓰기<\/span><span class="note-open">접기<\/span><\/summary>/);
 });
+
+test('짧은 독서 메모는 "전체 보기" 없이 눌러서 바로 편집, 긴 메모만 펼치기', () => {
+  const short = book({ note: '쾌락과 고통의 균형' }); reset(short);
+  const html = bookView(short.id);
+  assert.match(html, /<div class="note-short"><button type="button" class="memo-text memo-edit-tap" data-act="edit-note"[^>]*>쾌락과 고통의 균형<\/button><\/div>/);
+  assert.doesNotMatch(html, /preview-note/);
+  const long = book({ note: '가'.repeat(200) }); reset(long);
+  assert.match(bookView(long.id), /data-disclosure="preview-note-note"/);
+});
