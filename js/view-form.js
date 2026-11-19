@@ -1,10 +1,10 @@
 // 책 추가·정보 수정 화면: 준비된 책 담기(책 추가일 때), 목차 붙여넣기, 미리보기.
-import { state } from "./state.js?v=73";
-import { esc } from "./util.js?v=73";
-import { parseToc, tocText, leavesOf, isGroup, newId, parseBookPaste, autoDates, validateBook, carryOver, findSimilarBook } from "./core.js?v=73";
-import { persist } from "./sync.js?v=73";
-import { notFound } from "./view-common.js?v=73";
-import { catalogHtml, catalogCount } from "./catalog.js?v=73";
+import { state } from "./state.js?v=74";
+import { esc } from "./util.js?v=74";
+import { parseToc, tocText, leavesOf, isGroup, newId, parseBookPaste, autoDates, validateBook, carryOver, findSimilarBook } from "./core.js?v=74";
+import { persist } from "./sync.js?v=74";
+import { notFound } from "./view-common.js?v=74";
+import { catalogHtml, catalogCount } from "./catalog.js?v=74";
 
 function previewHtml(items) {
   if (!items.length) return '<p class="muted">목차를 붙여 넣으면 인식 결과가 여기에 표시됩니다.</p>';

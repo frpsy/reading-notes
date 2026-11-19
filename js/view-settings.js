@@ -1,7 +1,7 @@
 // 설정 화면입니다(책 찾기는 책 추가 화면으로 합쳤습니다).
-import { state } from "./state.js?v=73";
-import { esc } from "./util.js?v=73";
-import { themeLabel, fontScaleState } from "./prefs.js?v=73";
+import { state } from "./state.js?v=74";
+import { esc } from "./util.js?v=74";
+import { themeLabel, fontScaleState } from "./prefs.js?v=74";
 
 // 글자 크기 조절: 눌러 바로 전체 화면에 적용하고 이 기기에 저장합니다(5% 단위).
 function fontScaleItem() {

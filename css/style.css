@@ -1155,3 +1155,24 @@ a.book .book-next{grid-column:1 / -1;grid-row:5;border-top:0;padding-top:0;margi
 .note-panel .note-editor{border-top:1px solid var(--line);margin-top:8px;padding-top:4px}
 .note-editor:not(.has-note)[open]>summary{display:none}
 .note-editor:not(.has-note)[open]>.fld{margin-top:12px!important}
+
+/* 디자인 v8 최종 다듬기: PC 챕터 줄 높이, 한 권 묶음 카드, 평점 위치, 책 추가 너비, 짧은 독서 메모 */
+@media(min-width:431px){
+  /* 줄 전체를 눌러도 체크되고 체크 버튼이 44px이므로 PC에서는 제목·쪽수 줄의 최소 높이를 두지 않습니다 */
+  .ch-hit{min-height:0;padding:4px 0}
+  .ch-meta{min-height:0}
+  .ch.leaf,.ch.group{padding-top:9px;padding-bottom:9px}
+}
+@media(min-width:900px){
+  .books:has(>a.book)>a.book:only-child{grid-column:1 / -1}
+}
+@media(min-width:768px){
+  .note-panel .rating-text{margin-left:8px}
+}
+.add-tabs,.add-shelf{max-width:660px}
+.note-short{margin-top:8px}
+.note-short .memo-edit-tap{display:block;width:100%;min-height:44px;padding:8px 0;border:0;background:none;color:var(--ink);font:inherit;font-size:1rem;line-height:1.7;text-align:left;white-space:pre-wrap;cursor:text;-webkit-tap-highlight-color:transparent}
+.note-panel:has(.note-editor[open])>.note-short{display:none}
+/* 메모가 있을 때 구분선은 평점과 메모 사이에(닫힌 편집기 위에 빈 선이 남지 않게) */
+.note-panel>.note-short,.note-panel>.memo-preview{border-top:1px solid var(--line);margin-top:8px;padding-top:4px}
+.note-panel .note-editor.has-note:not([open]){border-top:0;margin-top:0;padding-top:0}
